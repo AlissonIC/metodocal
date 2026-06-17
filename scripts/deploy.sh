@@ -72,6 +72,40 @@ run "config:clear" php artisan config:clear
 run "route:clear"  php artisan route:clear
 run "view:clear"   php artisan view:clear
 
+# 5.1) garantir que toda a estrutura de storage/ exista.
+#  Se o repositório não versionou alguma subpasta (ex.: storage/framework/cache/data),
+#  o PHP-FPM tenta criar via tempnam() e cai no /tmp do sistema. Idempotente.
+run "ensure storage dirs" mkdir -p \
+  storage/framework/cache/data \
+  storage/framework/sessions \
+  storage/framework/views \
+  storage/framework/testing \
+  storage/logs \
+  storage/app/public \
+  storage/app/private \
+  bootstrap/cache
+
+# 5.2) corrigir dono/permissão.
+#  - chown só funciona se o script rodar como root (ou com sudoers NOPASSWD).
+#    Se o user atual já for o dono (caso comum: deploy via SSH como `metodocal`),
+#    é no-op silencioso. Erro de permissão é tolerado (não usa `set -e`).
+#  - 775 garante escrita pro grupo (útil quando PHP-FPM e SSH são users diferentes
+#    mas no mesmo grupo).
+APP_USER="$(stat -c '%U' "$APP_DIR" 2>/dev/null || echo "")"
+APP_GROUP="$(stat -c '%G' "$APP_DIR" 2>/dev/null || echo "")"
+if [ -n "$APP_USER" ] && [ -n "$APP_GROUP" ]; then
+  run "chown storage/bootstrap" chown -R "$APP_USER:$APP_GROUP" storage bootstrap/cache
+fi
+run "chmod storage/bootstrap" chmod -R 775 storage bootstrap/cache
+
+# 5.3) reconstruir caches.
+#  Só limpar (passo 5) força cada request a reconstruir em runtime, o que
+#  dispara o tempnam() no /tmp se algo estiver errado. Reconstruir aqui
+#  cria os arquivos UMA vez, já com o dono certo, e o request só lê.
+run "config:cache" php artisan config:cache
+run "route:cache"  php artisan route:cache
+run "view:cache"   php artisan view:cache
+
 # 6) reiniciar workers do supervisor pra que peguem o código novo.
 #  - `queue:restart` é o caminho canônico do Laravel: grava um sinal que
 #    cada worker lê no topo do loop e encerra graciosamente. O supervisor
