@@ -1,0 +1,38 @@
+{
+  "menu": [
+    {
+      "url": "painel",
+      "name": "Painel",
+      "icon": "menu-icon icon-base ti tabler-smart-home",
+      "slug": "dashboard"
+    },
+    {
+      "url": "painel/perfil",
+      "name": "Meu Perfil",
+      "icon": "menu-icon icon-base ti tabler-user",
+      "slug": "profile.edit",
+      "permission": "access.profile.edit"
+    },
+    {
+      "url": "painel/minha-assinatura",
+      "name": "Minha Assinatura",
+      "icon": "menu-icon icon-base ti tabler-file-dollar",
+      "slug": "subscription.view",
+      "permission": "access.minhaassinatura.view"
+    },
+    {
+      "url": "painel/usuarios",
+      "name": "Usuários",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "slug": "admin.users",
+      "permission": "access.users.view"
+    },
+    {
+      "url": "painel/planos",
+      "name": "Planos",
+      "icon": "menu-icon icon-base ti tabler-package",
+      "slug": "admin.plans",
+      "permission": "access.plans.view"
+    }
+  ]
+}

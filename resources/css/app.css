@@ -1,0 +1,212 @@
+/* ============================================================================
+   Tema metodocal — paleta de marca
+   Primária:   #007da8 (azul institucional)
+   Secundária: #09d2e8 (ciano destaque)
+   Neutros vêm do próprio Vuexy (escala de cinzas próximas a branco/preto).
+   ============================================================================ */
+
+:root {
+  --md-brand-1: #007da8;
+  --md-brand-2: #09d2e8;
+  --md-brand-gradient: linear-gradient(135deg, #007da8 0%, #09d2e8 100%);
+  --md-brand-gradient-soft: linear-gradient(135deg, rgba(0, 125, 168, 0.10) 0%, rgba(9, 210, 232, 0.10) 100%);
+}
+
+/* ----------------------- Marca / Logo no menu lateral ---------------------- */
+.app-brand-text {
+  background: var(--md-brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ----------------------- Tela de autenticação (hero) ---------------------- */
+.authentication-wrapper .authentication-inner .card {
+  border-top: 4px solid transparent;
+  border-image: var(--md-brand-gradient) 1;
+  border-image-slice: 1;
+}
+.authentication-wrapper .app-brand-text {
+  background: var(--md-brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --------------------------- Botão primário ------------------------------ */
+.btn-primary {
+  background: var(--md-brand-gradient);
+  border-color: var(--md-brand-1);
+  transition: filter 0.2s ease;
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background: var(--md-brand-gradient);
+  border-color: var(--md-brand-1);
+  filter: brightness(1.05) saturate(1.05);
+}
+
+/* --------------------------- KPI cards ----------------------------------- */
+/* Avatar de destaque (primeiro card do dashboard) ganha o gradiente */
+.card .avatar .avatar-initial.bg-label-primary {
+  background: var(--md-brand-gradient) !important;
+  color: #fff !important;
+}
+
+/* --------------------------- Badges primary ------------------------------ */
+.badge.bg-primary {
+  background: var(--md-brand-gradient) !important;
+  border: none;
+}
+
+/* --------------------------- Links e foco -------------------------------- */
+a {
+  color: var(--md-brand-1);
+}
+a:hover {
+  color: var(--md-brand-2);
+}
+
+/* --------------------------- Realce sutil de "atual" no menu ------------- */
+.menu-vertical .menu-item.active > .menu-link {
+  background: var(--md-brand-gradient-soft);
+  color: var(--md-brand-1);
+  font-weight: 600;
+}
+.menu-vertical .menu-item.active > .menu-link i {
+  color: var(--md-brand-1);
+}
+
+/* --------------------------- Barra de progresso primary ----------------- */
+.progress-bar.bg-primary,
+.progress-bar:not([class*="bg-"]) {
+  background: var(--md-brand-gradient) !important;
+}
+
+/* ============================================================================
+   Paginação do Laravel (Bootstrap 5) — força w-100 para o "Mostrando..."
+   ficar à esquerda e os botões à direita com bom espaçamento.
+   ============================================================================ */
+nav[role="navigation"] > .d-sm-flex {
+  width: 100% !important;
+  gap: 1rem;
+}
+nav[role="navigation"] .pagination {
+  margin-bottom: 0;
+}
+
+/* ============================================================================
+   DataTables — espaçamento padrão
+   Padding é aplicado no .dt-container; a tabela usa margem negativa para
+   ocupar a largura total do card.
+   ============================================================================ */
+
+/* Container envolve toda a tabela: padding lateral define o respiro do card */
+div.dt-container {
+  padding: 0.25rem 1.25rem !important;
+}
+
+/* A linha da tabela "vaza" o padding lateral para ocupar a largura total */
+div.dt-container > div.dt-layout-row.dt-layout-table {
+  margin-left: -1.25rem !important;
+  margin-right: -1.25rem !important;
+}
+
+/* Espaço vertical em topo/rodapé */
+div.dt-container > div.dt-layout-row:first-child {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+div.dt-container > div.dt-layout-row:last-child {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+/* Coluna esquerda (length / info) */
+div.dt-container div.dt-layout-start {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  gap: 0.5rem;
+}
+div.dt-container div.dt-layout-start > * {
+  margin: 0 !important;
+}
+
+/* Coluna direita (busca + botões) */
+div.dt-container div.dt-layout-end {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  flex-wrap: wrap;
+  text-align: right !important;
+}
+div.dt-container div.dt-layout-end > * {
+  margin: 0 !important;
+}
+
+/* Campo de busca */
+div.dt-container div.dt-search {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+div.dt-container div.dt-search input.form-control,
+div.dt-container div.dt-search input {
+  min-width: 240px !important;
+  margin: 0 !important;
+  display: inline-block !important;
+  width: auto !important;
+}
+
+/* Botões "Novo X" e exports */
+div.dt-container div.dt-buttons {
+  display: flex !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap;
+  margin: 0 !important;
+}
+div.dt-container div.dt-buttons .btn {
+  white-space: nowrap;
+}
+
+/* Rodapé */
+div.dt-container div.dt-info {
+  color: var(--bs-secondary-color);
+  text-align: left !important;
+  padding: 0 !important;
+}
+div.dt-container div.dt-paging {
+  display: flex !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+  margin: 0 !important;
+}
+div.dt-container div.dt-paging ul.pagination {
+  margin: 0 !important;
+  justify-content: flex-end !important;
+}
+
+/* Mobile: empilhar e centralizar */
+@media (max-width: 575.98px) {
+  div.dt-container div.dt-layout-start,
+  div.dt-container div.dt-layout-end {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  div.dt-container div.dt-search input.form-control,
+  div.dt-container div.dt-search input {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  div.dt-container div.dt-paging,
+  div.dt-container div.dt-paging ul.pagination {
+    justify-content: center !important;
+  }
+}

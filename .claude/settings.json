@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\xampp\\\\htdocs\\\\metodocal\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(curl -sf -o /dev/null -w '%{http_code}\\\\n' http://127.0.0.1:8765/login)",
+      "Bash(rm -f cookies-ment.txt cookies-lic.txt)",
+      "Bash(curl -sS -c cookies-ment.txt -o /tmp/login-m.html http://127.0.0.1:8765/login)",
+      "Bash(sed -n 's/.*name=\"_token\"[^>]*value=\"\\\\\\([^\"]*\\\\\\)\".*/\\\\1/p' /tmp/login-m.html)",
+      "Bash(cd /tmp *)",
+      "Bash(curl -sf -o /dev/null http://127.0.0.1:8765/entrar)",
+      "Bash(rm -f cookies-*.txt)",
+      "Bash(curl -sS -o /tmp/root.html -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/)",
+      "Bash(curl -sS -o /dev/null -w \"/entrar: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/entrar)",
+      "Bash(curl -sS -o /dev/null -w \"/registrar: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/registrar)",
+      "Bash(curl -sS -o /dev/null -w \"/esqueci-senha: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/esqueci-senha)",
+      "Bash(curl -sf -o /dev/null http://127.0.0.1:8765/registrar)",
+      "Bash(rm -f cookies-r.txt)",
+      "Bash(curl -sS -c cookies-r.txt -o /tmp/reg.html http://127.0.0.1:8765/registrar)",
+      "Bash(curl -sS -c cookies-a.txt -o /tmp/login.html http://127.0.0.1:8765/entrar)",
+      "Bash(sed -n 's/.*name=\"_token\"[^>]*value=\"\\\\\\([^\"]*\\\\\\)\".*/\\\\1/p' /tmp/login.html)",
+      "Bash(curl -sS -b cookies-a.txt -o /tmp/p.html -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/painel/planos)",
+      "Bash(curl -sS -b cookies-a.txt -H \"Accept: application/json\" \"http://127.0.0.1:8765/painel/planos/datatable?draw=1&start=0&length=10\" -o /tmp/dt.json -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/dt.json\"\\),true\\); echo $j[\"recordsTotal\"];')",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/dt.json\"\\),true\\); foreach\\($j[\"data\"] as $p\\) echo \"  - {$p[\"nome\"]} | {$p[\"tipo_label\"]} | {$p[\"preco_formatado\"]}\".PHP_EOL;')",
+      "Bash(sed -n 's/.*name=\"csrf-token\"[^>]*content=\"\\\\\\([^\"]*\\\\\\)\".*/\\\\1/p' /tmp/dash.html)",
+      "Bash(curl -sS -b cookies-a.txt -H \"Accept: application/json\" \"http://127.0.0.1:8765/painel/usuarios/datatable?draw=1&start=0&length=10\" -o /tmp/du.json -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/du.json\"\\),true\\); echo $j[\"recordsTotal\"];')",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/du.json\"\\),true\\); foreach\\($j[\"data\"] as $u\\) echo \"  - {$u[\"name\"]} | {$u[\"email\"]} | role={$u[\"role\"]} | plano={$u[\"plano\"]}\".PHP_EOL;')",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/dt.json\"\\),true\\); echo $j[\"recordsTotal\"] ?? \"ERR\";')",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/dt.json\"\\),true\\); foreach\\(\\($j[\"data\"] ?? []\\) as $p\\) echo \" - {$p[\"nome\"]} | {$p[\"tipo_label\"]} | {$p[\"preco_formatado\"]} | {$p[\"ativas_count\"]} ativas\".PHP_EOL;')",
+      "Bash(curl -sS -b cookies-a.txt -o /tmp/u.html -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/painel/usuarios)",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/du.json\"\\),true\\); echo $j[\"recordsTotal\"] ?? \"ERR\";')",
+      "Bash(php -r '$j=json_decode\\(file_get_contents\\(\"/tmp/du.json\"\\),true\\); foreach\\(\\($j[\"data\"] ?? []\\) as $u\\) echo \" - {$u[\"name\"]} | role={$u[\"role\"]} | plano={$u[\"plano\"]}\".PHP_EOL;')",
+      "Bash(curl -sS -L -b cookies-a.txt -o /tmp/ap.html http://127.0.0.1:8765/painel)",
+      "Bash(sed -n '/menu-inner py-1/,/<\\\\/ul>/p' /tmp/ap.html)",
+      "Bash(curl -sS -b cookies-a.txt -o /dev/null -w \"/painel/agenda: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/painel/agenda)",
+      "Bash(curl -sS -b cookies-a.txt -o /dev/null -w \"/painel/crm: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/painel/crm)",
+      "Bash(curl -sS -b cookies-a.txt -o /dev/null -w \"/painel/usuarios: HTTP %{http_code}\\\\n\" http://127.0.0.1:8765/painel/usuarios)",
+      "Bash(curl -sS -L -b cookies-m.txt -o /tmp/mp.html http://127.0.0.1:8765/painel)",
+      "Bash(sed -n '/menu-inner py-1/,/<\\\\/ul>/p' /tmp/mp.html)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+<?php
+// Variables
+return [
+  "creatorName" => "DevAlisson.com",
+  "creatorUrl" => "https://devalisson.com",
+  "templateName" => "MetodoCal",
+  "templateSuffix" => "Bootstrap Admin Template",
+  "templateVersion" => "3.0.0",
+  "templateFree" => false,
+  "templateDescription" => "Start your development with a Dashboard for Bootstrap 5",
+  "templateKeyword" => "dashboard, bootstrap 5 dashboard, bootstrap 5 design, bootstrap 5",
+  "licenseUrl" => "",
+  "livePreview" => "",
+  "productPage" => "",
+  "support" => "https://pixinvent.ticksy.com/",
+  "moreThemes" => "",
+  "ogTitle" => "Vuexy bootstrap Dashboard by Pixinvent",
+  "ogImage" => "https://pixinvent.com/wp-content/uploads/2023/06/vuexy-hero-image.png",
+  "ogType" => "product",
+  "documentation" => "",
+  "generator" => "",
+  "changelog" => "",
+  "repository" => "",
+  "gitRepo" => "",
+  "gitRepoAccess" => "",
+  "githubFreeUrl" => "",
+  "facebookUrl" => "",
+  "twitterUrl" => "",
+  "githubUrl" => "",
+  "dribbbleUrl" => "",
+  "instagramUrl" => ""
+];

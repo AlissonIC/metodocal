@@ -1,0 +1,128 @@
+{
+  "menu": [
+    {
+      "url": "painel",
+      "name": "Painel",
+      "icon": "menu-icon icon-base ti tabler-smart-home",
+      "slug": "dashboard"
+    },
+    {
+      "url": "painel/perfil",
+      "name": "Meu Perfil",
+      "icon": "menu-icon icon-base ti tabler-user",
+      "slug": "profile.edit",
+      "permission": "access.profile.edit"
+    },
+    {
+      "url": "painel/minha-assinatura",
+      "name": "Minha Assinatura",
+      "icon": "menu-icon icon-base ti tabler-file-dollar",
+      "slug": "subscription.view",
+      "permission": "access.minhaassinatura.view"
+    },
+    {
+      "url": "painel/faturas",
+      "name": "Minhas Faturas",
+      "icon": "menu-icon icon-base ti tabler-receipt",
+      "slug": "faturas.index",
+      "permission": "access.faturas.view"
+    },
+
+    { "menuHeader": "Mentoria" },
+    {
+      "url": "painel/agenda",
+      "name": "Agenda",
+      "icon": "menu-icon icon-base ti tabler-calendar",
+      "slug": "mentorado.agenda",
+      "permission": "access.agenda.view"
+    },
+    {
+      "url": "painel/conteudos",
+      "name": "Trilha de Conteúdos",
+      "icon": "menu-icon icon-base ti tabler-book",
+      "slug": "mentorado.conteudos",
+      "permission": "access.conteudos.view"
+    },
+
+    { "menuHeader": "Licenciamento" },
+    {
+      "url": "painel/crm",
+      "name": "Meus Clientes",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "slug": "licenciado.crm",
+      "permission": "access.crm.view"
+    },
+    {
+      "url": "painel/materiais",
+      "name": "Materiais",
+      "icon": "menu-icon icon-base ti tabler-files",
+      "slug": "licenciado.materiais",
+      "permission": "access.materiais.view"
+    },
+    {
+      "url": "painel/comissoes",
+      "name": "Minhas Comissões",
+      "icon": "menu-icon icon-base ti tabler-cash",
+      "slug": "licenciado.comissoes",
+      "permission": "access.comissoes.view"
+    },
+
+    { "menuHeader": "Administração" },
+    {
+      "url": "painel/usuarios",
+      "name": "Usuários",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "slug": "admin.users",
+      "permission": "access.users.view"
+    },
+    {
+      "url": "painel/planos",
+      "name": "Planos",
+      "icon": "menu-icon icon-base ti tabler-package",
+      "slug": "admin.plans",
+      "permission": "access.plans.view"
+    },
+    {
+      "url": "painel/sessoes",
+      "name": "Sessões",
+      "icon": "menu-icon icon-base ti tabler-calendar-event",
+      "slug": "admin.sessoes",
+      "permission": "access.sessoes.manage"
+    },
+    {
+      "url": "painel/conteudos-admin",
+      "name": "Biblioteca de Conteúdos",
+      "icon": "menu-icon icon-base ti tabler-book-2",
+      "slug": "admin.conteudos",
+      "permission": "access.conteudos.manage"
+    },
+    {
+      "url": "painel/materiais-admin",
+      "name": "Materiais (gestão)",
+      "icon": "menu-icon icon-base ti tabler-folder",
+      "slug": "admin.materiais",
+      "permission": "access.materiais.manage"
+    },
+    {
+      "url": "painel/comissoes-admin",
+      "name": "Comissões (gestão)",
+      "icon": "menu-icon icon-base ti tabler-coin",
+      "slug": "admin.comissoes",
+      "permission": "access.comissoes.manage"
+    },
+    {
+      "url": "painel/financeiro",
+      "name": "Financeiro",
+      "icon": "menu-icon icon-base ti tabler-cash-banknote",
+      "slug": "admin.financeiro",
+      "permission": "access.financeiro.manage"
+    },
+    {
+      "url": "painel/notificacoes",
+      "name": "Notificações",
+      "icon": "menu-icon icon-base ti tabler-bell",
+      "slug": "admin.notificacoes",
+      "permission": "access.notificacoes.manage"
+    }
+  ]
+}
