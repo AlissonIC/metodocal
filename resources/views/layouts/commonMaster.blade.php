@@ -45,7 +45,8 @@
     content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
   @php
-    $seoTitle = trim((View::yieldContent('title') ?: '') . (View::yieldContent('title') ? ' | ' : '') . config('variables.templateName', 'MetodoCal'));
+    $pageTitle = trim($__env->yieldContent('title'));
+    $seoTitle = $pageTitle !== '' ? $pageTitle . ' | ' . config('variables.templateName', 'MetodoCal') : config('variables.templateName', 'MetodoCal');
     $seoDescription = config('variables.templateDescription', '');
     $seoImage = asset('assets/img/branding/logo.png');
     $seoUrl = url()->current();
