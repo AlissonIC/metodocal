@@ -38,11 +38,10 @@ return [
     'mercadopago' => [
         'public_key' => env('MP_PUBLIC_KEY'),
         'access_token' => env('MP_ACCESS_TOKEN'),
-        'webhook_secret' => env('MP_WEBHOOK_SECRET'),
         'success_url' => env('APP_URL', 'http://localhost') . '/painel/checkout/sucesso',
         'failure_url' => env('APP_URL', 'http://localhost') . '/painel/checkout/falha',
         'pending_url' => env('APP_URL', 'http://localhost') . '/painel/checkout/pendente',
-        'notification_url' => env('MP_NOTIFICATION_URL', env('APP_URL') . '/webhooks/mercadopago'),
+        'notification_url' => env('APP_URL') . '/webhooks/mercadopago',
     ],
 
 ];

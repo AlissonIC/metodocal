@@ -93,6 +93,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     Route::middleware('permission:access.minhaassinatura.view')->group(function () {
         Route::post('/contratar/{plan}', [CheckoutController::class, 'contratar'])->name('checkout.contratar');
         Route::get('/checkout/aguardando/{fatura}', [CheckoutController::class, 'aguardando'])->name('checkout.aguardando');
+        Route::get('/checkout/aguardando/{fatura}/status', [CheckoutController::class, 'status'])->name('checkout.status');
         Route::get('/checkout/sucesso', [CheckoutController::class, 'sucesso'])->name('checkout.sucesso');
         Route::get('/checkout/falha', [CheckoutController::class, 'falha'])->name('checkout.falha');
         Route::get('/checkout/pendente', [CheckoutController::class, 'pendente'])->name('checkout.pendente');

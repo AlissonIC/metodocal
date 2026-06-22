@@ -16,45 +16,64 @@ class FaturaService
 
     /**
      * Cria uma Subscription pendente + 1ª Fatura pendente para o plano.
+     *
+     * Antes de criar, cancela qualquer subscription/fatura PENDENTE anterior do
+     * usuário pra não acumular registros órfãos quando o cliente clica em
+     * "Contratar" várias vezes sem concluir o pagamento.
+     *
+     * Subscriptions ATIVAS de outro plano são mantidas — só viram canceladas
+     * quando o novo pagamento for confirmado (em marcarComoPaga).
+     *
      * Se o MP estiver configurado, popula link_pagamento e gateway_preference_id.
      */
     public function iniciarContratacao(User $user, Plan $plan): Fatura
     {
-        $subscription = Subscription::create([
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'status' => 'pendente',
-            'started_at' => null,
-            'ends_at' => $this->calcEndsAt($plan->recorrencia),
-        ]);
+        return DB::transaction(function () use ($user, $plan) {
+            // Cancela contratações pendentes anteriores do mesmo usuário
+            $pendentes = Subscription::where('user_id', $user->id)
+                ->where('status', 'pendente')
+                ->get();
+            foreach ($pendentes as $sub) {
+                $sub->faturas()->where('status', 'pendente')->update(['status' => 'cancelada']);
+                $sub->update(['status' => 'cancelada', 'canceled_at' => now()]);
+            }
 
-        $user->forceFill(['current_subscription_id' => $subscription->id])->save();
-
-        $fatura = Fatura::create([
-            'subscription_id' => $subscription->id,
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'valor' => $plan->preco,
-            'vencimento' => now()->addDays(3)->toDateString(),
-            'status' => 'pendente',
-            // Pré-popular com os dados que já temos do cadastro do usuário —
-            // o webhook do MP pode substituir depois com o que o pagador informar lá.
-            'payer_name' => $user->name,
-            'payer_email' => $user->email,
-            'payer_document' => $user->cpf_cnpj,
-        ]);
-
-        $fatura->load(['user', 'plan']);
-        $pref = $this->mp->createPreference($fatura);
-        if ($pref) {
-            $fatura->update([
-                'gateway_preference_id' => $pref['preference_id'],
-                'link_pagamento' => $pref['init_point'],
+            $subscription = Subscription::create([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'status' => 'pendente',
+                'started_at' => null,
+                'ends_at' => null, // calculado em marcarComoPaga (a partir do pagamento real)
             ]);
-            $subscription->update(['gateway_subscription_id' => $pref['preference_id']]);
-        }
 
-        return $fatura->fresh();
+            $user->forceFill(['current_subscription_id' => $subscription->id])->save();
+
+            $fatura = Fatura::create([
+                'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'valor' => $plan->preco,
+                'vencimento' => now()->addDays(3)->toDateString(),
+                'status' => 'pendente',
+                // Pré-popular com os dados que já temos do cadastro do usuário —
+                // o webhook do MP pode substituir depois com o que o pagador informar lá.
+                'payer_name' => $user->name,
+                'payer_email' => $user->email,
+                'payer_document' => $user->cpf_cnpj,
+            ]);
+
+            $fatura->load(['user', 'plan']);
+            $pref = $this->mp->createPreference($fatura);
+            if ($pref) {
+                $fatura->update([
+                    'gateway_preference_id' => $pref['preference_id'],
+                    'link_pagamento' => $pref['init_point'],
+                ]);
+                $subscription->update(['gateway_subscription_id' => $pref['preference_id']]);
+            }
+
+            return $fatura->fresh();
+        });
     }
 
     public function marcarComoPaga(
@@ -66,20 +85,43 @@ class FaturaService
             return;
         }
 
-        $fatura->update([
-            'status' => 'paga',
-            'pago_em' => now(),
-            'gateway_payment_id' => $gatewayPaymentId,
-            'metodo' => $metodo,
-        ]);
-
-        $subscription = $fatura->subscription;
-        if ($subscription && $subscription->status !== 'ativa') {
-            $subscription->update([
-                'status' => 'ativa',
-                'started_at' => $subscription->started_at ?? now(),
+        DB::transaction(function () use ($fatura, $gatewayPaymentId, $metodo) {
+            $fatura->update([
+                'status' => 'paga',
+                'pago_em' => now(),
+                'gateway_payment_id' => $gatewayPaymentId,
+                'metodo' => $metodo,
             ]);
-        }
+
+            $subscription = $fatura->subscription()->first();
+            if (! $subscription) return;
+
+            // Cancela outras subscriptions ativas do mesmo usuário —
+            // o cliente assinou um novo plano, então o anterior é encerrado.
+            Subscription::where('user_id', $subscription->user_id)
+                ->where('id', '!=', $subscription->id)
+                ->where('status', 'ativa')
+                ->each(function (Subscription $sub) {
+                    $sub->update(['status' => 'cancelada', 'canceled_at' => now()]);
+                });
+
+            // Ativa a subscription e recalcula a vigência a partir de AGORA
+            // (não de quando foi criada — o pagamento pode ter demorado dias).
+            if ($subscription->status !== 'ativa') {
+                $plan = $subscription->plan()->first();
+                $subscription->update([
+                    'status' => 'ativa',
+                    'started_at' => now(),
+                    'ends_at' => $plan ? $this->calcEndsAt($plan->recorrencia) : $subscription->ends_at,
+                ]);
+            }
+
+            // Garante que o current_subscription_id do user aponta pro plano pago
+            $user = $subscription->user()->first();
+            if ($user && $user->current_subscription_id !== $subscription->id) {
+                $user->forceFill(['current_subscription_id' => $subscription->id])->save();
+            }
+        });
     }
 
     public function marcarComoCancelada(Fatura $fatura): void
