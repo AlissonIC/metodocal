@@ -5,7 +5,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Error - Pages')
+@section('title', 'Página não encontrada')
 
 @section('page-style')
 <!-- Page -->
@@ -18,9 +18,9 @@ $configData = Helper::appClasses();
 <div class="container-xxl container-p-y">
   <div class="misc-wrapper">
     <h1 class="mb-2 mx-2" style="line-height: 6rem;font-size: 6rem;">404</h1>
-    <h4 class="mb-2 mx-2">Page Not Found️ ⚠️</h4>
-    <p class="mb-6 mx-2">we couldn't find the page you are looking for</p>
-    <a href="{{ url('/') }}" class="btn btn-primary mb-10">Back to home</a>
+    <h4 class="mb-2 mx-2">Página não encontrada ⚠️</h4>
+    <p class="mb-6 mx-2">A página que você procura não existe ou foi movida.</p>
+    <a href="{{ url('/') }}" class="btn btn-primary mb-10">Voltar para o início</a>
     <div class="mt-4">
       <img src="{{ asset('assets/img/illustrations/page-misc-error.png') }}" alt="page-misc-error-light" width="225" class="img-fluid" />
     </div>

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\SessaoController as AdminSessaoController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\EmpresaGuinchoController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProcessoLimpaNomeController;
 use App\Http\Controllers\authentications\ForgotPasswordBasic;
 use App\Http\Controllers\authentications\LoginBasic;
@@ -34,11 +35,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/lang/{locale}', [LanguageController::class, 'swap']);
 
 // ----------------------------------------------------------------------------
+// Landing pública
+// ----------------------------------------------------------------------------
+Route::get('/', [LandingController::class, 'index'])->name('home');
+
+// ----------------------------------------------------------------------------
 // Acesso público (apenas visitantes)
 // ----------------------------------------------------------------------------
 Route::middleware('guest')->group(function () {
-    Route::get('/', [LoginBasic::class, 'index'])->name('login');
-    Route::get('/entrar', [LoginBasic::class, 'index'])->name('login.show');
+    Route::get('/entrar', [LoginBasic::class, 'index'])->name('login');
     Route::post('/entrar', [LoginBasic::class, 'authenticate'])->name('login.attempt');
 
     Route::get('/registrar', [RegisterBasic::class, 'index'])->name('register');
