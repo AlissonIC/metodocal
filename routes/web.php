@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\NotificacaoController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\SessaoController as AdminSessaoController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\EmpresaGuinchoController;
+use App\Http\Controllers\ProcessoLimpaNomeController;
 use App\Http\Controllers\authentications\ForgotPasswordBasic;
 use App\Http\Controllers\authentications\LoginBasic;
 use App\Http\Controllers\authentications\RegisterBasic;
@@ -97,6 +99,42 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::get('/faturas/{fatura}', [FaturasController::class, 'show'])->name('faturas.show');
     });
 
+    // Guincho (cliente + admin servidos pela mesma URL)
+    Route::middleware('permission:access.empresas-guincho.view')->group(function () {
+        Route::get('/empresas-guincho', [EmpresaGuinchoController::class, 'index'])->name('empresas-guincho.index');
+        Route::get('/empresas-guincho/datatable', [EmpresaGuinchoController::class, 'datatable'])->name('empresas-guincho.datatable');
+    });
+
+    // Guincho — ações admin (mesmo prefixo, permissão diferente)
+    Route::middleware('permission:access.empresas-guincho.manage')->group(function () {
+        Route::get('/empresas-guincho/novo', [EmpresaGuinchoController::class, 'create'])->name('empresas-guincho.create');
+        Route::post('/empresas-guincho', [EmpresaGuinchoController::class, 'store'])->name('empresas-guincho.store');
+        Route::get('/empresas-guincho/{empresaGuincho}/editar', [EmpresaGuinchoController::class, 'edit'])->name('empresas-guincho.edit');
+        Route::patch('/empresas-guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'update'])->name('empresas-guincho.update');
+        Route::delete('/empresas-guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'destroy'])->name('empresas-guincho.destroy');
+    });
+
+    // Limpa Nome (cliente + admin servidos pela mesma URL)
+    Route::middleware('permission:access.limpa-nome.view')->group(function () {
+        Route::get('/limpa-nome', [ProcessoLimpaNomeController::class, 'index'])->name('limpa-nome.index');
+        Route::get('/limpa-nome/datatable', [ProcessoLimpaNomeController::class, 'datatable'])->name('limpa-nome.datatable');
+        Route::get('/limpa-nome/novo', [ProcessoLimpaNomeController::class, 'create'])->name('limpa-nome.create');
+        Route::post('/limpa-nome', [ProcessoLimpaNomeController::class, 'store'])->name('limpa-nome.store');
+        Route::get('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'show'])->name('limpa-nome.show');
+        Route::get('/limpa-nome/{processo}/editar', [ProcessoLimpaNomeController::class, 'edit'])->name('limpa-nome.edit');
+        Route::patch('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'update'])->name('limpa-nome.update');
+        Route::delete('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'destroy'])->name('limpa-nome.destroy');
+        Route::post('/limpa-nome/{processo}/documentos', [ProcessoLimpaNomeController::class, 'uploadDocumento'])->name('limpa-nome.documentos.store');
+        Route::delete('/limpa-nome/documentos/{documento}', [ProcessoLimpaNomeController::class, 'destroyDocumento'])->name('limpa-nome.documentos.destroy');
+        Route::get('/limpa-nome/documentos/{documento}/download', [ProcessoLimpaNomeController::class, 'downloadDocumento'])->name('limpa-nome.documentos.download');
+    });
+
+    // Limpa Nome — ações admin (mesmo prefixo, permissão diferente)
+    Route::middleware('permission:access.limpa-nome.manage')->group(function () {
+        Route::patch('/limpa-nome/{processo}/status', [ProcessoLimpaNomeController::class, 'updateStatus'])->name('limpa-nome.status');
+        Route::patch('/limpa-nome/{processo}/observacoes', [ProcessoLimpaNomeController::class, 'updateObservacoes'])->name('limpa-nome.observacoes');
+    });
+
     // Admin - Financeiro
     Route::middleware('permission:access.financeiro.manage')->group(function () {
         Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('admin.financeiro');
@@ -136,8 +174,9 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     Route::middleware('permission:access.crm.view')->group(function () {
         Route::get('/crm', [LicClienteController::class, 'index'])->name('licenciado.crm');
         Route::get('/crm/datatable', [LicClienteController::class, 'datatable'])->name('licenciado.crm.datatable');
-        Route::get('/crm/{cliente}', [LicClienteController::class, 'show'])->name('licenciado.crm.show');
+        Route::get('/crm/novo', [LicClienteController::class, 'create'])->name('licenciado.crm.create');
         Route::post('/crm', [LicClienteController::class, 'store'])->name('licenciado.crm.store');
+        Route::get('/crm/{cliente}/editar', [LicClienteController::class, 'edit'])->name('licenciado.crm.edit');
         Route::patch('/crm/{cliente}', [LicClienteController::class, 'update'])->name('licenciado.crm.update');
         Route::delete('/crm/{cliente}', [LicClienteController::class, 'destroy'])->name('licenciado.crm.destroy');
     });
@@ -154,49 +193,55 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     Route::middleware('permission:access.users.view')->group(function () {
         Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users');
         Route::get('/usuarios/datatable', [UserController::class, 'datatable']);
-        Route::get('/usuarios/{user}', [UserController::class, 'show']);
-        Route::post('/usuarios', [UserController::class, 'store']);
-        Route::patch('/usuarios/{user}', [UserController::class, 'update']);
-        Route::delete('/usuarios/{user}', [UserController::class, 'destroy']);
+        Route::get('/usuarios/novo', [UserController::class, 'create'])->name('admin.users.create');
+        Route::post('/usuarios', [UserController::class, 'store'])->name('admin.users.store');
+        Route::get('/usuarios/{user}/editar', [UserController::class, 'edit'])->name('admin.users.edit');
+        Route::patch('/usuarios/{user}', [UserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/usuarios/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     });
     Route::middleware('permission:access.plans.view')->group(function () {
         Route::get('/planos', [PlanController::class, 'index'])->name('admin.plans');
         Route::get('/planos/datatable', [PlanController::class, 'datatable']);
-        Route::get('/planos/{plan}', [PlanController::class, 'show']);
-        Route::post('/planos', [PlanController::class, 'store']);
-        Route::patch('/planos/{plan}', [PlanController::class, 'update']);
-        Route::delete('/planos/{plan}', [PlanController::class, 'destroy']);
+        Route::get('/planos/novo', [PlanController::class, 'create'])->name('admin.plans.create');
+        Route::post('/planos', [PlanController::class, 'store'])->name('admin.plans.store');
+        Route::get('/planos/{plan}/editar', [PlanController::class, 'edit'])->name('admin.plans.edit');
+        Route::patch('/planos/{plan}', [PlanController::class, 'update'])->name('admin.plans.update');
+        Route::delete('/planos/{plan}', [PlanController::class, 'destroy'])->name('admin.plans.destroy');
     });
     Route::middleware('permission:access.sessoes.manage')->group(function () {
         Route::get('/sessoes', [AdminSessaoController::class, 'index'])->name('admin.sessoes');
         Route::get('/sessoes/datatable', [AdminSessaoController::class, 'datatable']);
-        Route::get('/sessoes/{sessao}', [AdminSessaoController::class, 'show']);
-        Route::post('/sessoes', [AdminSessaoController::class, 'store']);
-        Route::patch('/sessoes/{sessao}', [AdminSessaoController::class, 'update']);
-        Route::delete('/sessoes/{sessao}', [AdminSessaoController::class, 'destroy']);
+        Route::get('/sessoes/novo', [AdminSessaoController::class, 'create'])->name('admin.sessoes.create');
+        Route::post('/sessoes', [AdminSessaoController::class, 'store'])->name('admin.sessoes.store');
+        Route::get('/sessoes/{sessao}/editar', [AdminSessaoController::class, 'edit'])->name('admin.sessoes.edit');
+        Route::patch('/sessoes/{sessao}', [AdminSessaoController::class, 'update'])->name('admin.sessoes.update');
+        Route::delete('/sessoes/{sessao}', [AdminSessaoController::class, 'destroy'])->name('admin.sessoes.destroy');
     });
     Route::middleware('permission:access.conteudos.manage')->group(function () {
         Route::get('/conteudos-admin', [AdminConteudoController::class, 'index'])->name('admin.conteudos');
         Route::get('/conteudos-admin/datatable', [AdminConteudoController::class, 'datatable']);
-        Route::get('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'show']);
-        Route::post('/conteudos-admin', [AdminConteudoController::class, 'store']);
-        Route::patch('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'update']);
-        Route::delete('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'destroy']);
+        Route::get('/conteudos-admin/novo', [AdminConteudoController::class, 'create'])->name('admin.conteudos.create');
+        Route::post('/conteudos-admin', [AdminConteudoController::class, 'store'])->name('admin.conteudos.store');
+        Route::get('/conteudos-admin/{conteudo}/editar', [AdminConteudoController::class, 'edit'])->name('admin.conteudos.edit');
+        Route::patch('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'update'])->name('admin.conteudos.update');
+        Route::delete('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'destroy'])->name('admin.conteudos.destroy');
     });
     Route::middleware('permission:access.materiais.manage')->group(function () {
         Route::get('/materiais-admin', [AdminMaterialController::class, 'index'])->name('admin.materiais');
         Route::get('/materiais-admin/datatable', [AdminMaterialController::class, 'datatable']);
-        Route::get('/materiais-admin/{material}', [AdminMaterialController::class, 'show']);
-        Route::post('/materiais-admin', [AdminMaterialController::class, 'store']);
-        Route::patch('/materiais-admin/{material}', [AdminMaterialController::class, 'update']);
-        Route::delete('/materiais-admin/{material}', [AdminMaterialController::class, 'destroy']);
+        Route::get('/materiais-admin/novo', [AdminMaterialController::class, 'create'])->name('admin.materiais.create');
+        Route::post('/materiais-admin', [AdminMaterialController::class, 'store'])->name('admin.materiais.store');
+        Route::get('/materiais-admin/{material}/editar', [AdminMaterialController::class, 'edit'])->name('admin.materiais.edit');
+        Route::patch('/materiais-admin/{material}', [AdminMaterialController::class, 'update'])->name('admin.materiais.update');
+        Route::delete('/materiais-admin/{material}', [AdminMaterialController::class, 'destroy'])->name('admin.materiais.destroy');
     });
     Route::middleware('permission:access.comissoes.manage')->group(function () {
         Route::get('/comissoes-admin', [AdminComissaoController::class, 'index'])->name('admin.comissoes');
         Route::get('/comissoes-admin/datatable', [AdminComissaoController::class, 'datatable']);
-        Route::get('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'show']);
-        Route::post('/comissoes-admin', [AdminComissaoController::class, 'store']);
-        Route::patch('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'update']);
-        Route::delete('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'destroy']);
+        Route::get('/comissoes-admin/novo', [AdminComissaoController::class, 'create'])->name('admin.comissoes.create');
+        Route::post('/comissoes-admin', [AdminComissaoController::class, 'store'])->name('admin.comissoes.store');
+        Route::get('/comissoes-admin/{comissao}/editar', [AdminComissaoController::class, 'edit'])->name('admin.comissoes.edit');
+        Route::patch('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'update'])->name('admin.comissoes.update');
+        Route::delete('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'destroy'])->name('admin.comissoes.destroy');
     });
 });

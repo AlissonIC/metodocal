@@ -85,6 +85,16 @@ a:hover {
 }
 
 /* ============================================================================
+   Card — restaura padding-top do .card-body quando o .card-header tem
+   border-bottom. O Vuexy zera o padding superior do .card-body adjacente
+   ao .card-header (para layouts sem separador), mas quando há border-bottom
+   isso faz o conteúdo colar na linha do header.
+   ============================================================================ */
+.card > .card-header.border-bottom + .card-body {
+  padding-block-start: var(--bs-card-spacer-y, 1.25rem);
+}
+
+/* ============================================================================
    Paginação do Laravel (Bootstrap 5) — força w-100 para o "Mostrando..."
    ficar à esquerda e os botões à direita com bom espaçamento.
    ============================================================================ */

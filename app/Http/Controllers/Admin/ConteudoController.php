@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Conteudo;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -26,21 +27,36 @@ class ConteudoController extends Controller
             ->toJson();
     }
 
-    public function show(Conteudo $conteudo): JsonResponse
+    public function create()
     {
-        return response()->json($conteudo);
+        return view('content.admin.conteudos.form', [
+            'conteudo' => new Conteudo(),
+        ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function edit(Conteudo $conteudo)
     {
-        $c = Conteudo::create($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Conteúdo criado.', 'data' => $c], 201);
+        return view('content.admin.conteudos.form', [
+            'conteudo' => $conteudo,
+        ]);
     }
 
-    public function update(Request $request, Conteudo $conteudo): JsonResponse
+    public function store(Request $request): RedirectResponse
+    {
+        Conteudo::create($this->validateData($request));
+
+        return redirect()
+            ->route('admin.conteudos')
+            ->with('status', 'Conteúdo criado com sucesso.');
+    }
+
+    public function update(Request $request, Conteudo $conteudo): RedirectResponse
     {
         $conteudo->update($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Conteúdo atualizado.']);
+
+        return redirect()
+            ->route('admin.conteudos')
+            ->with('status', 'Conteúdo atualizado com sucesso.');
     }
 
     public function destroy(Conteudo $conteudo): JsonResponse

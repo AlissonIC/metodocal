@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sessao;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -13,9 +14,7 @@ class SessaoController extends Controller
 {
     public function index()
     {
-        return view('content.admin.sessoes.index', [
-            'mentorados' => User::role('mentorado')->orderBy('name')->get(['id', 'name', 'email']),
-        ]);
+        return view('content.admin.sessoes.index');
     }
 
     public function datatable(): JsonResponse
@@ -29,35 +28,43 @@ class SessaoController extends Controller
                 $map = ['agendada' => 'primary', 'concluida' => 'success', 'cancelada' => 'secondary'];
                 return '<span class="badge bg-label-' . ($map[$s->status] ?? 'secondary') . '">' . ucfirst($s->status) . '</span>';
             })
+            ->addColumn('actions', fn (Sessao $s) => $s->id)
             ->rawColumns(['status_badge'])
             ->toJson();
     }
 
-    public function show(Sessao $sessao): JsonResponse
+    public function create()
     {
-        return response()->json([
-            'id' => $sessao->id,
-            'user_id' => $sessao->user_id,
-            'titulo' => $sessao->titulo,
-            'descricao' => $sessao->descricao,
-            'scheduled_at' => $sessao->scheduled_at->format('Y-m-d\TH:i'),
-            'duracao_minutos' => $sessao->duracao_minutos,
-            'link_reuniao' => $sessao->link_reuniao,
-            'status' => $sessao->status,
-            'notas' => $sessao->notas,
+        return view('content.admin.sessoes.form', [
+            'sessao' => new Sessao(),
+            'mentorados' => User::role('mentorado')->orderBy('name')->get(['id', 'name', 'email']),
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function edit(Sessao $sessao)
     {
-        $sessao = Sessao::create($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Sessão agendada.', 'data' => $sessao], 201);
+        return view('content.admin.sessoes.form', [
+            'sessao' => $sessao,
+            'mentorados' => User::role('mentorado')->orderBy('name')->get(['id', 'name', 'email']),
+        ]);
     }
 
-    public function update(Request $request, Sessao $sessao): JsonResponse
+    public function store(Request $request): RedirectResponse
+    {
+        Sessao::create($this->validateData($request));
+
+        return redirect()
+            ->route('admin.sessoes')
+            ->with('status', 'Sessão agendada com sucesso.');
+    }
+
+    public function update(Request $request, Sessao $sessao): RedirectResponse
     {
         $sessao->update($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Sessão atualizada.']);
+
+        return redirect()
+            ->route('admin.sessoes')
+            ->with('status', 'Sessão atualizada com sucesso.');
     }
 
     public function destroy(Sessao $sessao): JsonResponse

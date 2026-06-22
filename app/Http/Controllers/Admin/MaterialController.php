@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Material;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
@@ -29,21 +30,34 @@ class MaterialController extends Controller
             ->toJson();
     }
 
-    public function show(Material $material): JsonResponse
+    public function create()
     {
-        return response()->json($material);
+        return view('content.admin.materiais.form', [
+            'material' => new Material(),
+        ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function edit(Material $material)
+    {
+        return view('content.admin.materiais.form', [
+            'material' => $material,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $data = $this->validateData($request);
         $data['arquivo'] = $this->storeFile($request);
         $data['tamanho_bytes'] = $request->file('arquivo')->getSize();
-        $m = Material::create($data);
-        return response()->json(['status' => 'success', 'message' => 'Material enviado.', 'data' => $m], 201);
+
+        Material::create($data);
+
+        return redirect()
+            ->route('admin.materiais')
+            ->with('status', 'Material enviado.');
     }
 
-    public function update(Request $request, Material $material): JsonResponse
+    public function update(Request $request, Material $material): RedirectResponse
     {
         $data = $this->validateData($request, ignoreFile: true);
 
@@ -56,7 +70,10 @@ class MaterialController extends Controller
         }
 
         $material->update($data);
-        return response()->json(['status' => 'success', 'message' => 'Material atualizado.']);
+
+        return redirect()
+            ->route('admin.materiais')
+            ->with('status', 'Material atualizado.');
     }
 
     public function destroy(Material $material): JsonResponse

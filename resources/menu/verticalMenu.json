@@ -28,6 +28,22 @@
       "permission": "access.faturas.view"
     },
 
+    { "menuHeader": "Serviços" },
+    {
+      "url": "painel/empresas-guincho",
+      "name": "Guincho",
+      "icon": "menu-icon icon-base ti tabler-truck",
+      "slug": "empresas-guincho.index",
+      "permission": "access.empresas-guincho.view"
+    },
+    {
+      "url": "painel/limpa-nome",
+      "name": "Limpa Nome",
+      "icon": "menu-icon icon-base ti tabler-id",
+      "slug": "limpa-nome.index",
+      "permission": "access.limpa-nome.view"
+    },
+
     { "menuHeader": "Mentoria" },
     {
       "url": "painel/agenda",
@@ -91,21 +107,21 @@
     },
     {
       "url": "painel/conteudos-admin",
-      "name": "Biblioteca de Conteúdos",
+      "name": "Conteúdos",
       "icon": "menu-icon icon-base ti tabler-book-2",
       "slug": "admin.conteudos",
       "permission": "access.conteudos.manage"
     },
     {
       "url": "painel/materiais-admin",
-      "name": "Materiais (gestão)",
+      "name": "Materiais",
       "icon": "menu-icon icon-base ti tabler-folder",
       "slug": "admin.materiais",
       "permission": "access.materiais.manage"
     },
     {
       "url": "painel/comissoes-admin",
-      "name": "Comissões (gestão)",
+      "name": "Comissões",
       "icon": "menu-icon icon-base ti tabler-coin",
       "slug": "admin.comissoes",
       "permission": "access.comissoes.manage"

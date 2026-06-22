@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StorePlanRequest;
 use App\Http\Requests\Admin\UpdatePlanRequest;
 use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -42,28 +43,39 @@ class PlanController extends Controller
             ->toJson();
     }
 
-    public function show(Plan $plan): JsonResponse
+    public function create()
     {
-        $this->authorize('view', $plan);
-        $plan->permissions = $plan->permissions ?? [];
-        return response()->json($plan);
+        $this->authorize('create', Plan::class);
+
+        return view('content.admin.plans.form', [
+            'plan' => new Plan(),
+            'permissions' => Permission::orderBy('name')->pluck('name'),
+        ]);
     }
 
-    public function store(StorePlanRequest $request): JsonResponse
+    public function edit(Plan $plan)
+    {
+        $this->authorize('update', $plan);
+
+        return view('content.admin.plans.form', [
+            'plan' => $plan,
+            'permissions' => Permission::orderBy('name')->pluck('name'),
+        ]);
+    }
+
+    public function store(StorePlanRequest $request): RedirectResponse
     {
         $data = $request->validated();
         $data['slug'] = $this->uniqueSlug($data['nome']);
 
-        $plan = Plan::create($data);
+        Plan::create($data);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Plano criado com sucesso.',
-            'data' => $plan,
-        ], 201);
+        return redirect()
+            ->route('admin.plans')
+            ->with('status', 'Plano criado com sucesso.');
     }
 
-    public function update(UpdatePlanRequest $request, Plan $plan): JsonResponse
+    public function update(UpdatePlanRequest $request, Plan $plan): RedirectResponse
     {
         $data = $request->validated();
 
@@ -73,11 +85,9 @@ class PlanController extends Controller
 
         $plan->update($data);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Plano atualizado com sucesso.',
-            'data' => $plan->fresh(),
-        ]);
+        return redirect()
+            ->route('admin.plans')
+            ->with('status', 'Plano atualizado com sucesso.');
     }
 
     public function destroy(Plan $plan): JsonResponse

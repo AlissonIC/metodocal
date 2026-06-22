@@ -7,6 +7,7 @@ use App\Models\ClienteLicenciado;
 use App\Models\Comissao;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -14,10 +15,7 @@ class ComissaoController extends Controller
 {
     public function index()
     {
-        return view('content.admin.comissoes.index', [
-            'licenciados' => User::role('licenciado')->orderBy('name')->get(['id', 'name']),
-            'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
-        ]);
+        return view('content.admin.comissoes.index');
     }
 
     public function datatable(): JsonResponse
@@ -37,26 +35,34 @@ class ComissaoController extends Controller
             ->toJson();
     }
 
-    public function show(Comissao $comissao): JsonResponse
+    public function create()
     {
-        return response()->json([
-            'id' => $comissao->id,
-            'licensed_by_user_id' => $comissao->licensed_by_user_id,
-            'cliente_id' => $comissao->cliente_id,
-            'descricao' => $comissao->descricao,
-            'valor' => $comissao->valor,
-            'data_referencia' => $comissao->data_referencia->format('Y-m-d'),
-            'status' => $comissao->status,
+        return view('content.admin.comissoes.form', [
+            'comissao' => new Comissao(),
+            'licenciados' => User::role('licenciado')->orderBy('name')->get(['id', 'name']),
+            'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function edit(Comissao $comissao)
     {
-        $c = Comissao::create($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Comissão lançada.', 'data' => $c], 201);
+        return view('content.admin.comissoes.form', [
+            'comissao' => $comissao,
+            'licenciados' => User::role('licenciado')->orderBy('name')->get(['id', 'name']),
+            'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
+        ]);
     }
 
-    public function update(Request $request, Comissao $comissao): JsonResponse
+    public function store(Request $request): RedirectResponse
+    {
+        Comissao::create($this->validateData($request));
+
+        return redirect()
+            ->route('admin.comissoes')
+            ->with('status', 'Comissão lançada.');
+    }
+
+    public function update(Request $request, Comissao $comissao): RedirectResponse
     {
         $data = $this->validateData($request);
         if ($data['status'] === 'paga' && $comissao->status !== 'paga') {
@@ -65,7 +71,10 @@ class ComissaoController extends Controller
             $data['pago_em'] = null;
         }
         $comissao->update($data);
-        return response()->json(['status' => 'success', 'message' => 'Comissão atualizada.']);
+
+        return redirect()
+            ->route('admin.comissoes')
+            ->with('status', 'Comissão atualizada.');
     }
 
     public function destroy(Comissao $comissao): JsonResponse

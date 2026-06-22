@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Licenciado;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BaseFormRequest;
 use App\Models\ClienteLicenciado;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
@@ -31,25 +31,41 @@ class ClienteController extends Controller
             ->toJson();
     }
 
-    public function show(ClienteLicenciado $cliente): JsonResponse
+    public function create()
     {
-        $this->ensureOwnership($cliente);
-        return response()->json($cliente);
+        return view('content.licenciado.crm-form', [
+            'cliente' => new ClienteLicenciado(),
+        ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function edit(ClienteLicenciado $cliente)
+    {
+        $this->ensureOwnership($cliente);
+
+        return view('content.licenciado.crm-form', [
+            'cliente' => $cliente,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $data = $this->validateData($request);
         $data['licensed_by_user_id'] = Auth::id();
-        $cliente = ClienteLicenciado::create($data);
-        return response()->json(['status' => 'success', 'message' => 'Cliente cadastrado.', 'data' => $cliente], 201);
+        ClienteLicenciado::create($data);
+
+        return redirect()
+            ->route('licenciado.crm')
+            ->with('status', 'Cliente cadastrado.');
     }
 
-    public function update(Request $request, ClienteLicenciado $cliente): JsonResponse
+    public function update(Request $request, ClienteLicenciado $cliente): RedirectResponse
     {
         $this->ensureOwnership($cliente);
         $cliente->update($this->validateData($request));
-        return response()->json(['status' => 'success', 'message' => 'Cliente atualizado.']);
+
+        return redirect()
+            ->route('licenciado.crm')
+            ->with('status', 'Cliente atualizado.');
     }
 
     public function destroy(ClienteLicenciado $cliente): JsonResponse

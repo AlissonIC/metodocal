@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -51,23 +52,29 @@ class UserController extends Controller
             ->toJson();
     }
 
-    public function show(User $user): JsonResponse
+    public function create()
     {
-        $this->authorize('view', $user);
+        $this->authorize('create', User::class);
 
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'cpf_cnpj' => $user->cpf_cnpj,
-            'status' => $user->status,
-            'role' => $user->getRoleNames()->first(),
-            'plan_id' => $user->currentSubscription?->plan_id,
+        return view('content.admin.users.form', [
+            'user' => new User(),
+            'plans' => Plan::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'tipo']),
         ]);
     }
 
-    public function store(StoreUserRequest $request): JsonResponse
+    public function edit(User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->load('currentSubscription:id,plan_id');
+
+        return view('content.admin.users.form', [
+            'user' => $user,
+            'plans' => Plan::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'tipo']),
+        ]);
+    }
+
+    public function store(StoreUserRequest $request): RedirectResponse
     {
         $data = $request->validated();
         $planId = $data['plan_id'] ?? null;
@@ -75,7 +82,7 @@ class UserController extends Controller
         $role = $data['role'];
         unset($data['role']);
 
-        $user = DB::transaction(function () use ($data, $role, $planId) {
+        DB::transaction(function () use ($data, $role, $planId) {
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -90,17 +97,14 @@ class UserController extends Controller
             if ($planId) {
                 $this->attachSubscription($user, (int) $planId);
             }
-            return $user;
         });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Usuário criado com sucesso.',
-            'data' => $user,
-        ], 201);
+        return redirect()
+            ->route('admin.users')
+            ->with('status', 'Usuário criado com sucesso.');
     }
 
-    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $this->authorize('update', $user);
         $data = $request->validated();
@@ -109,7 +113,7 @@ class UserController extends Controller
         $role = $data['role'];
         unset($data['role']);
 
-        DB::transaction(function () use ($user, $data, $role, $planId, $request) {
+        DB::transaction(function () use ($user, $data, $role, $planId) {
             $update = [
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -136,11 +140,9 @@ class UserController extends Controller
             }
         });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Usuário atualizado com sucesso.',
-            'data' => $user->fresh(),
-        ]);
+        return redirect()
+            ->route('admin.users')
+            ->with('status', 'Usuário atualizado com sucesso.');
     }
 
     public function destroy(Request $request, User $user): JsonResponse
