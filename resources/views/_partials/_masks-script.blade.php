@@ -1,5 +1,5 @@
 {{-- Máscaras de telefone, CPF, CNPJ, CEP e dinheiro usando cleave-zen.
-     Coloque este @include dentro de @section('page-script') APÓS o @vite do cleave-zen.
+     Coloque este include dentro de uma section page-script APÓS o vite do cleave-zen.
 
      Uso nos campos:
        <input class="mask-phone">                    → (XX) XXXXX-XXXX ou (XX) XXXX-XXXX (auto)
