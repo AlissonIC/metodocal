@@ -13,7 +13,6 @@
   @vite([
     'resources/assets/vendor/fonts/iconify/iconify.css',
     'resources/assets/vendor/scss/core.scss',
-    'resources/assets/vendor/scss/theme-default.scss',
     'resources/css/app.css',
   ])
 
