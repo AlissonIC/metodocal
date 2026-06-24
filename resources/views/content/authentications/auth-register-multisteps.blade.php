@@ -33,8 +33,7 @@ $configData = Helper::appClasses();
 <div class="authentication-wrapper authentication-cover authentication-bg">
   <!-- Logo -->
   <a href="{{ url('/') }}" class="app-brand auth-cover-brand">
-    <span class="app-brand-logo demo">@include('_partials.macros')</span>
-    <span class="app-brand-text demo text-heading fw-bold">{{ config('variables.templateName') }}</span>
+    <span class="app-brand-logo demo">@include('_partials.macros', ['width' => '80', 'height' => '80'])</span>
   </a>
   <!-- /Logo -->
   <div class="authentication-inner row">

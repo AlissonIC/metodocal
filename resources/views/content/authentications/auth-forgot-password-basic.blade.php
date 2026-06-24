@@ -31,8 +31,7 @@ $customizerHidden = 'customizer-hide';
         <div class="card-body">
           <div class="app-brand justify-content-center mb-6">
             <a href="{{ url('/') }}" class="app-brand-link">
-              <span class="app-brand-logo demo">@include('_partials.macros')</span>
-              <span class="app-brand-text demo text-heading fw-bold">{{ config('variables.templateName') }}</span>
+              <span class="app-brand-logo demo">@include('_partials.macros', ['width' => '80', 'height' => '80'])</span>
             </a>
           </div>
           <h4 class="mb-1">Esqueceu a senha?</h4>
