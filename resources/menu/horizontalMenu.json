@@ -11,28 +11,28 @@
       "name": "Meu Perfil",
       "icon": "menu-icon icon-base ti tabler-user",
       "slug": "profile.edit",
-      "permission": "access.profile.edit"
+      "role": "admin|mentorado|licenciado"
     },
     {
       "url": "painel/minha-assinatura",
       "name": "Minha Assinatura",
       "icon": "menu-icon icon-base ti tabler-file-dollar",
       "slug": "subscription.view",
-      "permission": "access.minhaassinatura.view"
+      "role": "mentorado|licenciado"
     },
     {
       "url": "painel/usuarios",
       "name": "Usuários",
       "icon": "menu-icon icon-base ti tabler-users",
       "slug": "admin.users",
-      "permission": "access.users.view"
+      "role": "admin"
     },
     {
       "url": "painel/planos",
       "name": "Planos",
       "icon": "menu-icon icon-base ti tabler-package",
       "slug": "admin.plans",
-      "permission": "access.plans.view"
+      "role": "admin"
     }
   ]
 }

@@ -69,14 +69,27 @@ class MenuServiceProvider extends ServiceProvider
             return false;
         }
 
-        if (isset($item->permission) && $item->permission !== '') {
-            // Verifica permissão DIRETA (sem passar pelo Gate::before do admin).
-            // Itens de cliente só aparecem para quem tem a permission via role/plano.
-            return $user->hasPermissionTo($item->permission);
+        // Admin bypass: sempre vê tudo, independente de permission/role
+        // (mesma regra do Gate::before em AuthServiceProvider).
+        if ($user->hasRole('admin')) {
+            return true;
         }
 
+        // role: "admin" ou "admin|mentorado|licenciado"
         if (isset($item->role) && $item->role !== '') {
-            return $user->hasRole($item->role);
+            $roles = explode('|', $item->role);
+            return $user->hasAnyRole($roles);
+        }
+
+        // permission: usado pra itens gateados por plano de assinatura.
+        // Try/catch protege contra PermissionDoesNotExist quando o DB ainda
+        // não tem a permission seedada (ex.: primeiro deploy).
+        if (isset($item->permission) && $item->permission !== '') {
+            try {
+                return $user->hasPermissionTo($item->permission);
+            } catch (\Throwable $e) {
+                return false;
+            }
         }
 
         return true;

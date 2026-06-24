@@ -11,37 +11,37 @@
       "name": "Meu Perfil",
       "icon": "menu-icon icon-base ti tabler-user",
       "slug": "profile.edit",
-      "permission": "access.profile.edit"
+      "role": "admin|mentorado|licenciado"
     },
     {
       "url": "painel/minha-assinatura",
       "name": "Minha Assinatura",
       "icon": "menu-icon icon-base ti tabler-file-dollar",
       "slug": "subscription.view",
-      "permission": "access.minhaassinatura.view"
+      "role": "mentorado|licenciado"
     },
     {
       "url": "painel/faturas",
       "name": "Minhas Faturas",
       "icon": "menu-icon icon-base ti tabler-receipt",
       "slug": "faturas.index",
-      "permission": "access.faturas.view"
+      "role": "mentorado|licenciado"
     },
 
     { "menuHeader": "Serviços" },
     {
-      "url": "painel/empresas-guincho",
+      "url": "painel/guincho",
       "name": "Guincho",
       "icon": "menu-icon icon-base ti tabler-truck",
-      "slug": "empresas-guincho.index",
-      "permission": "access.empresas-guincho.view"
+      "slug": "guincho.index",
+      "role": "admin|mentorado|licenciado"
     },
     {
       "url": "painel/limpa-nome",
       "name": "Limpa Nome",
       "icon": "menu-icon icon-base ti tabler-id",
       "slug": "limpa-nome.index",
-      "permission": "access.limpa-nome.view"
+      "role": "admin|mentorado|licenciado"
     },
 
     { "menuHeader": "Mentoria" },
@@ -89,56 +89,56 @@
       "name": "Usuários",
       "icon": "menu-icon icon-base ti tabler-users",
       "slug": "admin.users",
-      "permission": "access.users.view"
+      "role": "admin"
     },
     {
       "url": "painel/planos",
       "name": "Planos",
       "icon": "menu-icon icon-base ti tabler-package",
       "slug": "admin.plans",
-      "permission": "access.plans.view"
+      "role": "admin"
     },
     {
       "url": "painel/sessoes",
       "name": "Sessões",
       "icon": "menu-icon icon-base ti tabler-calendar-event",
       "slug": "admin.sessoes",
-      "permission": "access.sessoes.manage"
+      "role": "admin"
     },
     {
       "url": "painel/conteudos-admin",
       "name": "Conteúdos",
       "icon": "menu-icon icon-base ti tabler-book-2",
       "slug": "admin.conteudos",
-      "permission": "access.conteudos.manage"
+      "role": "admin"
     },
     {
       "url": "painel/materiais-admin",
       "name": "Materiais",
       "icon": "menu-icon icon-base ti tabler-folder",
       "slug": "admin.materiais",
-      "permission": "access.materiais.manage"
+      "role": "admin"
     },
     {
       "url": "painel/comissoes-admin",
       "name": "Comissões",
       "icon": "menu-icon icon-base ti tabler-coin",
       "slug": "admin.comissoes",
-      "permission": "access.comissoes.manage"
+      "role": "admin"
     },
     {
       "url": "painel/financeiro",
       "name": "Financeiro",
       "icon": "menu-icon icon-base ti tabler-cash-banknote",
       "slug": "admin.financeiro",
-      "permission": "access.financeiro.manage"
+      "role": "admin"
     },
     {
       "url": "painel/notificacoes",
       "name": "Notificações",
       "icon": "menu-icon icon-base ti tabler-bell",
       "slug": "admin.notificacoes",
-      "permission": "access.notificacoes.manage"
+      "role": "admin"
     }
   ]
 }
