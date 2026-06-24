@@ -9,13 +9,13 @@
 @section('content')
 @php
   $editing = $empresa->exists;
-  $action = $editing ? route('empresas-guincho.update', $empresa) : route('empresas-guincho.store');
+  $action = $editing ? route('guincho.update', $empresa) : route('guincho.store');
   $logoUrl = $empresa->logo ? asset('storage/' . $empresa->logo) : null;
 @endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h4 class="mb-0">{{ $editing ? 'Editar empresa de guincho' : 'Nova empresa de guincho' }}</h4>
-  <a href="{{ route('empresas-guincho.index') }}" class="btn btn-label-secondary">
+  <a href="{{ route('guincho.index') }}" class="btn btn-label-secondary">
     <i class="icon-base ti tabler-arrow-left me-1"></i> Voltar
   </a>
 </div>
@@ -168,7 +168,7 @@
   </div>
 
   <div class="d-flex justify-content-end gap-2">
-    <a href="{{ route('empresas-guincho.index') }}" class="btn btn-label-secondary">Cancelar</a>
+    <a href="{{ route('guincho.index') }}" class="btn btn-label-secondary">Cancelar</a>
     <button type="submit" class="btn btn-primary"><i class="icon-base ti tabler-device-floppy me-1"></i> {{ $editing ? 'Salvar alterações' : 'Cadastrar empresa' }}</button>
   </div>
 </form>

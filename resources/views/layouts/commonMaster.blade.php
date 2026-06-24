@@ -48,7 +48,7 @@
     $pageTitle = trim($__env->yieldContent('title'));
     $seoTitle = $pageTitle !== '' ? $pageTitle . ' | ' . config('variables.templateName', 'MetodoCal') : config('variables.templateName', 'MetodoCal');
     $seoDescription = config('variables.templateDescription', '');
-    $seoImage = asset('assets/img/branding/logo.png');
+    $seoImage = asset('assets/img/branding/logo_transparente.png');
     $seoUrl = url()->current();
   @endphp
 
@@ -82,8 +82,11 @@
 
   {{-- Favicons --}}
   <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon.png') }}" />
-  <link rel="apple-touch-icon" href="{{ asset('assets/img/branding/logo.png') }}" />
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/favicon/favicon-16x16.png') }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon-32x32.png') }}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/favicon/apple-touch-icon.png') }}" />
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('assets/img/favicon/android-chrome-192x192.png') }}" />
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('assets/img/favicon/android-chrome-512x512.png') }}" />
   <meta name="theme-color" content="#1FA2B5" />
 
   <!-- Include Styles -->

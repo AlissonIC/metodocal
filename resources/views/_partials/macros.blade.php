@@ -7,7 +7,7 @@
   $alt = $alt ?? 'MetodoCal';
 @endphp
 
-<img src="{{ asset('assets/img/branding/logo.png') }}"
+<img src="{{ asset('assets/img/branding/logo_transparente.png') }}"
   alt="{{ $alt }}"
   width="{{ $width }}"
   height="{{ $height }}"

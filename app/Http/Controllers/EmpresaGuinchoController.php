@@ -122,7 +122,7 @@ class EmpresaGuinchoController extends Controller
         EmpresaGuincho::create($data);
 
         return redirect()
-            ->route('empresas-guincho.index')
+            ->route('guincho.index')
             ->with('status', 'Empresa cadastrada.');
     }
 
@@ -142,7 +142,7 @@ class EmpresaGuinchoController extends Controller
         $empresaGuincho->update($data);
 
         return redirect()
-            ->route('empresas-guincho.index')
+            ->route('guincho.index')
             ->with('status', 'Empresa atualizada.');
     }
 

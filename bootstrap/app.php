@@ -2,10 +2,13 @@
 
 use App\Http\Middleware\LocaleMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -56,5 +59,39 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->view('content.pages.pages-misc-not-authorized', [], 403);
             }
             return null;
+        });
+
+        // Catch-all: qualquer outra exception em produção vira a página de erro
+        // amigável. Em debug (APP_DEBUG=true), deixa o Laravel mostrar o Whoops
+        // pra o dev ver o stack trace.
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            // Não interceptar exceptions que o Laravel já trata de forma
+            // específica e não-visual (redirects, validation, auth)
+            if ($e instanceof ValidationException
+                || $e instanceof AuthenticationException
+                || $e instanceof TokenMismatchException) {
+                return null;
+            }
+
+            if (config('app.debug')) {
+                return null;
+            }
+
+            $status = $e instanceof HttpException ? $e->getStatusCode() : 500;
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Ocorreu um erro inesperado.',
+                ], $status);
+            }
+
+            return response()->view('content.pages.pages-misc-error', [
+                'statusCode'  => $status,
+                'pageTitle'   => $status === 500 ? 'Algo deu errado' : 'Página não encontrada',
+                'pageMessage' => $status === 500
+                    ? 'Tivemos um problema ao processar sua solicitação. Tente novamente em instantes.'
+                    : 'A página que você procura não existe ou foi movida.',
+            ], $status);
         });
     })->create();

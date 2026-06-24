@@ -16,12 +16,13 @@ isset($configData['contentLayout']) && $configData['contentLayout'] === 'compact
                 </script>, feito com ❤️ por <a href="{{ !empty(config('variables.creatorUrl')) ? config('variables.creatorUrl') : '' }}" target="_blank" class="footer-link">{{ !empty(config('variables.creatorName')) ? config('variables.creatorName') : '' }}</a>
             </div>
             <div class="d-none d-lg-inline-block">
-                <a href="{{ config('variables.moreThemes') ? config('variables.moreThemes') : '#' }}" target="_blank" class="footer-link me-4">Saiba Mais</a>
-                <a href="{{ config('variables.licenseUrl') ? config('variables.licenseUrl') : '#' }}" class="footer-link me-4" target="_blank">Privacidade</a>
-                <a href="{{ config('variables.documentation') ? config('variables.documentation') . '/laravel-introduction.html' : '#' }}" target="_blank" class="footer-link me-4">Documentação</a>
-                <a href="{{ config('variables.support') ? config('variables.support') : '#' }}" target="_blank" class="footer-link">Ajuda</a>
+                <a href="#" class="footer-link me-4" data-bs-toggle="modal" data-bs-target="#modalLgpd">Privacidade</a>
+                <a href="#" class="footer-link me-4" data-bs-toggle="modal" data-bs-target="#modalTermos">Termos de uso</a>
+                <a href="mailto:contato@metodocal.com.br" class="footer-link">Contato</a>
             </div>
         </div>
     </div>
 </footer>
 <!-- / Footer -->
+
+@include('_partials._legal-modals')

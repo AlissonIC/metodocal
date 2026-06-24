@@ -67,14 +67,7 @@ Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadopago'])-
 // Painel (autenticado)
 // ----------------------------------------------------------------------------
 Route::prefix('painel')->middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'redirect'])->name('dashboard');
-
-    Route::get('/admin', [DashboardController::class, 'admin'])
-        ->middleware('permission:access.dashboard.admin')->name('admin.dashboard');
-    Route::get('/mentorado', [DashboardController::class, 'mentorado'])
-        ->middleware('permission:access.dashboard.mentorado')->name('mentorado.dashboard');
-    Route::get('/licenciado', [DashboardController::class, 'licenciado'])
-        ->middleware('permission:access.dashboard.licenciado')->name('licenciado.dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Perfil
     Route::middleware('permission:access.profile.edit')->group(function () {
@@ -107,17 +100,17 @@ Route::prefix('painel')->middleware('auth')->group(function () {
 
     // Guincho (cliente + admin servidos pela mesma URL)
     Route::middleware('permission:access.empresas-guincho.view')->group(function () {
-        Route::get('/empresas-guincho', [EmpresaGuinchoController::class, 'index'])->name('empresas-guincho.index');
-        Route::get('/empresas-guincho/datatable', [EmpresaGuinchoController::class, 'datatable'])->name('empresas-guincho.datatable');
+        Route::get('/guincho', [EmpresaGuinchoController::class, 'index'])->name('guincho.index');
+        Route::get('/guincho/datatable', [EmpresaGuinchoController::class, 'datatable'])->name('guincho.datatable');
     });
 
     // Guincho — ações admin (mesmo prefixo, permissão diferente)
     Route::middleware('permission:access.empresas-guincho.manage')->group(function () {
-        Route::get('/empresas-guincho/novo', [EmpresaGuinchoController::class, 'create'])->name('empresas-guincho.create');
-        Route::post('/empresas-guincho', [EmpresaGuinchoController::class, 'store'])->name('empresas-guincho.store');
-        Route::get('/empresas-guincho/{empresaGuincho}/editar', [EmpresaGuinchoController::class, 'edit'])->name('empresas-guincho.edit');
-        Route::patch('/empresas-guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'update'])->name('empresas-guincho.update');
-        Route::delete('/empresas-guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'destroy'])->name('empresas-guincho.destroy');
+        Route::get('/guincho/novo', [EmpresaGuinchoController::class, 'create'])->name('guincho.create');
+        Route::post('/guincho', [EmpresaGuinchoController::class, 'store'])->name('guincho.store');
+        Route::get('/guincho/{empresaGuincho}/editar', [EmpresaGuinchoController::class, 'edit'])->name('guincho.edit');
+        Route::patch('/guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'update'])->name('guincho.update');
+        Route::delete('/guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'destroy'])->name('guincho.destroy');
     });
 
     // Limpa Nome (cliente + admin servidos pela mesma URL)

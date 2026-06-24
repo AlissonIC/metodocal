@@ -16,7 +16,7 @@ return [
   "support" => "https://metodocal.com.br/contato",
   "moreThemes" => "",
   "ogTitle" => "MetodoCal — Plataforma de Mentoria e Licenciamento",
-  "ogImage" => "https://metodocal.com.br/assets/img/branding/logo.png",
+  "ogImage" => "https://metodocal.com.br/assets/img/branding/logo_transparente.png",
   "ogType" => "website",
   "documentation" => "",
   "generator" => "",

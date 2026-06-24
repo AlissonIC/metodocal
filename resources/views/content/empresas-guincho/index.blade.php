@@ -26,7 +26,7 @@
       </p>
     </div>
     @if ($isAdmin)
-      <a href="{{ route('empresas-guincho.create') }}" class="btn btn-primary">
+      <a href="{{ route('guincho.create') }}" class="btn btn-primary">
         <i class="icon-base ti tabler-plus me-1"></i> Nova empresa
       </a>
     @endif
@@ -78,7 +78,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
-  const baseUrl = "{{ url('/painel/empresas-guincho') }}";
+  const baseUrl = "{{ url('/painel/guincho') }}";
   const isAdmin = @json($isAdmin);
 
   const columns = [
