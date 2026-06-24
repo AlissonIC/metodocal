@@ -69,19 +69,17 @@ class MenuServiceProvider extends ServiceProvider
             return false;
         }
 
-        // Admin bypass: sempre vê tudo, independente de permission/role
-        // (mesma regra do Gate::before em AuthServiceProvider).
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
         // role: "admin" ou "admin|mentorado|licenciado"
+        // (admin entra na visibilidade só se "admin" estiver listado — itens
+        // de cliente NÃO incluem admin nem mesmo via bypass).
         if (isset($item->role) && $item->role !== '') {
             $roles = explode('|', $item->role);
             return $user->hasAnyRole($roles);
         }
 
-        // permission: usado pra itens gateados por plano de assinatura.
+        // permission: itens gateados por plano de assinatura. Admin NÃO tem
+        // bypass aqui — esses recursos são experiências de cliente (agenda
+        // pessoal, materiais comprados, etc), não fazem sentido pro admin.
         // Try/catch protege contra PermissionDoesNotExist quando o DB ainda
         // não tem a permission seedada (ex.: primeiro deploy).
         if (isset($item->permission) && $item->permission !== '') {
