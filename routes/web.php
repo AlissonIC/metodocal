@@ -99,13 +99,13 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Guincho (cliente + admin servidos pela mesma URL)
-    Route::middleware('permission:access.empresas-guincho.view')->group(function () {
+    Route::middleware('permission:access.guincho.view')->group(function () {
         Route::get('/guincho', [EmpresaGuinchoController::class, 'index'])->name('guincho.index');
         Route::get('/guincho/datatable', [EmpresaGuinchoController::class, 'datatable'])->name('guincho.datatable');
     });
 
     // Guincho — ações admin (mesmo prefixo, permissão diferente)
-    Route::middleware('permission:access.empresas-guincho.manage')->group(function () {
+    Route::middleware('permission:access.guincho.manage')->group(function () {
         Route::get('/guincho/novo', [EmpresaGuinchoController::class, 'create'])->name('guincho.create');
         Route::post('/guincho', [EmpresaGuinchoController::class, 'store'])->name('guincho.store');
         Route::get('/guincho/{empresaGuincho}/editar', [EmpresaGuinchoController::class, 'edit'])->name('guincho.edit');

@@ -81,12 +81,12 @@
   <link rel="canonical" href="{{ $seoUrl }}" />
 
   {{-- Favicons --}}
-  <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/favicon/favicon-16x16.png') }}" />
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon-32x32.png') }}" />
-  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/favicon/apple-touch-icon.png') }}" />
-  <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('assets/img/favicon/android-chrome-192x192.png') }}" />
-  <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('assets/img/favicon/android-chrome-512x512.png') }}" />
+  <link rel="icon" type="image/x-icon" href="{{ asset('favicon-v2.ico') }}" />
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/favicon/favicon-v2-16x16.png') }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon-v2-32x32.png') }}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/favicon/apple-touch-icon-v2.png') }}" />
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('assets/img/favicon/android-chrome-v2-192x192.png') }}" />
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('assets/img/favicon/android-chrome-v2-512x512.png') }}" />
   <meta name="theme-color" content="#1FA2B5" />
 
   <!-- Include Styles -->

@@ -39,14 +39,14 @@ class PermissionSeeder extends Seeder
             'access.crm.manage',
             'access.financeiro.manage',
             'access.notificacoes.manage',
-            'access.empresas-guincho.manage',
+            'access.guincho.manage',
             'access.limpa-nome.manage',
 
             // Cliente - faturas (todos veem as próprias)
             'access.faturas.view',
 
             // Cliente - busca de empresas de guincho
-            'access.empresas-guincho.view',
+            'access.guincho.view',
 
             // Cliente - processos de limpa nome
             'access.limpa-nome.view',
@@ -71,8 +71,8 @@ class PermissionSeeder extends Seeder
             'access.crm.manage',
             'access.financeiro.manage',
             'access.notificacoes.manage',
-            'access.empresas-guincho.manage',
-            'access.empresas-guincho.view',
+            'access.guincho.manage',
+            'access.guincho.view',
             'access.limpa-nome.manage',
             'access.limpa-nome.view',
         ]);
@@ -83,7 +83,7 @@ class PermissionSeeder extends Seeder
             'access.profile.edit',
             'access.minhaassinatura.view',
             'access.faturas.view',
-            'access.empresas-guincho.view',
+            'access.guincho.view',
             'access.limpa-nome.view',
         ]);
 
@@ -93,7 +93,7 @@ class PermissionSeeder extends Seeder
             'access.profile.edit',
             'access.minhaassinatura.view',
             'access.faturas.view',
-            'access.empresas-guincho.view',
+            'access.guincho.view',
             'access.limpa-nome.view',
         ]);
     }

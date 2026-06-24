@@ -14,7 +14,7 @@ class EmpresaGuinchoController extends Controller
 {
     public function index(Request $request)
     {
-        $isAdmin = $request->user()->can('access.empresas-guincho.manage');
+        $isAdmin = $request->user()->can('access.guincho.manage');
 
         $ufsDisponiveis = EmpresaGuincho::query()
             ->when(! $isAdmin, fn ($q) => $q->where('ativo', true))
@@ -37,7 +37,7 @@ class EmpresaGuinchoController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
-        $isAdmin = $request->user()->can('access.empresas-guincho.manage');
+        $isAdmin = $request->user()->can('access.guincho.manage');
 
         $query = EmpresaGuincho::query();
 
@@ -91,7 +91,7 @@ class EmpresaGuinchoController extends Controller
 
     public function create(Request $request)
     {
-        abort_unless($request->user()->can('access.empresas-guincho.manage'), 403);
+        abort_unless($request->user()->can('access.guincho.manage'), 403);
 
         return view('content.empresas-guincho.form', [
             'empresa' => new EmpresaGuincho(['ativo' => true]),
@@ -101,7 +101,7 @@ class EmpresaGuinchoController extends Controller
 
     public function edit(Request $request, EmpresaGuincho $empresaGuincho)
     {
-        abort_unless($request->user()->can('access.empresas-guincho.manage'), 403);
+        abort_unless($request->user()->can('access.guincho.manage'), 403);
 
         return view('content.empresas-guincho.form', [
             'empresa' => $empresaGuincho,
@@ -111,7 +111,7 @@ class EmpresaGuinchoController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        abort_unless($request->user()->can('access.empresas-guincho.manage'), 403);
+        abort_unless($request->user()->can('access.guincho.manage'), 403);
 
         $data = $this->validateData($request);
 
@@ -128,7 +128,7 @@ class EmpresaGuinchoController extends Controller
 
     public function update(Request $request, EmpresaGuincho $empresaGuincho): RedirectResponse
     {
-        abort_unless($request->user()->can('access.empresas-guincho.manage'), 403);
+        abort_unless($request->user()->can('access.guincho.manage'), 403);
 
         $data = $this->validateData($request);
 
@@ -148,7 +148,7 @@ class EmpresaGuinchoController extends Controller
 
     public function destroy(Request $request, EmpresaGuincho $empresaGuincho): JsonResponse
     {
-        abort_unless($request->user()->can('access.empresas-guincho.manage'), 403);
+        abort_unless($request->user()->can('access.guincho.manage'), 403);
 
         if ($empresaGuincho->logo) {
             Storage::disk('public')->delete($empresaGuincho->logo);
