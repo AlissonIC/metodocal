@@ -8,7 +8,7 @@ class UpdatePlanRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('access.plans.manage');
+        return $this->user()->hasRole('admin');
     }
 
     public function rules(): array

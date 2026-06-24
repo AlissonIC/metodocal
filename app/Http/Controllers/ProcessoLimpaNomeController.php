@@ -21,13 +21,13 @@ class ProcessoLimpaNomeController extends Controller
         return view('content.limpa-nome.index', [
             'statuses' => ProcessoLimpaNome::STATUSES,
             'tipos' => ProcessoLimpaNome::TIPOS,
-            'isAdmin' => auth()->user()->can('access.limpa-nome.manage'),
+            'isAdmin' => auth()->user()->hasRole('admin'),
         ]);
     }
 
     public function datatable(Request $request): JsonResponse
     {
-        $isAdmin = $request->user()->can('access.limpa-nome.manage');
+        $isAdmin = $request->user()->hasRole('admin');
 
         $query = ProcessoLimpaNome::query()->withCount('documentos');
 
@@ -56,7 +56,7 @@ class ProcessoLimpaNomeController extends Controller
 
     public function create(Request $request)
     {
-        abort_if($request->user()->cannot('access.limpa-nome.view') || $this->isAdminOnly($request), 403);
+        abort_if($this->isAdminOnly($request), 403, 'Administradores não cadastram processos.');
 
         return view('content.limpa-nome.form', [
             'processo' => new ProcessoLimpaNome(['tipo' => 'limpa_nome', 'tipo_documento' => 'cpf']),
@@ -105,7 +105,7 @@ class ProcessoLimpaNomeController extends Controller
         return view('content.limpa-nome.show', [
             'processo' => $processo,
             'statuses' => ProcessoLimpaNome::STATUSES,
-            'isAdmin' => $request->user()->can('access.limpa-nome.manage'),
+            'isAdmin' => $request->user()->hasRole('admin'),
             'isOwner' => $processo->user_id === $request->user()->id,
         ]);
     }
@@ -184,7 +184,7 @@ class ProcessoLimpaNomeController extends Controller
     {
         $this->authorizeAccess($request, $documento->processo);
 
-        $isAdmin = $request->user()->can('access.limpa-nome.manage');
+        $isAdmin = $request->user()->hasRole('admin');
         $isUploader = $documento->uploaded_by_user_id === $request->user()->id;
         abort_unless($isAdmin || $isUploader, 403, 'Você só pode excluir documentos que enviou.');
 
@@ -203,7 +203,7 @@ class ProcessoLimpaNomeController extends Controller
 
     public function updateStatus(Request $request, ProcessoLimpaNome $processo): RedirectResponse
     {
-        abort_unless($request->user()->can('access.limpa-nome.manage'), 403);
+        abort_unless($request->user()->hasRole('admin'), 403);
 
         $data = $request->validate([
             'status' => ['required', 'in:' . implode(',', array_keys(ProcessoLimpaNome::STATUSES))],
@@ -239,7 +239,7 @@ class ProcessoLimpaNomeController extends Controller
 
     public function updateObservacoes(Request $request, ProcessoLimpaNome $processo): RedirectResponse
     {
-        abort_unless($request->user()->can('access.limpa-nome.manage'), 403);
+        abort_unless($request->user()->hasRole('admin'), 403);
 
         $data = $request->validate([
             'observacoes_admin' => ['nullable', 'string', 'max:5000'],
@@ -252,7 +252,7 @@ class ProcessoLimpaNomeController extends Controller
 
     private function authorizeAccess(Request $request, ProcessoLimpaNome $processo): void
     {
-        $isAdmin = $request->user()->can('access.limpa-nome.manage');
+        $isAdmin = $request->user()->hasRole('admin');
         $isOwner = $processo->user_id === $request->user()->id;
         abort_unless($isAdmin || $isOwner, 403);
     }
@@ -264,8 +264,7 @@ class ProcessoLimpaNomeController extends Controller
 
     private function isAdminOnly(Request $request): bool
     {
-        return $request->user()->can('access.limpa-nome.manage')
-            && ! $request->user()->can('access.limpa-nome.view');
+        return $request->user()->hasRole('admin');
     }
 
     private function validateProcesso(Request $request): array

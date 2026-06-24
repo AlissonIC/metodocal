@@ -9,26 +9,26 @@ class PlanPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('access.plans.view');
+        return $user->hasRole('admin');
     }
 
     public function view(User $user, Plan $plan): bool
     {
-        return $user->can('access.plans.view');
+        return $user->hasRole('admin');
     }
 
     public function create(User $user): bool
     {
-        return $user->can('access.plans.manage');
+        return $user->hasRole('admin');
     }
 
     public function update(User $user, Plan $plan): bool
     {
-        return $user->can('access.plans.manage');
+        return $user->hasRole('admin');
     }
 
     public function delete(User $user, Plan $plan): bool
     {
-        return $user->can('access.plans.manage');
+        return $user->hasRole('admin');
     }
 }

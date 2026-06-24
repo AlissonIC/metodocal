@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePlanFeature;
 use App\Http\Middleware\LocaleMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'plan_feature' => EnsurePlanFeature::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

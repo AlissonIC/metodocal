@@ -8,17 +8,17 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('access.users.view');
+        return $user->hasRole('admin');
     }
 
     public function view(User $user, User $target): bool
     {
-        return $user->can('access.users.view') || $user->id === $target->id;
+        return $user->hasRole('admin') || $user->id === $target->id;
     }
 
     public function create(User $user): bool
     {
-        return $user->can('access.users.manage');
+        return $user->hasRole('admin');
     }
 
     public function update(User $user, User $target): bool
@@ -26,7 +26,7 @@ class UserPolicy
         if ($user->id === $target->id) {
             return true;
         }
-        return $user->can('access.users.manage');
+        return $user->hasRole('admin');
     }
 
     public function delete(User $user, User $target): bool
@@ -34,6 +34,6 @@ class UserPolicy
         if ($user->id === $target->id) {
             return false;
         }
-        return $user->can('access.users.manage');
+        return $user->hasRole('admin');
     }
 }

@@ -69,8 +69,8 @@ Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadopago'])-
 Route::prefix('painel')->middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Perfil
-    Route::middleware('permission:access.profile.edit')->group(function () {
+    // Perfil — qualquer usuário autenticado
+    Route::middleware('role:admin|mentorado|licenciado')->group(function () {
         Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
         Route::patch('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -78,12 +78,12 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/perfil/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
     });
 
-    // Minha Assinatura
+    // Minha Assinatura — só clientes (admin não assina)
     Route::get('/minha-assinatura', [SubscriptionController::class, 'show'])
-        ->middleware('permission:access.minhaassinatura.view')->name('subscription.view');
+        ->middleware('role:mentorado|licenciado')->name('subscription.view');
 
-    // Checkout
-    Route::middleware('permission:access.minhaassinatura.view')->group(function () {
+    // Checkout — só clientes
+    Route::middleware('role:mentorado|licenciado')->group(function () {
         Route::post('/contratar/{plan}', [CheckoutController::class, 'contratar'])->name('checkout.contratar');
         Route::get('/checkout/aguardando/{fatura}', [CheckoutController::class, 'aguardando'])->name('checkout.aguardando');
         Route::get('/checkout/aguardando/{fatura}/status', [CheckoutController::class, 'status'])->name('checkout.status');
@@ -93,19 +93,19 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Faturas (cliente)
-    Route::middleware('permission:access.faturas.view')->group(function () {
+    Route::middleware('role:mentorado|licenciado')->group(function () {
         Route::get('/faturas', [FaturasController::class, 'index'])->name('faturas.index');
         Route::get('/faturas/{fatura}', [FaturasController::class, 'show'])->name('faturas.show');
     });
 
     // Guincho (cliente + admin servidos pela mesma URL)
-    Route::middleware('permission:access.guincho.view')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado')->group(function () {
         Route::get('/guincho', [EmpresaGuinchoController::class, 'index'])->name('guincho.index');
         Route::get('/guincho/datatable', [EmpresaGuinchoController::class, 'datatable'])->name('guincho.datatable');
     });
 
-    // Guincho — ações admin (mesmo prefixo, permissão diferente)
-    Route::middleware('permission:access.guincho.manage')->group(function () {
+    // Guincho — ações admin (mesmo prefixo, role diferente)
+    Route::middleware('role:admin')->group(function () {
         Route::get('/guincho/novo', [EmpresaGuinchoController::class, 'create'])->name('guincho.create');
         Route::post('/guincho', [EmpresaGuinchoController::class, 'store'])->name('guincho.store');
         Route::get('/guincho/{empresaGuincho}/editar', [EmpresaGuinchoController::class, 'edit'])->name('guincho.edit');
@@ -114,7 +114,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Limpa Nome (cliente + admin servidos pela mesma URL)
-    Route::middleware('permission:access.limpa-nome.view')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado')->group(function () {
         Route::get('/limpa-nome', [ProcessoLimpaNomeController::class, 'index'])->name('limpa-nome.index');
         Route::get('/limpa-nome/datatable', [ProcessoLimpaNomeController::class, 'datatable'])->name('limpa-nome.datatable');
         Route::get('/limpa-nome/novo', [ProcessoLimpaNomeController::class, 'create'])->name('limpa-nome.create');
@@ -128,14 +128,14 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::get('/limpa-nome/documentos/{documento}/download', [ProcessoLimpaNomeController::class, 'downloadDocumento'])->name('limpa-nome.documentos.download');
     });
 
-    // Limpa Nome — ações admin (mesmo prefixo, permissão diferente)
-    Route::middleware('permission:access.limpa-nome.manage')->group(function () {
+    // Limpa Nome — ações admin (mesmo prefixo, role diferente)
+    Route::middleware('role:admin')->group(function () {
         Route::patch('/limpa-nome/{processo}/status', [ProcessoLimpaNomeController::class, 'updateStatus'])->name('limpa-nome.status');
         Route::patch('/limpa-nome/{processo}/observacoes', [ProcessoLimpaNomeController::class, 'updateObservacoes'])->name('limpa-nome.observacoes');
     });
 
     // Admin - Financeiro
-    Route::middleware('permission:access.financeiro.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('admin.financeiro');
         Route::get('/financeiro/datatable', [FinanceiroController::class, 'datatable'])->name('admin.financeiro.datatable');
         Route::get('/financeiro/eventos-pagamento/datatable', [FinanceiroController::class, 'paymentEvents']);
@@ -148,7 +148,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Admin - Notificações
-    Route::middleware('permission:access.notificacoes.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/notificacoes', [NotificacaoController::class, 'index'])->name('admin.notificacoes');
         Route::get('/notificacoes/datatable', [NotificacaoController::class, 'datatable'])->name('admin.notificacoes.datatable');
         Route::get('/notificacoes/{notificacao}', [NotificacaoController::class, 'show'])->name('admin.notificacoes.show');
@@ -157,20 +157,20 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/notificacoes/{notificacao}/cancel', [NotificacaoController::class, 'cancel'])->name('admin.notificacoes.cancel');
     });
 
-    // ---------- Mentorado ----------
-    Route::middleware('permission:access.agenda.view')->group(function () {
+    // ---------- Mentorado (gateado por plano) ----------
+    Route::middleware('plan_feature:access.agenda.view,Agenda')->group(function () {
         Route::get('/agenda', [AgendaController::class, 'index'])->name('mentorado.agenda');
         Route::get('/agenda/events', [AgendaController::class, 'events'])->name('mentorado.agenda.events');
         Route::post('/agenda/{sessao}/complete', [AgendaController::class, 'complete'])->name('mentorado.agenda.complete');
         Route::post('/agenda/{sessao}/cancel', [AgendaController::class, 'cancel'])->name('mentorado.agenda.cancel');
     });
-    Route::middleware('permission:access.conteudos.view')->group(function () {
+    Route::middleware('plan_feature:access.conteudos.view,Conteúdos')->group(function () {
         Route::get('/conteudos', [MentConteudoController::class, 'index'])->name('mentorado.conteudos');
         Route::post('/conteudos/{conteudo}/toggle', [MentConteudoController::class, 'toggleComplete'])->name('mentorado.conteudos.toggle');
     });
 
-    // ---------- Licenciado ----------
-    Route::middleware('permission:access.crm.view')->group(function () {
+    // ---------- Licenciado (gateado por plano) ----------
+    Route::middleware('plan_feature:access.crm.view,CRM')->group(function () {
         Route::get('/crm', [LicClienteController::class, 'index'])->name('licenciado.crm');
         Route::get('/crm/datatable', [LicClienteController::class, 'datatable'])->name('licenciado.crm.datatable');
         Route::get('/crm/novo', [LicClienteController::class, 'create'])->name('licenciado.crm.create');
@@ -179,17 +179,17 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/crm/{cliente}', [LicClienteController::class, 'update'])->name('licenciado.crm.update');
         Route::delete('/crm/{cliente}', [LicClienteController::class, 'destroy'])->name('licenciado.crm.destroy');
     });
-    Route::middleware('permission:access.materiais.view')->group(function () {
+    Route::middleware('plan_feature:access.materiais.view,Materiais')->group(function () {
         Route::get('/materiais', [LicMaterialController::class, 'index'])->name('licenciado.materiais');
         Route::get('/materiais/{material}/download', [LicMaterialController::class, 'download'])->name('licenciado.materiais.download');
     });
-    Route::middleware('permission:access.comissoes.view')->group(function () {
+    Route::middleware('plan_feature:access.comissoes.view,Comissões')->group(function () {
         Route::get('/comissoes', [LicComissaoController::class, 'index'])->name('licenciado.comissoes');
         Route::get('/comissoes/datatable', [LicComissaoController::class, 'datatable'])->name('licenciado.comissoes.datatable');
     });
 
     // ---------- Admin ----------
-    Route::middleware('permission:access.users.view')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users');
         Route::get('/usuarios/datatable', [UserController::class, 'datatable']);
         Route::get('/usuarios/novo', [UserController::class, 'create'])->name('admin.users.create');
@@ -198,7 +198,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/usuarios/{user}', [UserController::class, 'update'])->name('admin.users.update');
         Route::delete('/usuarios/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     });
-    Route::middleware('permission:access.plans.view')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/planos', [PlanController::class, 'index'])->name('admin.plans');
         Route::get('/planos/datatable', [PlanController::class, 'datatable']);
         Route::get('/planos/novo', [PlanController::class, 'create'])->name('admin.plans.create');
@@ -207,7 +207,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/planos/{plan}', [PlanController::class, 'update'])->name('admin.plans.update');
         Route::delete('/planos/{plan}', [PlanController::class, 'destroy'])->name('admin.plans.destroy');
     });
-    Route::middleware('permission:access.sessoes.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/sessoes', [AdminSessaoController::class, 'index'])->name('admin.sessoes');
         Route::get('/sessoes/datatable', [AdminSessaoController::class, 'datatable']);
         Route::get('/sessoes/novo', [AdminSessaoController::class, 'create'])->name('admin.sessoes.create');
@@ -216,7 +216,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/sessoes/{sessao}', [AdminSessaoController::class, 'update'])->name('admin.sessoes.update');
         Route::delete('/sessoes/{sessao}', [AdminSessaoController::class, 'destroy'])->name('admin.sessoes.destroy');
     });
-    Route::middleware('permission:access.conteudos.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/conteudos-admin', [AdminConteudoController::class, 'index'])->name('admin.conteudos');
         Route::get('/conteudos-admin/datatable', [AdminConteudoController::class, 'datatable']);
         Route::get('/conteudos-admin/novo', [AdminConteudoController::class, 'create'])->name('admin.conteudos.create');
@@ -225,7 +225,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'update'])->name('admin.conteudos.update');
         Route::delete('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'destroy'])->name('admin.conteudos.destroy');
     });
-    Route::middleware('permission:access.materiais.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/materiais-admin', [AdminMaterialController::class, 'index'])->name('admin.materiais');
         Route::get('/materiais-admin/datatable', [AdminMaterialController::class, 'datatable']);
         Route::get('/materiais-admin/novo', [AdminMaterialController::class, 'create'])->name('admin.materiais.create');
@@ -234,7 +234,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/materiais-admin/{material}', [AdminMaterialController::class, 'update'])->name('admin.materiais.update');
         Route::delete('/materiais-admin/{material}', [AdminMaterialController::class, 'destroy'])->name('admin.materiais.destroy');
     });
-    Route::middleware('permission:access.comissoes.manage')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('/comissoes-admin', [AdminComissaoController::class, 'index'])->name('admin.comissoes');
         Route::get('/comissoes-admin/datatable', [AdminComissaoController::class, 'datatable']);
         Route::get('/comissoes-admin/novo', [AdminComissaoController::class, 'create'])->name('admin.comissoes.create');

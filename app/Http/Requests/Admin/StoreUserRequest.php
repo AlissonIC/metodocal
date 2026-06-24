@@ -9,7 +9,7 @@ class StoreUserRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('access.users.manage');
+        return $this->user()->hasRole('admin');
     }
 
     public function rules(): array
