@@ -5,7 +5,7 @@
 @section('content')
 @php
   $editing = $conteudo->exists;
-  $action = $editing ? url('/painel/conteudos-admin/' . $conteudo->id) : url('/painel/conteudos-admin');
+  $action = $editing ? url('/painel/admin/conteudos/' . $conteudo->id) : url('/painel/admin/conteudos');
 @endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4">

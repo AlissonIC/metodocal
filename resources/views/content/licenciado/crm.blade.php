@@ -3,13 +3,31 @@
 @section('title', 'CRM de Clientes')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+])
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+])
+@endsection
+
+@section('page-style')
+<style>
+  @media (max-width: 575.98px) {
+    .dt-responsive td, .dt-responsive th { font-size: .82rem; }
+    .dt-responsive .badge { font-size: .68rem; }
+  }
+  table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+    background-color: var(--bs-primary);
+    border: 0;
+  }
+</style>
 @endsection
 
 @section('content')
@@ -29,15 +47,14 @@
   @endif
 
   <div class="card-datatable">
-    <table class="datatables-crm table border-top">
+    <table class="datatables-crm table border-top dt-responsive" style="width:100%">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Nome</th>
           <th>E-mail</th>
           <th>Telefone</th>
           <th>Status</th>
-          <th>Ações</th>
+          <th class="text-end">Ações</th>
         </tr>
       </thead>
     </table>
@@ -54,23 +71,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const dt = new DataTable('.datatables-crm', {
     processing: true,
     serverSide: true,
+    responsive: true,
     ajax: { url: baseUrl + '/datatable' },
     columns: [
-      { data: 'id' },
-      { data: 'nome' },
-      { data: 'email', render: v => v || '—' },
-      { data: 'telefone', render: v => v || '—' },
-      { data: 'status_badge' },
+      { data: 'nome',         responsivePriority: 1 },
+      { data: 'email',        responsivePriority: 3, render: v => v || '<span class="text-muted">—</span>' },
+      { data: 'telefone',     responsivePriority: 4, render: v => v || '<span class="text-muted">—</span>', className: 'text-nowrap' },
+      { data: 'status_badge', responsivePriority: 2 },
       {
         data: 'actions',
+        responsivePriority: 1,
         orderable: false,
         searchable: false,
+        className: 'text-end text-nowrap',
         render: id => `
-          <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon"><i class="icon-base ti tabler-edit icon-22px"></i></a>
-          <button class="btn btn-sm btn-icon delete-cli text-danger" data-id="${id}"><i class="icon-base ti tabler-trash icon-22px"></i></button>`
+          <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+            <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon" title="Editar"><i class="icon-base ti tabler-edit icon-22px"></i></a>
+            <button class="btn btn-sm btn-icon delete-cli text-danger" data-id="${id}" title="Excluir"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+          </div>`
       }
     ],
-    order: [[0, 'desc']],
+    order: [[0, 'asc']],
     language: {
       processing: 'Carregando...',
       search: 'Buscar:',

@@ -22,7 +22,7 @@
       <div
         class="chat-sidebar-left-user sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
         <div class="avatar avatar-xl avatar-online chat-sidebar-avatar">
-          <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+          <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
         </div>
         <h5 class="mt-4 mb-0">John Doe</h5>
         <span>Admin</span>
@@ -107,7 +107,7 @@
         <div class="d-flex align-items-center me-6 me-lg-0">
           <div class="flex-shrink-0 avatar avatar-online me-4" data-bs-toggle="sidebar" data-overlay="app-overlay-ex"
             data-target="#app-chat-sidebar-left">
-            <img class="user-avatar rounded-circle cursor-pointer" src="{{ asset('assets/img/avatars/1.png') }}"
+            <img class="user-avatar rounded-circle cursor-pointer" src="{{ asset('assets/img/avatars/1.jpg') }}"
               alt="Avatar" />
           </div>
           <div class="flex-grow-1 input-group input-group-merge">
@@ -374,7 +374,7 @@
                 </div>
                 <div class="user-avatar flex-shrink-0 ms-4">
                   <div class="avatar avatar-sm">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                 </div>
               </div>
@@ -415,7 +415,7 @@
                 </div>
                 <div class="user-avatar flex-shrink-0 ms-4">
                   <div class="avatar avatar-sm">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                 </div>
               </div>
@@ -456,7 +456,7 @@
                 </div>
                 <div class="user-avatar flex-shrink-0 ms-4">
                   <div class="avatar avatar-sm">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                 </div>
               </div>
@@ -494,7 +494,7 @@
                 </div>
                 <div class="user-avatar flex-shrink-0 ms-4">
                   <div class="avatar avatar-sm">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                 </div>
               </div>
@@ -531,7 +531,7 @@
                 </div>
                 <div class="user-avatar flex-shrink-0 ms-4">
                   <div class="avatar avatar-sm">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                 </div>
               </div>

@@ -14,7 +14,12 @@
 @php
   $editing = $sessao->exists;
   $action = $editing ? url('/painel/sessoes/' . $sessao->id) : url('/painel/sessoes');
-  $scheduledValue = old('scheduled_at', $editing && $sessao->scheduled_at ? $sessao->scheduled_at->format('Y-m-d\TH:i') : '');
+  $scheduledFromQuery = request()->query('scheduled_at');
+  $scheduledValue = old('scheduled_at',
+    $editing && $sessao->scheduled_at
+      ? $sessao->scheduled_at->format('Y-m-d\TH:i')
+      : ($scheduledFromQuery ?: '')
+  );
 @endphp
 
 <div class="d-flex justify-content-between align-items-center mb-4">

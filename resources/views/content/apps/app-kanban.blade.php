@@ -156,7 +156,7 @@
           </div>
           <div class="media mb-4 d-flex align-items-center">
             <div class="avatar me-3 flex-shrink-0">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="media-body">
               <p class="mb-0"><span>Barry</span> Commented on App review task.</p>
@@ -196,7 +196,7 @@
           </div>
           <div class="media mb-4 d-flex align-items-center">
             <div class="avatar me-3 flex-shrink-0">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="media-body">
               <p class="mb-0"><span>Barry</span> Complete all the tasks assigned to him.</p>

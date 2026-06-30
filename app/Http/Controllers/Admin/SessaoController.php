@@ -17,9 +17,54 @@ class SessaoController extends Controller
         return view('content.admin.sessoes.index');
     }
 
-    public function datatable(): JsonResponse
+    public function calendario()
     {
-        $query = Sessao::query()->with('user:id,name,email');
+        return view('content.admin.sessoes.calendario');
+    }
+
+    public function events(Request $request): JsonResponse
+    {
+        $sessoes = Sessao::query()
+            ->with('user:id,name')
+            ->when($request->start, fn ($q) => $q->where('scheduled_at', '>=', $request->start))
+            ->when($request->end, fn ($q) => $q->where('scheduled_at', '<=', $request->end))
+            ->get();
+
+        // Cores alinhadas ao tema dourado: agendada (dourado), concluida (verde), cancelada (cinza)
+        $colors = [
+            'agendada' => '#B8860B',
+            'concluida' => '#16a34a',
+            'cancelada' => '#82868b',
+        ];
+
+        return response()->json($sessoes->map(function (Sessao $s) use ($colors) {
+            return [
+                'id' => $s->id,
+                'title' => $s->titulo . ($s->user ? ' · ' . $s->user->name : ''),
+                'start' => $s->scheduled_at->toIso8601String(),
+                'end' => $s->scheduled_at->copy()->addMinutes($s->duracao_minutos)->toIso8601String(),
+                'backgroundColor' => $colors[$s->status] ?? $colors['agendada'],
+                'borderColor' => $colors[$s->status] ?? $colors['agendada'],
+                'url' => route('admin.sessoes.edit', $s),
+                'extendedProps' => [
+                    'status' => $s->status,
+                    'user' => $s->user?->name,
+                    'descricao' => $s->descricao,
+                    'link_reuniao' => $s->link_reuniao,
+                ],
+            ];
+        }));
+    }
+
+    public function datatable(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $query = Sessao::query()
+            ->with('user:id,name,email')
+            ->latest('scheduled_at');
+
+        if ($s = $request->query('status'))  $query->where('status', $s);
+        if ($de = $request->query('de'))     $query->whereDate('scheduled_at', '>=', $de);
+        if ($ate = $request->query('ate'))   $query->whereDate('scheduled_at', '<=', $ate);
 
         return DataTables::eloquent($query)
             ->addColumn('user_name', fn (Sessao $s) => $s->user?->name ?? '—')
@@ -29,6 +74,16 @@ class SessaoController extends Controller
                 return '<span class="badge bg-label-' . ($map[$s->status] ?? 'secondary') . '">' . ucfirst($s->status) . '</span>';
             })
             ->addColumn('actions', fn (Sessao $s) => $s->id)
+            ->addColumn('details', fn (Sessao $s) => [
+                'user_name'       => $s->user?->name,
+                'titulo'          => $s->titulo,
+                'scheduled_at'    => $s->scheduled_at->format('d/m/Y H:i'),
+                'duracao_minutos' => $s->duracao_minutos,
+                'status'          => ucfirst($s->status),
+                'link_reuniao'    => $s->link_reuniao,
+                'descricao'       => $s->descricao,
+                'notas'           => $s->notas,
+            ])
             ->rawColumns(['status_badge'])
             ->toJson();
     }

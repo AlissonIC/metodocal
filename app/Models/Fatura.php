@@ -19,6 +19,8 @@ class Fatura extends Model
         'subscription_id',
         'user_id',
         'plan_id',
+        'processo_id',
+        'descricao',
         'valor',
         'vencimento',
         'status',
@@ -62,6 +64,11 @@ class Fatura extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function processo(): BelongsTo
+    {
+        return $this->belongsTo(Processo::class);
     }
 
     public function paymentEvents(): HasMany

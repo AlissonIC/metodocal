@@ -52,7 +52,7 @@
     $seoUrl = url()->current();
   @endphp
 
-  <title>{{ $seoTitle }} — {{ config('variables.templateSuffix', '') }}</title>
+  <title>{{ $seoTitle }} · {{ config('variables.templateSuffix', '') }}</title>
   <meta name="description" content="{{ $seoDescription }}" />
   <meta name="keywords" content="{{ config('variables.templateKeyword', '') }}" />
   <meta name="author" content="{{ config('variables.creatorName', '') }}" />
@@ -87,7 +87,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/favicon/apple-touch-icon-v2.png') }}" />
   <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('assets/img/favicon/android-chrome-v2-192x192.png') }}" />
   <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('assets/img/favicon/android-chrome-v2-512x512.png') }}" />
-  <meta name="theme-color" content="#1FA2B5" />
+  <meta name="theme-color" content="#B8860B" />
 
   <!-- Include Styles -->
   <!-- $isFront is used to append the front layout styles only on the front layout otherwise the variable will be blank -->

@@ -3,13 +3,31 @@
 @section('title', 'Conteúdos')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+])
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+])
+@endsection
+
+@section('page-style')
+<style>
+  @media (max-width: 575.98px) {
+    .dt-responsive td, .dt-responsive th { font-size: .82rem; }
+    .dt-responsive .badge { font-size: .68rem; }
+  }
+  table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+    background-color: var(--bs-primary);
+    border: 0;
+  }
+</style>
 @endsection
 
 @section('content')
@@ -29,17 +47,16 @@
   @endif
 
   <div class="card-datatable">
-    <table class="datatables-conteudos table border-top">
+    <table class="datatables-conteudos table border-top dt-responsive" style="width:100%">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Título</th>
           <th>Tipo</th>
           <th>Categoria</th>
           <th>Ordem</th>
           <th>Concluíram</th>
           <th>Status</th>
-          <th>Ações</th>
+          <th class="text-end">Ações</th>
         </tr>
       </thead>
     </table>
@@ -51,30 +68,34 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
-  const baseUrl = "{{ url('/painel/conteudos-admin') }}";
+  const baseUrl = "{{ url('/painel/admin/conteudos') }}";
 
   const dt = new DataTable('.datatables-conteudos', {
     processing: true,
     serverSide: true,
+    responsive: true,
     ajax: { url: baseUrl + '/datatable' },
     columns: [
-      { data: 'id' },
-      { data: 'titulo' },
-      { data: 'tipo_label' },
-      { data: 'categoria', render: v => v || '—' },
-      { data: 'ordem' },
-      { data: 'progressos_count' },
-      { data: 'status_badge' },
+      { data: 'titulo',           responsivePriority: 1 },
+      { data: 'tipo_label',       responsivePriority: 3 },
+      { data: 'categoria',        responsivePriority: 4, render: v => v || '<span class="text-muted">—</span>' },
+      { data: 'ordem',            responsivePriority: 5, className: 'text-center' },
+      { data: 'progressos_count', responsivePriority: 5, className: 'text-center' },
+      { data: 'status_badge',     responsivePriority: 2 },
       {
         data: 'id',
+        responsivePriority: 1,
         orderable: false,
         searchable: false,
+        className: 'text-end text-nowrap',
         render: id => `
-          <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon"><i class="icon-base ti tabler-edit icon-22px"></i></a>
-          <button class="btn btn-sm btn-icon delete-con text-danger" data-id="${id}"><i class="icon-base ti tabler-trash icon-22px"></i></button>`
+          <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+            <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon" title="Editar"><i class="icon-base ti tabler-edit icon-22px"></i></a>
+            <button class="btn btn-sm btn-icon delete-con text-danger" data-id="${id}" title="Excluir"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+          </div>`
       }
     ],
-    order: [[4, 'asc']],
+    order: [[3, 'asc']],
     language: {
       processing: 'Carregando...',
       search: 'Buscar:',

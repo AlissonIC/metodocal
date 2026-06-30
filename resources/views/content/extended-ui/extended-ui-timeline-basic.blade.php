@@ -38,7 +38,7 @@
                 <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
                   <div class="d-flex flex-wrap align-items-center mb-50">
                     <div class="avatar avatar-sm me-2">
-                      <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                      <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                     </div>
                     <div>
                       <p class="mb-0 small fw-medium">Lester McCarthy (Client)</p>
@@ -123,7 +123,7 @@
                 <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
                   <div class="d-flex flex-wrap align-items-center mb-50">
                     <div class="avatar avatar-sm me-2">
-                      <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                      <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                     </div>
                     <div>
                       <p class="mb-0 small fw-medium">Lester McCarthy (Client)</p>

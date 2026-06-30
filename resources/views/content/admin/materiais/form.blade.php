@@ -5,7 +5,7 @@
 @section('content')
 @php
   $editing = $material->exists;
-  $action = $editing ? url('/painel/materiais-admin/' . $material->id) : url('/painel/materiais-admin');
+  $action = $editing ? url('/painel/admin/materiais/' . $material->id) : url('/painel/admin/materiais');
   $arquivoAtual = $material->arquivo ? basename($material->arquivo) : null;
 @endphp
 
@@ -52,7 +52,7 @@
           @if ($editing && $arquivoAtual)
             <div class="mb-4">
               <label class="form-label d-block">Arquivo atual</label>
-              <a href="{{ Storage::disk('public')->url($material->arquivo) }}" target="_blank" class="d-inline-flex align-items-center gap-2">
+              <a href="{{ asset('storage/' . $material->arquivo) }}" target="_blank" class="d-inline-flex align-items-center gap-2">
                 <i class="icon-base ti tabler-file icon-22px"></i>
                 <span>{{ $arquivoAtual }}</span>
               </a>

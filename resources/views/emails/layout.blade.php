@@ -13,7 +13,7 @@
 
           {{-- Header com gradiente da marca --}}
           <tr>
-            <td style="background: linear-gradient(135deg, #007da8 0%, #09d2e8 100%); padding:32px 32px 24px; text-align:center;">
+            <td style="background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%); padding:32px 32px 24px; text-align:center;">
               <h1 style="margin:0; color:#ffffff; font-size:26px; font-weight:700; letter-spacing:-0.5px;">
                 {{ config('variables.templateName') }}
               </h1>
@@ -36,7 +36,7 @@
               @isset($botao_texto)
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
                   <tr>
-                    <td align="center" bgcolor="#007da8" style="background: linear-gradient(135deg, #007da8 0%, #09d2e8 100%); border-radius:6px;">
+                    <td align="center" bgcolor="#B8860B" style="background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%); border-radius:6px;">
                       <a href="{{ $botao_url }}"
                          style="display:inline-block; padding:12px 28px; color:#ffffff; text-decoration:none; font-weight:600; font-size:15px;">
                         {{ $botao_texto }}
@@ -46,7 +46,7 @@
                 </table>
                 <p style="margin:16px 0 0; font-size:13px; color:#6c757d;">
                   Se o botão acima não funcionar, copie e cole este endereço no navegador:<br>
-                  <span style="word-break:break-all; color:#007da8;">{{ $botao_url }}</span>
+                  <span style="word-break:break-all; color:#B8860B;">{{ $botao_url }}</span>
                 </p>
               @endisset
             </td>
@@ -56,7 +56,7 @@
           <tr>
             <td style="background-color:#f8f9fa; padding:24px 32px; text-align:center; font-size:12px; color:#6c757d;">
               <p style="margin:0 0 6px;">© {{ date('Y') }} {{ config('variables.templateName') }}. Todos os direitos reservados.</p>
-              <p style="margin:0;">Esta é uma mensagem automática — por favor, não responda este e-mail.</p>
+              <p style="margin:0;">Esta é uma mensagem automática. Por favor, não responda este e-mail.</p>
             </td>
           </tr>
         </table>

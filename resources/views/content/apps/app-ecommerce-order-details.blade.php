@@ -155,7 +155,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-start align-items-center mb-6">
           <div class="avatar me-3">
-            <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+            <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
           </div>
           <div class="d-flex flex-column">
             <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">

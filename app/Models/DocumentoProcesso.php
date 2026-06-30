@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DocumentoLimpaNome extends Model
+class DocumentoProcesso extends Model
 {
     use HasFactory;
 
-    protected $table = 'documentos_limpa_nome';
+    protected $table = 'documentos_processo';
 
     protected $fillable = [
         'processo_id',
@@ -29,7 +29,7 @@ class DocumentoLimpaNome extends Model
 
     public function processo(): BelongsTo
     {
-        return $this->belongsTo(ProcessoLimpaNome::class, 'processo_id');
+        return $this->belongsTo(Processo::class, 'processo_id');
     }
 
     public function uploadedBy(): BelongsTo

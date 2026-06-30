@@ -39,7 +39,7 @@
       <div class="card-body pt-12">
         <div class="customer-avatar-section">
           <div class="d-flex align-items-center flex-column">
-            <img class="img-fluid rounded mb-4" src="{{ asset('assets/img/avatars/1.png') }}" height="120" width="120"
+            <img class="img-fluid rounded mb-4" src="{{ asset('assets/img/avatars/1.jpg') }}" height="120" width="120"
               alt="User avatar" />
             <div class="customer-info text-center mb-6">
               <h5 class="mb-0">Lorine Hischke</h5>

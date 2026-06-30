@@ -4,13 +4,16 @@ use App\Http\Controllers\Admin\ComissaoController as AdminComissaoController;
 use App\Http\Controllers\Admin\ConteudoController as AdminConteudoController;
 use App\Http\Controllers\Admin\FinanceiroController;
 use App\Http\Controllers\Admin\MaterialController as AdminMaterialController;
+use App\Http\Controllers\Admin\BancoController as AdminBancoController;
+use App\Http\Controllers\Admin\CompradorController as AdminCompradorController;
 use App\Http\Controllers\Admin\NotificacaoController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\ServicoController as AdminServicoController;
 use App\Http\Controllers\Admin\SessaoController as AdminSessaoController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\EmpresaGuinchoController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\ProcessoLimpaNomeController;
+use App\Http\Controllers\ProcessoController;
 use App\Http\Controllers\authentications\ForgotPasswordBasic;
 use App\Http\Controllers\authentications\LoginBasic;
 use App\Http\Controllers\authentications\RegisterBasic;
@@ -113,30 +116,36 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'destroy'])->name('guincho.destroy');
     });
 
-    // Limpa Nome (cliente + admin servidos pela mesma URL)
+    // Processos (cliente + admin servidos pela mesma URL)
     Route::middleware('role:admin|mentorado|licenciado')->group(function () {
-        Route::get('/limpa-nome', [ProcessoLimpaNomeController::class, 'index'])->name('limpa-nome.index');
-        Route::get('/limpa-nome/datatable', [ProcessoLimpaNomeController::class, 'datatable'])->name('limpa-nome.datatable');
-        Route::get('/limpa-nome/novo', [ProcessoLimpaNomeController::class, 'create'])->name('limpa-nome.create');
-        Route::post('/limpa-nome', [ProcessoLimpaNomeController::class, 'store'])->name('limpa-nome.store');
-        Route::get('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'show'])->name('limpa-nome.show');
-        Route::get('/limpa-nome/{processo}/editar', [ProcessoLimpaNomeController::class, 'edit'])->name('limpa-nome.edit');
-        Route::patch('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'update'])->name('limpa-nome.update');
-        Route::delete('/limpa-nome/{processo}', [ProcessoLimpaNomeController::class, 'destroy'])->name('limpa-nome.destroy');
-        Route::post('/limpa-nome/{processo}/documentos', [ProcessoLimpaNomeController::class, 'uploadDocumento'])->name('limpa-nome.documentos.store');
-        Route::delete('/limpa-nome/documentos/{documento}', [ProcessoLimpaNomeController::class, 'destroyDocumento'])->name('limpa-nome.documentos.destroy');
-        Route::get('/limpa-nome/documentos/{documento}/download', [ProcessoLimpaNomeController::class, 'downloadDocumento'])->name('limpa-nome.documentos.download');
+        Route::get('/processos', [ProcessoController::class, 'index'])->name('processos.index');
+        Route::get('/processos/datatable', [ProcessoController::class, 'datatable'])->name('processos.datatable');
+        Route::get('/processos/novo', [ProcessoController::class, 'create'])->name('processos.create');
+        Route::post('/processos', [ProcessoController::class, 'store'])->name('processos.store');
+        Route::get('/processos/{processo}', [ProcessoController::class, 'show'])->name('processos.show');
+        Route::get('/processos/{processo}/editar', [ProcessoController::class, 'edit'])->name('processos.edit');
+        Route::patch('/processos/{processo}', [ProcessoController::class, 'update'])->name('processos.update');
+        Route::delete('/processos/{processo}', [ProcessoController::class, 'destroy'])->name('processos.destroy');
+        Route::post('/processos/{processo}/documentos', [ProcessoController::class, 'uploadDocumento'])->name('processos.documentos.store');
+        Route::delete('/processos/documentos/{documento}', [ProcessoController::class, 'destroyDocumento'])->name('processos.documentos.destroy');
+        Route::get('/processos/documentos/{documento}/download', [ProcessoController::class, 'downloadDocumento'])->name('processos.documentos.download');
     });
 
-    // Limpa Nome — ações admin (mesmo prefixo, role diferente)
+    // Processos — ações admin (mesmo prefixo, role diferente)
     Route::middleware('role:admin')->group(function () {
-        Route::patch('/limpa-nome/{processo}/status', [ProcessoLimpaNomeController::class, 'updateStatus'])->name('limpa-nome.status');
-        Route::patch('/limpa-nome/{processo}/observacoes', [ProcessoLimpaNomeController::class, 'updateObservacoes'])->name('limpa-nome.observacoes');
+        Route::patch('/processos/{processo}/status', [ProcessoController::class, 'updateStatus'])->name('processos.status');
+        Route::patch('/processos/{processo}/observacoes', [ProcessoController::class, 'updateObservacoes'])->name('processos.observacoes');
+        Route::post('/processos/{processo}/faturas', [ProcessoController::class, 'storeFatura'])->name('processos.faturas.store');
+        Route::delete('/processos/faturas/{fatura}', [ProcessoController::class, 'destroyFatura'])->name('processos.faturas.destroy');
+        Route::post('/processos/{processo}/comissoes', [ProcessoController::class, 'storeComissao'])->name('processos.comissoes.store');
+        Route::delete('/processos/comissoes/{comissao}', [ProcessoController::class, 'destroyComissao'])->name('processos.comissoes.destroy');
     });
 
     // Admin - Financeiro
     Route::middleware('role:admin')->group(function () {
         Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('admin.financeiro');
+        Route::get('/financeiro/relatorios', [FinanceiroController::class, 'relatorios'])->name('admin.financeiro.relatorios');
+        Route::get('/financeiro/relatorios/data', [FinanceiroController::class, 'relatoriosData'])->name('admin.financeiro.relatorios.data');
         Route::get('/financeiro/datatable', [FinanceiroController::class, 'datatable'])->name('admin.financeiro.datatable');
         Route::get('/financeiro/eventos-pagamento/datatable', [FinanceiroController::class, 'paymentEvents']);
         Route::get('/financeiro/{fatura}', [FinanceiroController::class, 'show'])->name('admin.financeiro.show');
@@ -208,7 +217,24 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/planos/{plan}', [PlanController::class, 'destroy'])->name('admin.plans.destroy');
     });
     Route::middleware('role:admin')->group(function () {
+        Route::get('/bancos', [AdminBancoController::class, 'index'])->name('admin.bancos');
+        Route::post('/bancos', [AdminBancoController::class, 'store'])->name('admin.bancos.store');
+        Route::patch('/bancos/{banco}', [AdminBancoController::class, 'update'])->name('admin.bancos.update');
+        Route::delete('/bancos/{banco}', [AdminBancoController::class, 'destroy'])->name('admin.bancos.destroy');
+    });
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/servicos', [AdminServicoController::class, 'index'])->name('admin.servicos');
+        Route::get('/servicos/datatable', [AdminServicoController::class, 'datatable']);
+        Route::get('/servicos/novo', [AdminServicoController::class, 'create'])->name('admin.servicos.create');
+        Route::post('/servicos', [AdminServicoController::class, 'store'])->name('admin.servicos.store');
+        Route::get('/servicos/{servico}/editar', [AdminServicoController::class, 'edit'])->name('admin.servicos.edit');
+        Route::patch('/servicos/{servico}', [AdminServicoController::class, 'update'])->name('admin.servicos.update');
+        Route::delete('/servicos/{servico}', [AdminServicoController::class, 'destroy'])->name('admin.servicos.destroy');
+    });
+    Route::middleware('role:admin')->group(function () {
         Route::get('/sessoes', [AdminSessaoController::class, 'index'])->name('admin.sessoes');
+        Route::get('/sessoes/calendario', [AdminSessaoController::class, 'calendario'])->name('admin.sessoes.calendario');
+        Route::get('/sessoes/events', [AdminSessaoController::class, 'events'])->name('admin.sessoes.events');
         Route::get('/sessoes/datatable', [AdminSessaoController::class, 'datatable']);
         Route::get('/sessoes/novo', [AdminSessaoController::class, 'create'])->name('admin.sessoes.create');
         Route::post('/sessoes', [AdminSessaoController::class, 'store'])->name('admin.sessoes.store');
@@ -216,31 +242,40 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/sessoes/{sessao}', [AdminSessaoController::class, 'update'])->name('admin.sessoes.update');
         Route::delete('/sessoes/{sessao}', [AdminSessaoController::class, 'destroy'])->name('admin.sessoes.destroy');
     });
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/conteudos-admin', [AdminConteudoController::class, 'index'])->name('admin.conteudos');
-        Route::get('/conteudos-admin/datatable', [AdminConteudoController::class, 'datatable']);
-        Route::get('/conteudos-admin/novo', [AdminConteudoController::class, 'create'])->name('admin.conteudos.create');
-        Route::post('/conteudos-admin', [AdminConteudoController::class, 'store'])->name('admin.conteudos.store');
-        Route::get('/conteudos-admin/{conteudo}/editar', [AdminConteudoController::class, 'edit'])->name('admin.conteudos.edit');
-        Route::patch('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'update'])->name('admin.conteudos.update');
-        Route::delete('/conteudos-admin/{conteudo}', [AdminConteudoController::class, 'destroy'])->name('admin.conteudos.destroy');
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/compradores', [AdminCompradorController::class, 'index'])->name('admin.compradores');
+        Route::get('/compradores/datatable', [AdminCompradorController::class, 'datatable']);
+        Route::get('/compradores/novo', [AdminCompradorController::class, 'create'])->name('admin.compradores.create');
+        Route::post('/compradores', [AdminCompradorController::class, 'store'])->name('admin.compradores.store');
+        Route::get('/compradores/{comprador}/editar', [AdminCompradorController::class, 'edit'])->name('admin.compradores.edit');
+        Route::patch('/compradores/{comprador}', [AdminCompradorController::class, 'update'])->name('admin.compradores.update');
+        Route::delete('/compradores/{comprador}', [AdminCompradorController::class, 'destroy'])->name('admin.compradores.destroy');
     });
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/materiais-admin', [AdminMaterialController::class, 'index'])->name('admin.materiais');
-        Route::get('/materiais-admin/datatable', [AdminMaterialController::class, 'datatable']);
-        Route::get('/materiais-admin/novo', [AdminMaterialController::class, 'create'])->name('admin.materiais.create');
-        Route::post('/materiais-admin', [AdminMaterialController::class, 'store'])->name('admin.materiais.store');
-        Route::get('/materiais-admin/{material}/editar', [AdminMaterialController::class, 'edit'])->name('admin.materiais.edit');
-        Route::patch('/materiais-admin/{material}', [AdminMaterialController::class, 'update'])->name('admin.materiais.update');
-        Route::delete('/materiais-admin/{material}', [AdminMaterialController::class, 'destroy'])->name('admin.materiais.destroy');
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/conteudos', [AdminConteudoController::class, 'index'])->name('admin.conteudos');
+        Route::get('/conteudos/datatable', [AdminConteudoController::class, 'datatable']);
+        Route::get('/conteudos/novo', [AdminConteudoController::class, 'create'])->name('admin.conteudos.create');
+        Route::post('/conteudos', [AdminConteudoController::class, 'store'])->name('admin.conteudos.store');
+        Route::get('/conteudos/{conteudo}/editar', [AdminConteudoController::class, 'edit'])->name('admin.conteudos.edit');
+        Route::patch('/conteudos/{conteudo}', [AdminConteudoController::class, 'update'])->name('admin.conteudos.update');
+        Route::delete('/conteudos/{conteudo}', [AdminConteudoController::class, 'destroy'])->name('admin.conteudos.destroy');
     });
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/comissoes-admin', [AdminComissaoController::class, 'index'])->name('admin.comissoes');
-        Route::get('/comissoes-admin/datatable', [AdminComissaoController::class, 'datatable']);
-        Route::get('/comissoes-admin/novo', [AdminComissaoController::class, 'create'])->name('admin.comissoes.create');
-        Route::post('/comissoes-admin', [AdminComissaoController::class, 'store'])->name('admin.comissoes.store');
-        Route::get('/comissoes-admin/{comissao}/editar', [AdminComissaoController::class, 'edit'])->name('admin.comissoes.edit');
-        Route::patch('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'update'])->name('admin.comissoes.update');
-        Route::delete('/comissoes-admin/{comissao}', [AdminComissaoController::class, 'destroy'])->name('admin.comissoes.destroy');
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/materiais', [AdminMaterialController::class, 'index'])->name('admin.materiais');
+        Route::get('/materiais/datatable', [AdminMaterialController::class, 'datatable']);
+        Route::get('/materiais/novo', [AdminMaterialController::class, 'create'])->name('admin.materiais.create');
+        Route::post('/materiais', [AdminMaterialController::class, 'store'])->name('admin.materiais.store');
+        Route::get('/materiais/{material}/editar', [AdminMaterialController::class, 'edit'])->name('admin.materiais.edit');
+        Route::patch('/materiais/{material}', [AdminMaterialController::class, 'update'])->name('admin.materiais.update');
+        Route::delete('/materiais/{material}', [AdminMaterialController::class, 'destroy'])->name('admin.materiais.destroy');
+    });
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/comissoes', [AdminComissaoController::class, 'index'])->name('admin.comissoes');
+        Route::get('/comissoes/datatable', [AdminComissaoController::class, 'datatable']);
+        Route::get('/comissoes/novo', [AdminComissaoController::class, 'create'])->name('admin.comissoes.create');
+        Route::post('/comissoes', [AdminComissaoController::class, 'store'])->name('admin.comissoes.store');
+        Route::get('/comissoes/{comissao}/editar', [AdminComissaoController::class, 'edit'])->name('admin.comissoes.edit');
+        Route::patch('/comissoes/{comissao}', [AdminComissaoController::class, 'update'])->name('admin.comissoes.update');
+        Route::delete('/comissoes/{comissao}', [AdminComissaoController::class, 'destroy'])->name('admin.comissoes.destroy');
     });
 });

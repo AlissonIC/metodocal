@@ -32,7 +32,7 @@
       @endif
     </div>
     <hr>
-    <small class="text-muted d-block">Dados sensíveis (número do cartão, CVV, etc.) <strong>nunca</strong> são armazenados — eles ficam apenas com o gateway de pagamento.</small>
+    <small class="text-muted d-block">Dados sensíveis (número do cartão, CVV, etc.) <strong>nunca</strong> são armazenados. Eles ficam apenas com o gateway de pagamento.</small>
   @else
     <p class="text-muted mb-0">Nenhum dado de pagador disponível.</p>
   @endif

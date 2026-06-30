@@ -8,7 +8,7 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalTermosLabel">Termos de uso — {{ config('variables.templateName', 'MetodoCal') }}</h5>
+        <h5 class="modal-title" id="modalTermosLabel">Termos de uso · {{ config('variables.templateName', 'MetodoCal') }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
@@ -60,13 +60,13 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalLgpdLabel">Política de Privacidade · LGPD — {{ config('variables.templateName', 'MetodoCal') }}</h5>
+        <h5 class="modal-title" id="modalLgpdLabel">Política de Privacidade · LGPD · {{ config('variables.templateName', 'MetodoCal') }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-3">Última atualização: junho de 2026</p>
 
-        <p>Esta Política descreve como o {{ config('variables.templateName', 'MetodoCal') }} ("nós") coleta, utiliza, armazena e protege dados pessoais, em conformidade com a <strong>Lei Geral de Proteção de Dados — LGPD (Lei nº 13.709/2018)</strong>.</p>
+        <p>Esta Política descreve como o {{ config('variables.templateName', 'MetodoCal') }} ("nós") coleta, utiliza, armazena e protege dados pessoais, em conformidade com a <strong>Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018)</strong>.</p>
 
         <h6>1. Controlador dos dados</h6>
         <p>O controlador dos dados pessoais é o {{ config('variables.templateName', 'MetodoCal') }}, com canal oficial de contato pelo e-mail <a href="mailto:contato@metodocal.com.br">contato@metodocal.com.br</a>.</p>
@@ -90,14 +90,14 @@
         </ul>
 
         <h6>4. Base legal</h6>
-        <p>O tratamento se ampara em: <strong>execução de contrato</strong> (art. 7º, V), <strong>cumprimento de obrigação legal</strong> (art. 7º, II), <strong>legítimo interesse</strong> (art. 7º, IX) e <strong>consentimento</strong> (art. 7º, I) — este último para comunicações de marketing e cookies não essenciais.</p>
+        <p>O tratamento se ampara em: <strong>execução de contrato</strong> (art. 7º, V), <strong>cumprimento de obrigação legal</strong> (art. 7º, II), <strong>legítimo interesse</strong> (art. 7º, IX) e <strong>consentimento</strong> (art. 7º, I). Este último para comunicações de marketing e cookies não essenciais.</p>
 
         <h6>5. Compartilhamento</h6>
         <p>Dados pessoais podem ser compartilhados com:</p>
         <ul>
-          <li><strong>Mercado Pago</strong> — para processamento de pagamentos.</li>
-          <li><strong>Provedores de infraestrutura</strong> — hospedagem, e-mail transacional, analytics.</li>
-          <li><strong>Autoridades</strong> — quando exigido por lei ou ordem judicial.</li>
+          <li><strong>Mercado Pago</strong>, para processamento de pagamentos.</li>
+          <li><strong>Provedores de infraestrutura</strong>: hospedagem, e-mail transacional, analytics.</li>
+          <li><strong>Autoridades</strong>, quando exigido por lei ou ordem judicial.</li>
         </ul>
         <p>Não vendemos nem cedemos dados pessoais a terceiros para fins comerciais.</p>
 

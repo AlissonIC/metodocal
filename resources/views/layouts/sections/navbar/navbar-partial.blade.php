@@ -59,7 +59,7 @@ use Illuminate\Support\Facades\Storage;
       @php
         $avatarUrl = Auth::user() && Auth::user()->avatar
             ? Storage::url(Auth::user()->avatar)
-            : asset('assets/img/avatars/1.png');
+            : asset('assets/img/avatars/1.jpg');
         $roleLabel = Auth::user()?->getRoleNames()->first() ?? '';
       @endphp
       <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">

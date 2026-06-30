@@ -31,7 +31,7 @@ $configData = Helper::appClasses();
       <div class="card-body pt-12">
         <div class="user-avatar-section">
           <div class=" d-flex align-items-center flex-column">
-            <img class="img-fluid rounded mb-4" src="{{ asset('assets/img/avatars/1.png') }}" height="120" width="120" alt="User avatar" />
+            <img class="img-fluid rounded mb-4" src="{{ asset('assets/img/avatars/1.jpg') }}" height="120" width="120" alt="User avatar" />
             <div class="user-info text-center">
               <h5>Violet Mendoza</h5>
               <span class="badge bg-label-secondary">Author</span>

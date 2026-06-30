@@ -8,15 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('processos_limpa_nome', function (Blueprint $table) {
+        Schema::create('servicos', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome');
+            $table->string('slug')->unique();
+            $table->text('descricao')->nullable();
+            $table->decimal('valor_padrao', 12, 2)->nullable();
+            $table->boolean('ativo')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('processos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('servico_id')->constrained('servicos')->restrictOnDelete();
             $table->string('nome_completo');
             $table->enum('tipo_documento', ['cpf', 'cnpj']);
             $table->string('documento', 20);
             $table->string('email_contato')->nullable();
             $table->string('telefone_contato', 40)->nullable();
-            $table->enum('tipo', ['limpa_nome', 'aquisicao', 'negociacao_divida']);
             $table->enum('status', [
                 'cadastrado',
                 'em_analise',
@@ -34,13 +44,13 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['user_id', 'status']);
-            $table->index(['status', 'tipo']);
+            $table->index(['status', 'servico_id']);
             $table->index('documento');
         });
 
-        Schema::create('dividas_limpa_nome', function (Blueprint $table) {
+        Schema::create('dividas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('processo_id')->constrained('processos_limpa_nome')->cascadeOnDelete();
+            $table->foreignId('processo_id')->constrained('processos')->cascadeOnDelete();
             $table->string('credor');
             $table->decimal('valor', 12, 2)->default(0);
             $table->text('descricao')->nullable();
@@ -49,9 +59,9 @@ return new class extends Migration
             $table->index('processo_id');
         });
 
-        Schema::create('documentos_limpa_nome', function (Blueprint $table) {
+        Schema::create('documentos_processo', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('processo_id')->constrained('processos_limpa_nome')->cascadeOnDelete();
+            $table->foreignId('processo_id')->constrained('processos')->cascadeOnDelete();
             $table->foreignId('uploaded_by_user_id')->constrained('users')->cascadeOnDelete();
             $table->string('categoria')->nullable();
             $table->string('nome_original');
@@ -63,9 +73,9 @@ return new class extends Migration
             $table->index('processo_id');
         });
 
-        Schema::create('historico_limpa_nome', function (Blueprint $table) {
+        Schema::create('historico_processo', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('processo_id')->constrained('processos_limpa_nome')->cascadeOnDelete();
+            $table->foreignId('processo_id')->constrained('processos')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status_anterior')->nullable();
             $table->string('status_novo');
@@ -78,9 +88,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('historico_limpa_nome');
-        Schema::dropIfExists('documentos_limpa_nome');
-        Schema::dropIfExists('dividas_limpa_nome');
-        Schema::dropIfExists('processos_limpa_nome');
+        Schema::dropIfExists('historico_processo');
+        Schema::dropIfExists('documentos_processo');
+        Schema::dropIfExists('dividas');
+        Schema::dropIfExists('processos');
+        Schema::dropIfExists('servicos');
     }
 };

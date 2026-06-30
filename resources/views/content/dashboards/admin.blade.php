@@ -96,7 +96,7 @@
           <div class="content-left">
             <span class="text-heading">Receita recorrente mensal (estimada)</span>
             <h4 class="my-1">R$ {{ number_format((float) $receitaMensal, 2, ',', '.') }}</h4>
-            <small class="mb-0">Soma dos planos mensais ativos · Fase 4 confirma via pagamento</small>
+            <small class="mb-0">Soma dos planos mensais ativos</small>
           </div>
           <div class="avatar"><span class="avatar-initial rounded bg-label-primary"><i class="icon-base ti tabler-cash icon-26px"></i></span></div>
         </div>

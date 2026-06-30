@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProcessoLimpaNome extends Model
+class Processo extends Model
 {
     use HasFactory;
 
-    protected $table = 'processos_limpa_nome';
+    protected $table = 'processos';
 
     public const STATUSES = [
         'cadastrado' => ['Cadastrado', 'secondary'],
@@ -23,20 +23,15 @@ class ProcessoLimpaNome extends Model
         'cancelado' => ['Cancelado', 'danger'],
     ];
 
-    public const TIPOS = [
-        'limpa_nome' => 'Limpa Nome',
-        'aquisicao' => 'Aquisição de Dívida',
-        'negociacao_divida' => 'Negociação de Dívida',
-    ];
-
     protected $fillable = [
         'user_id',
+        'servico_id',
+        'comprador_id',
         'nome_completo',
         'tipo_documento',
         'documento',
         'email_contato',
         'telefone_contato',
-        'tipo',
         'status',
         'data_protocolo_liminar',
         'data_previsao_conclusao',
@@ -59,19 +54,39 @@ class ProcessoLimpaNome extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function servico(): BelongsTo
+    {
+        return $this->belongsTo(Servico::class);
+    }
+
+    public function comprador(): BelongsTo
+    {
+        return $this->belongsTo(Comprador::class);
+    }
+
     public function dividas(): HasMany
     {
-        return $this->hasMany(DividaLimpaNome::class, 'processo_id');
+        return $this->hasMany(Divida::class, 'processo_id');
     }
 
     public function documentos(): HasMany
     {
-        return $this->hasMany(DocumentoLimpaNome::class, 'processo_id');
+        return $this->hasMany(DocumentoProcesso::class, 'processo_id');
     }
 
     public function historico(): HasMany
     {
-        return $this->hasMany(HistoricoLimpaNome::class, 'processo_id')->orderByDesc('created_at');
+        return $this->hasMany(HistoricoProcesso::class, 'processo_id')->orderByDesc('created_at');
+    }
+
+    public function faturas(): HasMany
+    {
+        return $this->hasMany(Fatura::class, 'processo_id')->orderByDesc('created_at');
+    }
+
+    public function comissoes(): HasMany
+    {
+        return $this->hasMany(Comissao::class, 'processo_id')->orderByDesc('data_referencia');
     }
 
     public function isEditavelPeloCliente(): bool
@@ -87,10 +102,5 @@ class ProcessoLimpaNome extends Model
     public function statusColor(): string
     {
         return self::STATUSES[$this->status][1] ?? 'secondary';
-    }
-
-    public function tipoLabel(): string
-    {
-        return self::TIPOS[$this->tipo] ?? $this->tipo;
     }
 }

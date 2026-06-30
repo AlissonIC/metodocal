@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const pronto = await checar();
     if (pronto) return;
     if (tentativas >= MAX_TENTATIVAS) {
-      progress.innerHTML = '<small class="text-muted">A confirmação está demorando. Você pode fechar esta página — assim que pagarmos será refletido nas suas faturas. <a href="javascript:location.reload()">Atualizar</a></small>';
+      progress.innerHTML = '<small class="text-muted">A confirmação está demorando. Você pode fechar esta página. Assim que pagarmos, será refletido nas suas faturas. <a href="javascript:location.reload()">Atualizar</a></small>';
       return;
     }
     setTimeout(loop, 5000);

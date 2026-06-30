@@ -75,7 +75,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div class="d-flex align-items-center">
                 <div class="avatar avatar-sm me-2">
-                  <img class="rounded-circle mb-4" src="{{ asset('assets/img/avatars/1.png') }}" height="34" width="34"
+                  <img class="rounded-circle mb-4" src="{{ asset('assets/img/avatars/1.jpg') }}" height="34" width="34"
                     alt="User avatar" />
                 </div>
                 <div class="d-flex flex-column">

@@ -132,7 +132,7 @@
         <small class="text-muted d-block">
           O reenvio força o processamento imediato.
           @if ($n->channel === 'email')
-            Configure SMTP no <code>.env</code> antes de tentar com e-mails reais — em ambiente de dev, o envio vai pro log.
+            Configure SMTP no <code>.env</code> antes de tentar com e-mails reais. Em ambiente de dev, o envio vai pro log.
           @endif
         </small>
       </div>

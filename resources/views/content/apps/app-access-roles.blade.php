@@ -67,7 +67,7 @@ $configData = Helper::appClasses();
               <img class="rounded-circle" src="{{ asset('assets/img/avatars/4.png') }}" alt="Avatar" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="John Doe" class="avatar pull-up">
-              <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" />
+              <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Kristi Lawker" class="avatar pull-up">
               <img class="rounded-circle" src="{{ asset('assets/img/avatars/2.png') }}" alt="Avatar" />

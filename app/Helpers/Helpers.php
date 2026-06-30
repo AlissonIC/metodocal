@@ -126,9 +126,15 @@ class Helpers
       $primaryColor = $data['primaryColor'];
     }
 
-    // Check for primary color in cookie
+    // Check for primary color in cookie — ignora cookies com cores legadas
+    // (azul antigo da marca ou roxo Vuexy default) para que o rebrand dourado
+    // valha mesmo para usuários que tinham mexido no customizer antes.
     if (isset($_COOKIE[$primaryColorCookieName])) {
-      $primaryColor = $_COOKIE[$primaryColorCookieName];
+      $cookieColor = strtolower($_COOKIE[$primaryColorCookieName]);
+      $legacyColors = ['#007da8', '#09d2e8', '#7367f0', '#696cff', '#1fa2b5'];
+      if (! in_array($cookieColor, $legacyColors, true)) {
+        $primaryColor = $_COOKIE[$primaryColorCookieName];
+      }
     }
 
     // Determine style based on cookies, only if not 'blank-layout'
@@ -298,13 +304,25 @@ class Helpers
     $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
     $contrastColor = ($yiq >= 150) ? '#000' : '#fff';
 
+    // Hover/active escurece em ~12% (multiplicador 0.85)
+    $hr = max(0, (int) round($r * 0.85));
+    $hg = max(0, (int) round($g * 0.85));
+    $hb = max(0, (int) round($b * 0.85));
+
     return <<<CSS
 :root, [data-bs-theme=light], [data-bs-theme=dark] {
   --bs-primary: {$color};
   --bs-primary-rgb: {$r}, {$g}, {$b};
   --bs-primary-bg-subtle: rgba({$r}, {$g}, {$b}, 0.1);
   --bs-primary-border-subtle: rgba({$r}, {$g}, {$b}, 0.3);
+  --bs-primary-text-emphasis: {$color};
   --bs-primary-contrast: {$contrastColor};
+  --bs-link-color: {$color};
+  --bs-link-color-rgb: {$r}, {$g}, {$b};
+  --bs-link-hover-color: rgb({$hr}, {$hg}, {$hb});
+  --bs-link-hover-color-rgb: {$hr}, {$hg}, {$hb};
+  --bs-focus-ring-color: rgba({$r}, {$g}, {$b}, 0.25);
+  --bs-highlight-bg: rgba({$r}, {$g}, {$b}, 0.18);
 }
 CSS;
   }

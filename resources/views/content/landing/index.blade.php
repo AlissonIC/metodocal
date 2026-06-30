@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>{{ config('variables.templateName', 'MetodoCal') }} — Compre carros pelo preço de leilão, sem leilão</title>
-  <meta name="description" content="O método que ensina a encontrar, avaliar e comprar veículos antes que vão a leilão — adquirindo carros até 60% abaixo do valor de mercado, com segurança jurídica.">
+  <title>{{ config('variables.templateName', 'MetodoCal') }} · Método CAL · Comprando antes do leilão</title>
+  <meta name="description" content="O método para comprar veículos com até 70% de desconto assumindo a dívida antes da retomada do banco e transformar isso em renda recorrente e patrimônio. Curso e sociedade estratégica.">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <link rel="icon" type="image/x-icon" href="{{ asset('favicon-v2.ico') }}">
@@ -22,12 +22,12 @@
 
   <style>
     :root {
-      --md-1: #007da8;
-      --md-2: #09d2e8;
+      --md-1: #B8860B;
+      --md-2: #D4AF37;
       --md-3: #11141a;
-      --md-grad: linear-gradient(135deg, #007da8 0%, #09d2e8 100%);
-      --md-grad-soft: linear-gradient(135deg, rgba(0,125,168,.08) 0%, rgba(9,210,232,.08) 100%);
-      --md-grad-dark: linear-gradient(135deg, #0a1929 0%, #11141a 100%);
+      --md-grad: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%);
+      --md-grad-soft: linear-gradient(135deg, rgba(184,134,11,.08) 0%, rgba(212,175,55,.08) 100%);
+      --md-grad-dark: linear-gradient(135deg, #1a1408 0%, #11141a 100%);
     }
 
     html { scroll-behavior: smooth; }
@@ -64,8 +64,8 @@
       transition: all .2s ease; border: 0; text-decoration: none; cursor: pointer;
       font-size: .98rem;
     }
-    .lp-btn-primary { background: var(--md-grad); color: #fff; box-shadow: 0 10px 30px -10px rgba(0,125,168,.55); }
-    .lp-btn-primary:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 14px 34px -10px rgba(0,125,168,.7); }
+    .lp-btn-primary { background: var(--md-grad); color: #fff; box-shadow: 0 10px 30px -10px rgba(184,134,11,.55); }
+    .lp-btn-primary:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 14px 34px -10px rgba(184,134,11,.7); }
     .lp-btn-ghost { background: transparent; color: #2f2b3d; border: 1px solid rgba(0,0,0,.1); }
     .lp-btn-ghost:hover { background: rgba(0,0,0,.03); color: var(--md-1); border-color: var(--md-1); }
     .lp-btn-white { background: #fff; color: var(--md-1); }
@@ -78,14 +78,14 @@
       position: relative;
       padding: 6rem 0 5rem;
       overflow: hidden;
-      background: #fafbff;
+      background: #fdfbf4;
     }
     .lp-hero::before {
       content: ''; position: absolute; inset: 0;
       background:
-        radial-gradient(900px circle at 8% 5%, rgba(9,210,232,.22), transparent 55%),
-        radial-gradient(800px circle at 95% 25%, rgba(0,125,168,.20), transparent 60%),
-        radial-gradient(600px circle at 50% 100%, rgba(0,125,168,.10), transparent 50%);
+        radial-gradient(900px circle at 8% 5%, rgba(212,175,55,.22), transparent 55%),
+        radial-gradient(800px circle at 95% 25%, rgba(184,134,11,.20), transparent 60%),
+        radial-gradient(600px circle at 50% 100%, rgba(184,134,11,.10), transparent 50%);
       z-index: 0; pointer-events: none;
     }
     .lp-hero > .container { position: relative; z-index: 1; }
@@ -104,9 +104,10 @@
       50% { opacity: .5; transform: scale(1.4); }
     }
     .lp-h1 {
-      font-size: clamp(2.5rem, 5.5vw, 4.6rem);
-      font-weight: 800; line-height: 1.04; letter-spacing: -0.035em;
-      color: #0a1929; margin: 1.25rem 0 1.5rem;
+      font-size: clamp(1.95rem, 3.4vw, 3rem);
+      font-weight: 800; line-height: 1.15; letter-spacing: -0.025em;
+      color: #11141a; margin: 1rem 0 1.25rem;
+      max-width: 560px;
     }
     .lp-h1 .grad {
       background: var(--md-grad);
@@ -117,7 +118,7 @@
       text-decoration: line-through; text-decoration-color: #dc2626; text-decoration-thickness: 3px;
       color: #94a3b8;
     }
-    .lp-sub { font-size: 1.18rem; color: #5b6478; max-width: 580px; line-height: 1.6; }
+    .lp-sub { font-size: 1.05rem; color: #5b6478; max-width: 540px; line-height: 1.6; }
 
     .lp-hero-trust { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; margin-top: 2rem; color: #5b6478; font-size: .9rem; }
     .lp-hero-trust .check { color: #16a34a; }
@@ -125,7 +126,7 @@
     /* Hero visual: comparativo */
     .lp-compare {
       background: #fff; border-radius: 1.5rem; padding: 1.75rem;
-      box-shadow: 0 30px 60px -25px rgba(0,30,80,.2);
+      box-shadow: 0 30px 60px -25px rgba(60,40,0,.2);
       border: 1px solid rgba(0,0,0,.04); position: relative;
     }
     .lp-compare::after {
@@ -146,7 +147,7 @@
       background: linear-gradient(90deg, rgba(22,163,74,.08), rgba(22,163,74,.02));
       border: 1px solid rgba(22,163,74,.18);
     }
-    .lp-compare-row .lbl { display: flex; align-items: center; gap: .65rem; font-weight: 600; color: #1a1a2e; }
+    .lp-compare-row .lbl { display: flex; align-items: center; gap: .65rem; font-weight: 600; color: #11141a; }
     .lp-compare-row .val { font-weight: 800; font-size: 1.4rem; letter-spacing: -0.02em; }
     .lp-compare-row.bad .val { color: #dc2626; }
     .lp-compare-row.good .val { color: #16a34a; }
@@ -166,7 +167,7 @@
     .lp-compare-diff .val { font-weight: 800; font-size: 1.6rem; }
 
     /* ===== TRUST STRIP ===== */
-    .lp-trust { background: #fafbff; padding: 2.5rem 0; border-top: 1px solid rgba(0,0,0,.04); }
+    .lp-trust { background: #fdfbf4; padding: 2.5rem 0; border-top: 1px solid rgba(0,0,0,.04); }
     .lp-stat-num { font-size: 2.6rem; font-weight: 800;
       background: var(--md-grad);
       -webkit-background-clip: text; background-clip: text;
@@ -177,7 +178,7 @@
     /* ===== SECTIONS ===== */
     section { scroll-margin-top: 100px; }
     .lp-section { padding: 6rem 0; }
-    .lp-section-title { font-size: clamp(1.85rem, 3.8vw, 2.8rem); font-weight: 800; letter-spacing: -0.025em; color: #0a1929; }
+    .lp-section-title { font-size: clamp(1.85rem, 3.8vw, 2.8rem); font-weight: 800; letter-spacing: -0.025em; color: #11141a; }
     .lp-section-sub { color: #5b6478; font-size: 1.1rem; max-width: 680px; margin: 0 auto; line-height: 1.6; }
     .lp-tag {
       display: inline-block; padding: .4rem 1rem; border-radius: 999px;
@@ -185,13 +186,13 @@
       font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
       margin-bottom: 1.2rem;
     }
-    .lp-bg-alt { background: #fafbff; }
+    .lp-bg-alt { background: #fdfbf4; }
     .lp-bg-dark { background: var(--md-grad-dark); color: rgba(255,255,255,.85); position: relative; overflow: hidden; }
     .lp-bg-dark::before {
       content: ''; position: absolute; inset: 0;
       background:
-        radial-gradient(700px circle at 10% 50%, rgba(9,210,232,.15), transparent 50%),
-        radial-gradient(700px circle at 90% 50%, rgba(0,125,168,.12), transparent 50%);
+        radial-gradient(700px circle at 10% 50%, rgba(212,175,55,.15), transparent 50%),
+        radial-gradient(700px circle at 90% 50%, rgba(184,134,11,.12), transparent 50%);
       pointer-events: none;
     }
     .lp-bg-dark > .container { position: relative; z-index: 1; }
@@ -210,7 +211,7 @@
       background: rgba(220,38,38,.1); color: #dc2626;
       font-size: 1.5rem; margin-bottom: 1rem;
     }
-    .lp-pain h5 { font-weight: 700; color: #0a1929; margin-bottom: .5rem; }
+    .lp-pain h5 { font-weight: 700; color: #11141a; margin-bottom: .5rem; }
     .lp-pain p { color: #5b6478; margin: 0; font-size: .95rem; line-height: 1.6; }
 
     /* ===== MÉTODO (4 PASSOS) ===== */
@@ -223,7 +224,7 @@
       backdrop-filter: blur(10px);
       transition: all .3s ease;
     }
-    .lp-step-card:hover { background: rgba(255,255,255,.08); transform: translateY(-3px); border-color: rgba(9,210,232,.4); }
+    .lp-step-card:hover { background: rgba(255,255,255,.08); transform: translateY(-3px); border-color: rgba(212,175,55,.4); }
     .lp-step-num {
       display: inline-block;
       width: 52px; height: 52px; border-radius: 14px;
@@ -231,7 +232,7 @@
       color: #fff; font-weight: 800; font-size: 1.3rem;
       line-height: 52px; text-align: center;
       margin-bottom: 1rem;
-      box-shadow: 0 10px 25px -8px rgba(9,210,232,.5);
+      box-shadow: 0 10px 25px -8px rgba(212,175,55,.5);
     }
     .lp-step-card h5 { font-weight: 700; color: #fff; margin-bottom: .5rem; font-size: 1.15rem; }
     .lp-step-card p { color: rgba(255,255,255,.65); margin: 0; line-height: 1.6; font-size: .95rem; }
@@ -247,7 +248,7 @@
       background: var(--md-grad); opacity: 0;
       transition: opacity .3s ease;
     }
-    .lp-feature:hover { transform: translateY(-5px); border-color: rgba(0,125,168,.25); box-shadow: 0 25px 50px -25px rgba(0,125,168,.25); }
+    .lp-feature:hover { transform: translateY(-5px); border-color: rgba(184,134,11,.25); box-shadow: 0 25px 50px -25px rgba(184,134,11,.25); }
     .lp-feature:hover::before { opacity: 1; }
     .lp-feature-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
     .lp-feature-icon {
@@ -256,7 +257,7 @@
       background: var(--md-grad-soft); color: var(--md-1); font-size: 1.45rem;
       flex-shrink: 0;
     }
-    .lp-feature h5 { font-weight: 700; color: #0a1929; margin: 0; font-size: 1.1rem; line-height: 1.3; }
+    .lp-feature h5 { font-weight: 700; color: #11141a; margin: 0; font-size: 1.1rem; line-height: 1.3; }
     .lp-feature p { color: #5b6478; margin: 0; font-size: .95rem; line-height: 1.6; }
     .lp-feature .pill {
       position: absolute; top: 1.1rem; right: 1.1rem;
@@ -271,14 +272,14 @@
       border: 1px solid rgba(0,0,0,.06); height: 100%;
     }
     .lp-compare-side.bad { border-color: rgba(220,38,38,.2); }
-    .lp-compare-side.good { border: 2px solid var(--md-1); box-shadow: 0 25px 50px -25px rgba(0,125,168,.3); position: relative; }
+    .lp-compare-side.good { border: 2px solid var(--md-1); box-shadow: 0 25px 50px -25px rgba(184,134,11,.3); position: relative; }
     .lp-compare-side.good::before {
       content: 'Com o Método'; position: absolute; top: -14px; left: 2rem;
       background: var(--md-grad); color: #fff;
       padding: .25rem .85rem; border-radius: 999px;
       font-size: .75rem; font-weight: 700; letter-spacing: .04em;
     }
-    .lp-compare-side h4 { font-weight: 800; color: #0a1929; margin-bottom: 1.25rem; }
+    .lp-compare-side h4 { font-weight: 800; color: #11141a; margin-bottom: 1.25rem; }
     .lp-compare-side ul { list-style: none; padding: 0; margin: 0; }
     .lp-compare-side li { padding: .65rem 0; display: flex; align-items: flex-start; gap: .65rem; color: #4b465c; line-height: 1.5; border-bottom: 1px solid rgba(0,0,0,.04); }
     .lp-compare-side li:last-child { border-bottom: 0; }
@@ -291,16 +292,16 @@
       border: 1px solid rgba(0,0,0,.08);
       transition: all .3s ease; height: 100%; position: relative;
     }
-    .lp-plan:hover { transform: translateY(-5px); box-shadow: 0 25px 50px -25px rgba(0,125,168,.2); }
-    .lp-plan-featured { border: 2px solid var(--md-1); transform: scale(1.03); box-shadow: 0 30px 60px -25px rgba(0,125,168,.3); }
+    .lp-plan:hover { transform: translateY(-5px); box-shadow: 0 25px 50px -25px rgba(184,134,11,.2); }
+    .lp-plan-featured { border: 2px solid var(--md-1); transform: scale(1.03); box-shadow: 0 30px 60px -25px rgba(184,134,11,.3); }
     .lp-plan-featured::before {
       content: 'Mais escolhido'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
       background: var(--md-grad); color: #fff;
       padding: .3rem .9rem; border-radius: 999px;
       font-size: .75rem; font-weight: 700; letter-spacing: .04em;
     }
-    .lp-plan h4 { font-weight: 700; color: #0a1929; }
-    .lp-plan-price { font-size: 2.8rem; font-weight: 800; color: #0a1929; line-height: 1; }
+    .lp-plan h4 { font-weight: 700; color: #11141a; }
+    .lp-plan-price { font-size: 2.8rem; font-weight: 800; color: #11141a; line-height: 1; }
     .lp-plan-price .currency { font-size: 1.1rem; vertical-align: top; color: #5b6478; font-weight: 600; }
     .lp-plan-price .period { font-size: .9rem; color: #5b6478; font-weight: 500; }
 
@@ -310,7 +311,7 @@
       border: 1px solid rgba(0,0,0,.06); height: 100%;
       transition: all .3s ease;
     }
-    .lp-testimonial:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -20px rgba(0,30,80,.12); }
+    .lp-testimonial:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -20px rgba(60,40,0,.12); }
     .lp-testimonial p { color: #4b465c; line-height: 1.7; }
     .lp-testimonial .saving {
       display: inline-block; padding: .25rem .65rem; border-radius: .5rem;
@@ -326,7 +327,7 @@
 
     /* ===== FAQ ===== */
     .lp-faq .accordion-item { border: 1px solid rgba(0,0,0,.06); border-radius: .85rem !important; margin-bottom: .75rem; overflow: hidden; background: #fff; }
-    .lp-faq .accordion-button { font-weight: 600; color: #0a1929; padding: 1.25rem 1.35rem; background: #fff; }
+    .lp-faq .accordion-button { font-weight: 600; color: #11141a; padding: 1.25rem 1.35rem; background: #fff; }
     .lp-faq .accordion-button:not(.collapsed) { background: var(--md-grad-soft); color: var(--md-1); box-shadow: none; }
     .lp-faq .accordion-button:focus { box-shadow: none; border-color: transparent; }
     .lp-faq .accordion-body { color: #5b6478; line-height: 1.7; padding: 1rem 1.35rem 1.5rem; }
@@ -357,6 +358,7 @@
     /* ===== TABLET / DOWN ===== */
     @media (max-width: 991px) {
       .lp-hero { padding: 3rem 0 3rem; text-align: center; }
+      .lp-hero .lp-h1,
       .lp-hero .lp-sub { margin-left: auto; margin-right: auto; }
       /* CTAs do hero centralizam (d-flex precisa de justify-content explícito) */
       .lp-hero .d-flex.flex-wrap.gap-3 { justify-content: center; }
@@ -376,7 +378,7 @@
       .lp-footer .lp-logo-img { height: 34px; }
       .lp-nav .lp-btn { padding: .55rem .9rem; font-size: .85rem; }
 
-      /* Hero — tipografia contida + respiro entre blocos */
+      /* Hero - tipografia contida + respiro entre blocos */
       .lp-hero { padding: 2.5rem 0 3rem; }
       .lp-eyebrow { font-size: .72rem; padding: .4rem .85rem; margin-bottom: .5rem; }
       .lp-h1 {
@@ -398,7 +400,7 @@
       /* Trust badges em coluna, com mais respiro do bloco anterior */
       .lp-hero-trust { gap: .75rem; flex-direction: column; align-items: center; font-size: .85rem; margin-top: 2rem; }
 
-      /* Card comparativo do hero — header em coluna, badge oculto, valores menores */
+      /* Card comparativo do hero - header em coluna, badge oculto, valores menores */
       .lp-compare { padding: 1.25rem; border-radius: 1.1rem; margin-top: 2.5rem; }
       .lp-compare > .d-flex { flex-direction: column; align-items: flex-start !important; gap: .25rem; margin-bottom: 1rem !important; }
       .lp-compare > .d-flex .badge { display: none; }
@@ -481,9 +483,10 @@
     <ul class="nav d-none d-lg-flex">
       <li class="nav-item"><a class="nav-link" href="#oportunidade">A oportunidade</a></li>
       <li class="nav-item"><a class="nav-link" href="#metodo">O método</a></li>
-      <li class="nav-item"><a class="nav-link" href="#recursos">Recursos</a></li>
+      <li class="nav-item"><a class="nav-link" href="#monetizar">Como lucra</a></li>
+      <li class="nav-item"><a class="nav-link" href="#recursos">Plataforma</a></li>
       @if ($planos->count())
-        <li class="nav-item"><a class="nav-link" href="#planos">Planos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#planos">Caminhos</a></li>
       @endif
       <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
     </ul>
@@ -493,7 +496,7 @@
         <a href="{{ route('dashboard') }}" class="lp-btn lp-btn-ghost">Painel</a>
       @else
         <a href="{{ route('login') }}" class="lp-btn lp-btn-ghost d-none d-sm-inline-flex">Entrar</a>
-        <a href="{{ route('register') }}" class="lp-btn lp-btn-primary">Quero aprender</a>
+        <a href="{{ route('register') }}" class="lp-btn lp-btn-primary">Quero operar</a>
       @endauth
     </div>
   </div>
@@ -504,59 +507,67 @@
   <div class="container">
     <div class="row align-items-center g-5">
       <div class="col-lg-6">
-        <span class="lp-eyebrow"><span class="dot"></span> Acesso a um mercado que ninguém te contou</span>
+        <span class="lp-eyebrow"><span class="dot"></span> Método CAL · Comprando antes do leilão</span>
         <h1 class="lp-h1">
-          Compre carros pelo <span class="strike">preço de mercado</span>.<br>
-          <span class="grad">Pague preço de leilão — sem leiloar.</span>
+          O método para comprar veículos com <span class="grad">até 70% de desconto</span> e transformar em renda e patrimônio.
         </h1>
         <p class="lp-sub">
-          O método que ensina a <strong>identificar, avaliar e negociar veículos antes que vão a leilão</strong> — comprando direto do proprietário com até <strong class="text-success">60% de desconto</strong> sobre o valor de mercado.
+          Você não compra carro. Você <strong>assume a dívida</strong> de um veículo financiado antes que o banco retome, e depois <strong>monetiza por venda, financiamento próprio ou locação</strong>. Operação validada em <strong>+9 anos</strong> de mercado real.
         </p>
 
         <div class="d-flex flex-wrap gap-3 mt-4">
           <a href="{{ route('register') }}" class="lp-btn lp-btn-primary">
-            <i class="icon-base ti tabler-target"></i> Quero aprender o método
+            <i class="icon-base ti tabler-target"></i> Quero operar
           </a>
           <a href="#metodo" class="lp-btn lp-btn-ghost">
-            <i class="icon-base ti tabler-player-play"></i> Como funciona
+            <i class="icon-base ti tabler-player-play"></i> Ver como funciona
           </a>
         </div>
 
         <div class="lp-hero-trust">
-          <span><i class="icon-base ti tabler-shield-check check"></i> Sem cartão</span>
-          <span><i class="icon-base ti tabler-clock check"></i> Acesso imediato</span>
-          <span><i class="icon-base ti tabler-arrow-back-up check"></i> Cancele quando quiser</span>
+          <span><i class="icon-base ti tabler-shield-check check"></i> Contrato + Procuração Pública</span>
+          <span><i class="icon-base ti tabler-scale check"></i> Limpa Nome em até 10 dias</span>
+          <span><i class="icon-base ti tabler-coin check"></i> 1ª operação em ~30 dias</span>
         </div>
       </div>
 
       <div class="col-lg-6">
         <div class="lp-compare">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0 fw-bold" style="color:#0a1929;">Exemplo · Honda Civic 2019 · Tab. R$ 95.000</h6>
-            <span class="badge bg-label-secondary">Comparativo</span>
+            <h6 class="mb-0 fw-bold" style="color:#11141a;">Exemplo real · Veículo FIPE R$ 100.000</h6>
+            <span class="badge bg-label-secondary">Operação</span>
           </div>
 
           <div class="lp-compare-row bad">
             <span class="lbl">
               <span class="lp-compare-icon bad"><i class="icon-base ti tabler-shopping-cart"></i></span>
-              Mercado tradicional
+              Comprar no mercado
             </span>
-            <span class="val">R$ 92.000</span>
+            <span class="val">R$ 95.000</span>
           </div>
 
           <div class="lp-compare-row good">
             <span class="lbl">
               <span class="lp-compare-icon good"><i class="icon-base ti tabler-target-arrow"></i></span>
-              Com o Método
+              Assumir a dívida (Método)
             </span>
-            <span class="val">R$ 48.000</span>
+            <span class="val">R$ 20.000</span>
+          </div>
+
+          <div class="lp-compare-row good" style="margin-top: .35rem;">
+            <span class="lbl">
+              <span class="lp-compare-icon good"><i class="icon-base ti tabler-cash-banknote"></i></span>
+              Revenda · entrada de 30%
+            </span>
+            <span class="val">R$ 50.000</span>
           </div>
 
           <div class="lp-compare-diff">
-            <span class="lbl"><i class="icon-base ti tabler-coin me-1"></i> Economia</span>
-            <span class="val">+R$ 44.000</span>
+            <span class="lbl"><i class="icon-base ti tabler-trending-up me-1"></i> Lucro só na entrada</span>
+            <span class="val">+R$ 30.000</span>
           </div>
         </div>
+        <p class="text-muted small mt-2 mb-0 text-center">+ até 60 parcelas mensais de recorrência no financiamento próprio.</p>
       </div>
     </div>
   </div>
@@ -566,10 +577,10 @@
 <section class="lp-trust">
   <div class="container">
     <div class="row text-center g-4">
-      <div class="col-6 col-md-3"><div class="lp-stat-num">+1.200</div><div class="lp-stat-lbl">Veículos adquiridos pelos alunos</div></div>
-      <div class="col-6 col-md-3"><div class="lp-stat-num">60%</div><div class="lp-stat-lbl">Desconto médio sobre o mercado</div></div>
-      <div class="col-6 col-md-3"><div class="lp-stat-num">15 dias</div><div class="lp-stat-lbl">Pra fechar a primeira compra</div></div>
-      <div class="col-6 col-md-3"><div class="lp-stat-num">98%</div><div class="lp-stat-lbl">De aprovação dos alunos</div></div>
+      <div class="col-6 col-md-3"><div class="lp-stat-num">70%</div><div class="lp-stat-lbl">Desconto sobre o valor de mercado</div></div>
+      <div class="col-6 col-md-3"><div class="lp-stat-num">90%</div><div class="lp-stat-lbl">Desconto possível no saldo devedor</div></div>
+      <div class="col-6 col-md-3"><div class="lp-stat-num">+9 anos</div><div class="lp-stat-lbl">De operações reais no mercado</div></div>
+      <div class="col-6 col-md-3"><div class="lp-stat-num">3 frentes</div><div class="lp-stat-lbl">De monetização do mesmo ativo</div></div>
     </div>
   </div>
 </section>
@@ -578,40 +589,47 @@
 <section id="oportunidade" class="lp-section">
   <div class="container">
     <div class="text-center mb-5">
-      <span class="lp-tag" style="background: rgba(220,38,38,.08); color: #dc2626;">A oportunidade que poucos veem</span>
-      <h2 class="lp-section-title">Existe um mercado paralelo ao leilão</h2>
-      <p class="lp-section-sub mt-3">Todo dia, milhares de proprietários estão prestes a perder seus veículos pra leilão — e estariam dispostos a vender por uma fração do valor pra evitar a perda total. Esse é o seu mercado.</p>
+      <span class="lp-tag" style="background: rgba(212,175,55,.18); color: #B8860B;">A oportunidade antes da disputa</span>
+      <h2 class="lp-section-title">Enquanto o mercado disputa preço, você cria margem</h2>
+      <p class="lp-section-sub mt-3">Existe um mercado <strong>antes do leilão</strong> que ninguém vê: proprietários com financiamento atrasado, prestes a perder o carro pro banco. Em vez de perder tudo, eles cedem o veículo a quem assume a dívida. É aí que o método entra.</p>
     </div>
 
     <div class="row g-4">
       <div class="col-md-6 col-lg-3">
         <div class="lp-pain">
-          <div class="lp-pain-icon"><i class="icon-base ti tabler-trending-down"></i></div>
-          <h5>Quem compra no mercado, paga caro</h5>
-          <p>Tabela FIPE, OLX, Webmotors — todos cobram <strong>preço de varejo</strong>. Margem zero pra revenda, custo alto pra uso próprio.</p>
+          <div class="lp-pain-icon"><i class="icon-base ti tabler-message-circle"></i></div>
+          <h5>OLX e Marketplace</h5>
+          <p>Proprietários anunciando o veículo com <strong>parcelas atrasadas</strong>, precisando vender rápido. Você chega antes da retomada.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-pain">
           <div class="lp-pain-icon"><i class="icon-base ti tabler-gavel"></i></div>
-          <h5>Leilão oficial não é solução</h5>
-          <p>Concorrência alta, taxas de até <strong>15%</strong>, risco jurídico e veículos sem inspeção prévia. Margem apertada.</p>
+          <h5>Tribunais de Justiça</h5>
+          <p>Processos de <strong>busca e apreensão</strong> são públicos. Identificamos veículos prestes a ser retomados e abordamos o dono antes do fim.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-pain">
-          <div class="lp-pain-icon"><i class="icon-base ti tabler-search-off"></i></div>
-          <h5>Veículos pré-leilão são invisíveis</h5>
-          <p>Não tem site nem feirão pra esses carros. <strong>Quem não sabe onde olhar, não acha</strong>. E quem acha, fecha o negócio.</p>
+          <div class="lp-pain-icon"><i class="icon-base ti tabler-target"></i></div>
+          <h5>Tráfego pago direcionado</h5>
+          <p>Anúncios para <strong>"está com parcelas atrasadas?"</strong>. Você atrai o problema, oferece a solução, compra com margem.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-pain">
-          <div class="lp-pain-icon"><i class="icon-base ti tabler-alert-triangle"></i></div>
-          <h5>Comprar sozinho é arriscado</h5>
-          <p>Dívidas atreladas ao veículo, transferência travada, golpes documentais. <strong>Sem método, sem segurança</strong>.</p>
+          <div class="lp-pain-icon"><i class="icon-base ti tabler-handshake"></i></div>
+          <h5>Cliente sai ganhando</h5>
+          <p>Sem o método, ele perde o carro <strong>e fica com a dívida no CPF</strong>. Com você, ele sai do problema com nome limpo em até 10 dias.</p>
         </div>
       </div>
+    </div>
+
+    <div class="text-center mt-5">
+      <p class="text-muted mb-0" style="font-size: 1.05rem;">
+        <i class="icon-base ti tabler-quote text-warning"></i>
+        <em>"Você não compra carro. Compra <strong>oportunidade com margem embutida</strong>."</em>
+      </p>
     </div>
   </div>
 </section>
@@ -620,80 +638,113 @@
 <section id="metodo" class="lp-section lp-bg-dark">
   <div class="container">
     <div class="text-center mb-5">
-      <span class="lp-tag" style="background: rgba(9,210,232,.15); color: #09d2e8;">O método</span>
-      <h2 class="lp-section-title">Como comprar carros antes do leilão em 4 passos</h2>
-      <p class="lp-section-sub mt-3">O processo replicável que mais de mil alunos já usaram pra montar frota, revender ou comprar o veículo dos sonhos por uma fração do preço.</p>
+      <span class="lp-tag" style="background: rgba(212,175,55,.18); color: #B8860B;">O método em 4 etapas</span>
+      <h2 class="lp-section-title">Do primeiro contato à operação lucrativa</h2>
+      <p class="lp-section-sub mt-3">Um processo replicável, com scripts, planilhas e documentação jurídica, testado em centenas de operações reais.</p>
     </div>
 
     <div class="row g-4 lp-method-grid">
       <div class="col-md-6 col-lg-3">
         <div class="lp-step-card">
           <div class="lp-step-num">1</div>
-          <h5>Identifique oportunidades</h5>
-          <p>Aprenda os canais (formais e informais) onde encontrar proprietários em situação pré-leilão dispostos a negociar.</p>
+          <h5>Captação</h5>
+          <p>Encontre veículos pré-leilão em <strong>OLX, marketplaces, tribunais e tráfego pago</strong>. Você atrai quem já está com problema. Não tem disputa.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-step-card">
           <div class="lp-step-num">2</div>
-          <h5>Avalie o veículo</h5>
-          <p>Cheque pendências, débitos, restrições e estado real do carro. Saiba o valor justo e o teto da negociação.</p>
+          <h5>Negociação</h5>
+          <p>Scripts de <strong>abordagem, diagnóstico e fechamento</strong>. Você não vende, posiciona como solução. Planilha inteligente calcula o teto da operação.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-step-card">
           <div class="lp-step-num">3</div>
-          <h5>Negocie com técnica</h5>
-          <p>Scripts de abordagem, gatilhos de fechamento e estrutura de oferta que faz o proprietário aceitar — ganho mútuo.</p>
+          <h5>Formalização</h5>
+          <p><strong>Contrato</strong> + <strong>Laudo Cautelar</strong> + <strong>Procuração Pública</strong> de amplos poderes. O banco deixa de falar com o cliente e passa a tratar direto com você.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="lp-step-card">
           <div class="lp-step-num">4</div>
-          <h5>Regularize e use (ou revenda)</h5>
-          <p>Resolva pendências, faça a transferência segura e decida: use, monte frota ou revenda pelo valor de mercado.</p>
+          <h5>Monetização</h5>
+          <p>Quitação com desconto de <strong>até 90%</strong> e três frentes de receita: <strong>revenda, financiamento próprio ou locação</strong>. O mesmo ativo, três fontes de caixa.</p>
         </div>
       </div>
+    </div>
+
+    <div class="text-center mt-5">
+      <a href="#monetizar" class="lp-btn lp-btn-primary">
+        Ver as 3 formas de monetizar <i class="icon-base ti tabler-arrow-down"></i>
+      </a>
     </div>
   </div>
 </section>
 
-<!-- ============ ANTES vs DEPOIS ============ -->
-<section class="lp-section lp-bg-alt">
+<!-- ============ 3 FORMAS DE MONETIZAR ============ -->
+<section id="monetizar" class="lp-section lp-bg-alt">
   <div class="container">
     <div class="text-center mb-5">
-      <span class="lp-tag">Antes vs depois</span>
-      <h2 class="lp-section-title">A diferença entre comprar e investir</h2>
+      <span class="lp-tag">3 frentes de monetização</span>
+      <h2 class="lp-section-title">Um ativo. Três formas de virar dinheiro.</h2>
+      <p class="lp-section-sub mt-3">Você compra a dívida entre <strong>10% e 30% da FIPE</strong>. A partir daí, escolhe qual modelo aplica, ou combina os três.</p>
     </div>
 
-    <div class="row g-4 justify-content-center" style="max-width: 1100px; margin: 0 auto;">
-      <div class="col-md-6">
-        <div class="lp-compare-side bad">
-          <h4><i class="icon-base ti tabler-mood-sad text-danger me-2"></i> Comprando do jeito comum</h4>
-          <ul>
-            <li><i class="icon-base ti tabler-x"></i> Paga preço de tabela ou perto disso</li>
-            <li><i class="icon-base ti tabler-x"></i> Margem de revenda quase zero</li>
-            <li><i class="icon-base ti tabler-x"></i> Concorrência alta em leilão e marketplaces</li>
-            <li><i class="icon-base ti tabler-x"></i> Compra cara também o financiamento</li>
-            <li><i class="icon-base ti tabler-x"></i> Sem suporte jurídico pra resolver pendências</li>
-            <li><i class="icon-base ti tabler-x"></i> Demora meses pra encontrar bom negócio</li>
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="lp-feature h-100">
+          <span class="pill" style="background: rgba(212,175,55,.18); color: var(--md-1);">#1 · Recorrência</span>
+          <div class="lp-feature-head">
+            <div class="lp-feature-icon"><i class="icon-base ti tabler-cash-banknote"></i></div>
+            <h5>Financiamento próprio</h5>
+          </div>
+          <p class="mb-3">Você vende com <strong>30% de entrada</strong> e parcela em <strong>até 60x no boleto</strong> (atendendo inclusive negativados, juros ~3,99% a.m.).</p>
+          <ul class="list-unstyled small mb-0" style="line-height: 1.9;">
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Recupera o capital só na entrada</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> 5 anos de receita recorrente por carro</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Carteira que escala com o tempo</li>
           </ul>
         </div>
       </div>
 
-      <div class="col-md-6">
-        <div class="lp-compare-side good">
-          <h4><i class="icon-base ti tabler-mood-happy text-success me-2"></i> Com o método</h4>
-          <ul>
-            <li><i class="icon-base ti tabler-check"></i> Veículos com até <strong>60% de desconto</strong></li>
-            <li><i class="icon-base ti tabler-check"></i> Margem real de revenda — lucro garantido</li>
-            <li><i class="icon-base ti tabler-check"></i> Acesso a veículos que ninguém vê</li>
-            <li><i class="icon-base ti tabler-check"></i> Negociação direto com o dono — sem intermediários</li>
-            <li><i class="icon-base ti tabler-check"></i> Limpa nome e regularização inclusos</li>
-            <li><i class="icon-base ti tabler-check"></i> Primeira compra em <strong>15 dias</strong>, em média</li>
+      <div class="col-lg-4">
+        <div class="lp-feature h-100">
+          <span class="pill" style="background: rgba(22,163,74,.12); color: #16a34a;">#2 · Lucro rápido</span>
+          <div class="lp-feature-head">
+            <div class="lp-feature-icon"><i class="icon-base ti tabler-coin"></i></div>
+            <h5>Quitação futura</h5>
+          </div>
+          <p class="mb-3">Vende o veículo por <strong>50% da FIPE</strong> com o comprador assumindo o saldo a quitar. Caixa rápido pra reinvestir.</p>
+          <ul class="list-unstyled small mb-0" style="line-height: 1.9;">
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Ex.: FIPE 100k → comprou 20k</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Vende 50k, comprador quita 25k</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> <strong>+R$ 30 mil</strong> em uma operação</li>
           </ul>
         </div>
       </div>
+
+      <div class="col-lg-4">
+        <div class="lp-feature h-100">
+          <span class="pill" style="background: rgba(184,134,11,.15); color: var(--md-1);">#3 · Renda passiva</span>
+          <div class="lp-feature-head">
+            <div class="lp-feature-icon"><i class="icon-base ti tabler-key"></i></div>
+            <h5>Locação</h5>
+          </div>
+          <p class="mb-3">Aluga o veículo antes da venda. Gera receita semanal ou mensal enquanto o ativo está estacionado.</p>
+          <ul class="list-unstyled small mb-0" style="line-height: 1.9;">
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Fluxo de caixa imediato</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Reduz custo de carregar o ativo</li>
+            <li><i class="icon-base ti tabler-check text-success me-2"></i> Maximiza ROI antes da revenda</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5">
+      <p class="mb-0" style="font-size: 1.1rem;">
+        Aquisição com margem → Proteção do ativo → Monetização → Lucro → <strong>Reinvestimento</strong> → Escala.
+      </p>
     </div>
   </div>
 </section>
@@ -702,9 +753,9 @@
 <section id="recursos" class="lp-section">
   <div class="container">
     <div class="text-center mb-5">
-      <span class="lp-tag">Ferramentas inclusas</span>
-      <h2 class="lp-section-title">Tudo que você precisa pra fechar o primeiro negócio</h2>
-      <p class="lp-section-sub mt-3">A plataforma reúne aulas, mentoria, scripts e parceiros — pra você executar o método sem sair do painel.</p>
+      <span class="lp-tag">A plataforma</span>
+      <h2 class="lp-section-title">Tudo que você precisa pra operar, em um só lugar</h2>
+      <p class="lp-section-sub mt-3">Conteúdo, mentoria, scripts, documentos jurídicos e parceiros operacionais. Você não precisa montar nada do zero.</p>
     </div>
 
     <div class="row g-4">
@@ -713,9 +764,9 @@
           <span class="pill">Núcleo</span>
           <div class="lp-feature-head">
             <div class="lp-feature-icon"><i class="icon-base ti tabler-book"></i></div>
-            <h5>Trilha de conteúdo</h5>
+            <h5>Trilha Método CAL</h5>
           </div>
-          <p>Aulas em vídeo do zero ao avançado: prospecção, avaliação, negociação, fechamento e revenda.</p>
+          <p>Aulas em vídeo cobrindo aquisição, negociação, formalização, gestão e as 3 formas de monetizar, do zero ao avançado.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
@@ -723,9 +774,9 @@
           <span class="pill">Núcleo</span>
           <div class="lp-feature-head">
             <div class="lp-feature-icon"><i class="icon-base ti tabler-calendar"></i></div>
-            <h5>Mentoria 1-a-1</h5>
+            <h5>Mentoria contínua</h5>
           </div>
-          <p>Sessões com especialistas pra revisar oportunidades reais, scripts de abordagem e fechamentos.</p>
+          <p>Grupo de suporte no WhatsApp, <strong>encontros quinzenais por Zoom</strong> e encontro presencial no escritório pra esclarecimento de dúvidas.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
@@ -735,40 +786,85 @@
             <div class="lp-feature-icon"><i class="icon-base ti tabler-files"></i></div>
             <h5>Scripts e contratos</h5>
           </div>
-          <p>Modelos de oferta, contratos de compra e venda e planilhas de avaliação — testados e aprovados.</p>
+          <p>Scripts de abordagem e quebra de objeção, contrato de compra, modelo de procuração e <strong>planilha inteligente</strong> de teto da operação.</p>
         </div>
       </div>
 
       <div class="col-md-6 col-lg-4">
         <div class="lp-feature">
-          <span class="pill" style="background: rgba(9,210,232,.12); color: var(--md-1);">Plus</span>
+          <span class="pill" style="background: rgba(212,175,55,.12); color: var(--md-1);">Integrado</span>
           <div class="lp-feature-head">
             <div class="lp-feature-icon"><i class="icon-base ti tabler-shield-check"></i></div>
-            <h5>Limpa Nome integrado</h5>
+            <h5>Limpa Nome em 10 dias</h5>
           </div>
-          <p>Resolva pendências do CPF do vendedor (ou do seu) em até 45 dias — destrava negócios travados.</p>
+          <p>Liminar para limpar todas as restrições do CPF do cliente em até 10 dias. Destrava a negociação e protege quem vendeu o carro.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="lp-feature">
-          <span class="pill" style="background: rgba(9,210,232,.12); color: var(--md-1);">Plus</span>
+          <span class="pill" style="background: rgba(212,175,55,.12); color: var(--md-1);">Integrado</span>
+          <div class="lp-feature-head">
+            <div class="lp-feature-icon"><i class="icon-base ti tabler-building-bank"></i></div>
+            <h5>Análise de bancos</h5>
+          </div>
+          <p>Catálogo dos bancos com <strong>taxa real de desconto por instituição</strong>. Você sabe antes de comprar se a dívida vai render.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature">
+          <span class="pill" style="background: rgba(212,175,55,.12); color: var(--md-1);">Integrado</span>
           <div class="lp-feature-head">
             <div class="lp-feature-icon"><i class="icon-base ti tabler-truck"></i></div>
             <h5>Rede de guincho</h5>
           </div>
-          <p>Parceiros em todo o Brasil pra remover o veículo comprado com segurança e custo baixo.</p>
+          <p>Parceiros em todo o Brasil pra remover o veículo logo após o fechamento, protegendo o ativo de bloqueios ou retomada relâmpago.</p>
         </div>
       </div>
-      <div class="col-md-6 col-lg-4">
-        <div class="lp-feature">
-          <span class="pill" style="background: rgba(9,210,232,.12); color: var(--md-1);">Plus</span>
-          <div class="lp-feature-head">
-            <div class="lp-feature-icon"><i class="icon-base ti tabler-users"></i></div>
-            <h5>CRM de oportunidades</h5>
-          </div>
-          <p>Organize seus contatos, negociações em andamento e fechamentos — tudo em um painel só.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BANCOS ============ -->
+<section class="lp-section lp-bg-alt">
+  <div class="container" style="max-width: 1100px;">
+    <div class="text-center mb-5">
+      <span class="lp-tag">Análise estratégica</span>
+      <h2 class="lp-section-title">O banco define seu lucro</h2>
+      <p class="lp-section-sub mt-3">Em 9 anos de operação, descobrimos: <strong>o lucro está na negociação da dívida, não só no carro</strong>. Cada banco se comporta de um jeito, e isso muda a viabilidade da operação.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-6">
+        <div class="lp-compare-side good">
+          <h4><i class="icon-base ti tabler-thumb-up text-success me-2"></i> Bancos favoráveis à operação</h4>
+          <p class="text-muted small mb-3">Maior volume, mais flexibilidade, descontos de até 90% no saldo devedor.</p>
+          <ul>
+            <li><i class="icon-base ti tabler-check"></i> PAN, Santander, Aymoré</li>
+            <li><i class="icon-base ti tabler-check"></i> Itaú, Bradesco</li>
+            <li><i class="icon-base ti tabler-check"></i> Digimais, BV</li>
+            <li><i class="icon-base ti tabler-check"></i> Daycoval, Safra</li>
+          </ul>
         </div>
       </div>
+      <div class="col-md-6">
+        <div class="lp-compare-side bad">
+          <h4><i class="icon-base ti tabler-alert-octagon text-danger me-2"></i> Bancos rígidos (evitar ou precificar)</h4>
+          <p class="text-muted small mb-3">Política dura, menos margem, processo mais demorado. Só entram se o desconto inicial compensar.</p>
+          <ul>
+            <li><i class="icon-base ti tabler-x"></i> Omni, Porto Seguro</li>
+            <li><i class="icon-base ti tabler-x"></i> Volvo, Toyota, Honda</li>
+            <li><i class="icon-base ti tabler-x"></i> C6, Creditas</li>
+            <li><i class="icon-base ti tabler-x"></i> Hyundai, Yamaha, GM</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5">
+      <p class="mb-0" style="font-size: 1.05rem;">
+        <i class="icon-base ti tabler-quote text-warning"></i>
+        <em>"Quem não analisa o banco, assume risco. Quem entende o banco, <strong>controla o lucro</strong>."</em>
+      </p>
     </div>
   </div>
 </section>
@@ -789,12 +885,12 @@
   }
 @endphp
 <!-- ============ PLANOS ============ -->
-<section id="planos" class="lp-section lp-bg-alt">
+<section id="planos" class="lp-section">
   <div class="container">
     <div class="text-center mb-5">
-      <span class="lp-tag">Planos</span>
-      <h2 class="lp-section-title">Quanto custa começar a comprar bem?</h2>
-      <p class="lp-section-sub mt-3">O investimento se paga na primeira negociação. Sem fidelidade — cancele quando quiser.</p>
+      <span class="lp-tag">Dois caminhos</span>
+      <h2 class="lp-section-title">Comece pelo curso ou entre direto na sociedade</h2>
+      <p class="lp-section-sub mt-3"><strong>Formação do Operador</strong> para quem quer dominar o método e operar por conta. <strong>Sociedade Estratégica</strong> para quem quer entrar já com estrutura, suporte direto e operação rodando.</p>
     </div>
 
     @if ($recorrenciasDisponiveis->count() > 1)
@@ -836,44 +932,44 @@
 @endif
 
 <!-- ============ DEPOIMENTOS ============ -->
-<section class="lp-section">
+<section class="lp-section lp-bg-alt">
   <div class="container">
     <div class="text-center mb-5">
       <span class="lp-tag">Histórias reais</span>
-      <h2 class="lp-section-title">Eles compraram bem antes do leilão</h2>
+      <h2 class="lp-section-title">Operações que aconteceram com o método</h2>
     </div>
 
     <div class="row g-4">
       <div class="col-md-4">
         <div class="lp-testimonial">
-          <span class="saving">Comprou R$ 48k · Tab. R$ 95k</span>
+          <span class="saving">FIPE 95k · Comprou 22k · Lucro 38k</span>
           <div class="text-warning mb-2"><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i></div>
-          <p>"Sempre comprei carro pra revender pagando perto da tabela. Com o método peguei um Civic pela metade — revendi em 20 dias e tirei R$ 38 mil de lucro líquido."</p>
+          <p>"Civic de um cliente Santander prestes a ter o veículo retomado. Assumi a dívida, negociei com o banco e revendi por 60 mil em 20 dias. R$ 38 mil líquidos na operação."</p>
           <div class="d-flex align-items-center gap-3 mt-3">
             <span class="lp-avatar">JC</span>
-            <div><strong class="d-block">Juliano Cardoso</strong><small class="text-muted">Curitiba · PR · Investidor</small></div>
+            <div><strong class="d-block">Juliano Cardoso</strong><small class="text-muted">Curitiba · PR · Operador</small></div>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="lp-testimonial">
-          <span class="saving">3 carros em 6 meses</span>
+          <span class="saving">3 operações em 6 meses · Frota própria</span>
           <div class="text-warning mb-2"><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i></div>
-          <p>"Comecei como hobby, virou renda principal. Os scripts de abordagem fazem toda diferença — o dono cede porque entende que ganha ao evitar o leilão."</p>
+          <p>"Os scripts de quebra de objeção mudam o jogo. Quando o cliente entende que vai sair sem dívida e com nome limpo, ele cede. Hoje tenho 3 carros alugados gerando recorrência."</p>
           <div class="d-flex align-items-center gap-3 mt-3">
             <span class="lp-avatar">AS</span>
-            <div><strong class="d-block">Ana Souza</strong><small class="text-muted">Salvador · BA · Revendedora</small></div>
+            <div><strong class="d-block">Ana Souza</strong><small class="text-muted">Salvador · BA · Sociedade</small></div>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="lp-testimonial">
-          <span class="saving">Economizou R$ 41.000</span>
+          <span class="saving">Compass · 12 boletos vendidos · Recorrência</span>
           <div class="text-warning mb-2"><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i><i class="icon-base ti tabler-star-filled"></i></div>
-          <p>"Queria uma SUV mas tava cara demais. Pelo método achei um Compass com pendência simples, paguei o limpa nome do dono e fechei tudo regularizado."</p>
+          <p>"Vendi por financiamento próprio: 30% de entrada (já cobriu o que paguei) e 60 boletos de R$ 1.450. É renda passiva por 5 anos, só com um carro. Já estou montando o segundo."</p>
           <div class="d-flex align-items-center gap-3 mt-3">
             <span class="lp-avatar">RM</span>
-            <div><strong class="d-block">Ricardo Martins</strong><small class="text-muted">São Paulo · SP · Uso próprio</small></div>
+            <div><strong class="d-block">Ricardo Martins</strong><small class="text-muted">São Paulo · SP · Operador</small></div>
           </div>
         </div>
       </div>
@@ -882,72 +978,82 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section id="faq" class="lp-section lp-bg-alt">
+<section id="faq" class="lp-section">
   <div class="container" style="max-width: 820px;">
     <div class="text-center mb-5">
       <span class="lp-tag">Perguntas frequentes</span>
-      <h2 class="lp-section-title">Suas dúvidas, respondidas</h2>
+      <h2 class="lp-section-title">Tudo que você precisa entender antes de operar</h2>
     </div>
 
     <div class="accordion lp-faq" id="faqAccordion">
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-            Preciso ter CNPJ ou loja pra usar o método?
+            Como assim "assumir a dívida" em vez de comprar o carro?
           </button>
         </h2>
         <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">Não. O método funciona pra pessoa física que queira economizar na compra do próprio veículo, montar uma frota ou começar a revender — sem precisar de loja ou CNPJ.</div>
+          <div class="accordion-body">O proprietário com financiamento atrasado está prestes a perder o veículo via busca e apreensão. Você paga a ele uma quantia (10% a 30% da FIPE) para assumir a posse do carro e a negociação da dívida com o banco. Tudo formalizado por <strong>contrato + procuração pública de amplos poderes</strong>. A partir daí, você fala com o banco e o cliente sai do problema.</div>
         </div>
       </div>
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-            E se o veículo tiver dívida ou pendência?
+            Quanto tempo até o veículo ser totalmente meu?
           </button>
         </h2>
         <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">É justamente o cenário do método: muitos veículos pré-leilão têm pendência. Ensinamos como avaliar se vale a pena, negociar o débito embutido no preço e usar o Limpa Nome integrado pra destravar a transferência.</div>
+          <div class="accordion-body">Mínimo de <strong>3 meses</strong>, podendo chegar a 24 meses dependendo do banco e da estratégia escolhida. A procuração pública permite que você opere e monetize o ativo já desde o primeiro dia: alugando, vendendo via financiamento próprio ou estruturando quitação futura, sem precisar esperar a transferência final.</div>
         </div>
       </div>
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-            É legalizado? Tem risco jurídico?
+            E o nome do cliente que vendeu? Fica sujo?
           </button>
         </h2>
         <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">Totalmente. A compra é uma operação regular entre proprietário e comprador, com contrato e transferência via Detran. O método cobre exatamente como blindar a operação juridicamente.</div>
+          <div class="accordion-body">Não. Em até <strong>10 dias</strong>, conseguimos limpar todas as restrições do CPF do cliente por meio de uma liminar. Esse é um dos pilares que faz o cliente aceitar a operação. A plataforma tem o módulo <strong>Limpa Nome</strong> integrado pra rodar isso pra cada caso.</div>
         </div>
       </div>
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-            Em quanto tempo fecho a primeira compra?
+            Por que o banco aceita até 90% de desconto na dívida?
           </button>
         </h2>
         <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">A média dos nossos alunos é <strong>15 dias</strong> entre começar o método e fechar a primeira negociação. Depende da sua disponibilidade e do quanto você aplica o conteúdo.</div>
+          <div class="accordion-body">Porque o banco prefere recuperar parte do valor a perder tudo. Com o tempo, o contrato entra em fase de recuperação de crédito, o custo de cobrança sobe e a inadimplência vira oportunidade de negociação. Quem sabe abordar (e tem procuração em mãos), <strong>transforma dívida em lucro</strong>.</div>
         </div>
       </div>
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-            Qual o investimento médio pra começar?
+            É legalizado? Tem risco jurídico?
           </button>
         </h2>
         <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">Depende do veículo que você quer. O método ensina a achar oportunidades em todas as faixas de preço, de populares até SUVs premium. O importante é o desconto sobre o mercado, não o tíquete.</div>
+          <div class="accordion-body">Sim, totalmente. Toda operação roda em cima de três pilares jurídicos: <strong>contrato registrado</strong> (define direitos e deveres das partes), <strong>laudo cautelar</strong> (valida originalidade e procedência do veículo) e <strong>procuração pública de amplos poderes</strong> (te autoriza a negociar com o banco). Sem esses três, a operação não avança.</div>
         </div>
       </div>
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
-            Posso cancelar a assinatura?
+            Preciso de capital alto para começar?
           </button>
         </h2>
         <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-          <div class="accordion-body">A qualquer momento, sem multa, direto pelo painel. Sem fidelidade, sem letra miúda.</div>
+          <div class="accordion-body">Não. O método ensina a operar com tíquetes variados, de populares a premium. Como o preço de entrada é uma fração da FIPE (10% a 30%), o capital inicial pode ser bem menor do que o de uma compra tradicional. Além disso, o financiamento próprio devolve o capital já na entrada da revenda.</div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">
+            Qual a diferença entre o curso e a sociedade?
+          </button>
+        </h2>
+        <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body"><strong>Formação do Operador (curso):</strong> você aprende o método completo, recebe scripts e contratos, participa de mentoria em grupo (WhatsApp + Zoom quinzenal + presencial) e opera por conta própria. <strong>Sociedade Estratégica:</strong> você entra em uma unidade ou escritório com operação já rodando, suporte direto, know-how aplicado e participa do negócio. Caminho para escala mais acelerada.</div>
         </div>
       </div>
     </div>
@@ -955,14 +1061,14 @@
 </section>
 
 <!-- ============ CTA FINAL ============ -->
-<section class="lp-section">
+<section class="lp-section lp-bg-alt">
   <div class="container">
     <div class="lp-cta">
-      <h3>O próximo carro pelo preço de leilão é seu.</h3>
-      <p>Em menos de 1 minuto você está dentro. Aulas, mentoria, scripts e ferramentas — tudo pronto pra você fechar o primeiro negócio em 15 dias.</p>
+      <h3>Quem entra antes, lucra mais.</h3>
+      <p>Enquanto muitos ainda disputam carro em leilão, existem operadores entrando antes, comprando melhor, negociando melhor e lucrando muito mais. A única pergunta é: <strong>você vai assistir ou vai fazer parte?</strong></p>
       <div class="d-flex flex-wrap gap-3 justify-content-center">
         <a href="{{ route('register') }}" class="lp-btn lp-btn-white">
-          <i class="icon-base ti tabler-target"></i> Quero aprender o método
+          <i class="icon-base ti tabler-target"></i> Quero operar
         </a>
         <a href="{{ route('login') }}" class="lp-btn lp-btn-dark">
           Já tenho conta
@@ -980,7 +1086,7 @@
         <div class="mb-3">
           <img src="{{ asset('assets/img/branding/logo_transparente.png') }}" alt="{{ config('variables.templateName', 'MetodoCal') }}" class="lp-logo-img">
         </div>
-        <p class="small mb-0 lp-footer-desc">O método que ensina a comprar veículos antes do leilão — pagando preço de oportunidade, com segurança jurídica e ferramentas integradas.</p>
+        <p class="small mb-0 lp-footer-desc">Método CAL · Comprando antes do leilão. Compra com margem, formalização jurídica e três frentes de monetização, em uma única plataforma de operação.</p>
       </div>
       <div class="col-md-2 offset-md-2">
         <h6>O método</h6>

@@ -17,7 +17,7 @@
       </div>
       <div class="user-profile-header d-flex flex-column flex-lg-row text-sm-start text-center mb-5">
         <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
-          <img src="{{ asset('assets/img/avatars/1.png') }}" alt="user image" class="d-block h-auto ms-0 ms-sm-6 rounded user-profile-img" />
+          <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="user image" class="d-block h-auto ms-0 ms-sm-6 rounded user-profile-img" />
         </div>
         <div class="flex-grow-1 mt-3 mt-lg-5">
           <div class="d-flex align-items-md-end align-items-sm-start align-items-center justify-content-md-between justify-content-start mx-5 flex-md-row flex-column gap-4">
@@ -200,7 +200,7 @@
                 <img class="rounded-circle" src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="John Doe" class="avatar avatar-sm pull-up">
-                <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" />
+                <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Alan Walker" class="avatar avatar-sm pull-up me-3">
                 <img class="rounded-circle" src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" />

@@ -32,7 +32,7 @@
       </div>
       <div class="user-profile-header d-flex flex-column flex-lg-row text-sm-start text-center mb-5">
         <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
-          <img src="{{ asset('assets/img/avatars/1.png') }}" alt="user image"
+          <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="user image"
             class="d-block h-auto ms-0 ms-sm-6 rounded user-profile-img" />
         </div>
         <div class="flex-grow-1 mt-3 mt-lg-5">
@@ -172,7 +172,7 @@
               <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
                 <div class="d-flex flex-wrap align-items-center mb-50">
                   <div class="avatar avatar-sm me-2">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                   </div>
                   <div>
                     <p class="mb-0 small fw-medium">Lester McCarthy (Client)</p>
@@ -195,7 +195,7 @@
                   <div class="d-flex flex-wrap align-items-center">
                     <ul class="list-unstyled users-list d-flex align-items-center avatar-group m-0 me-2">
                       <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Vinnie Mostowy" class="avatar pull-up">
-                        <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" />
+                        <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" />
                       </li>
                       <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Allen Rieske" class="avatar pull-up">
                         <img class="rounded-circle" src="{{ asset('assets/img/avatars/4.png') }}" alt="Avatar" />

@@ -27,7 +27,7 @@
       @if ($fatura->gateway_payment_id)
         Solicita estorno via Mercado Pago.
       @else
-        Sem gateway — registra estorno manual.
+        Sem gateway: registra estorno manual.
       @endif
     </small>
   @endif

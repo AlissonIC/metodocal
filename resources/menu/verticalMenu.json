@@ -37,10 +37,10 @@
       "role": "admin|mentorado|licenciado"
     },
     {
-      "url": "painel/limpa-nome",
-      "name": "Limpa Nome",
+      "url": "painel/processos",
+      "name": "Processos",
       "icon": "menu-icon icon-base ti tabler-id",
-      "slug": "limpa-nome.index",
+      "slug": "processos.index",
       "role": "admin|mentorado|licenciado"
     },
 
@@ -85,11 +85,22 @@
 
     { "menuHeader": "Administração" },
     {
-      "url": "painel/usuarios",
-      "name": "Usuários",
+      "name": "Pessoas",
       "icon": "menu-icon icon-base ti tabler-users",
-      "slug": "admin.users",
-      "role": "admin"
+      "slug": ["admin.users", "admin.users.create", "admin.users.edit", "admin.compradores", "admin.compradores.create", "admin.compradores.edit"],
+      "role": "admin",
+      "submenu": [
+        {
+          "url": "painel/usuarios",
+          "name": "Usuários do sistema",
+          "slug": ["admin.users", "admin.users.create", "admin.users.edit"]
+        },
+        {
+          "url": "painel/admin/compradores",
+          "name": "Compradores",
+          "slug": ["admin.compradores", "admin.compradores.create", "admin.compradores.edit"]
+        }
+      ]
     },
     {
       "url": "painel/planos",
@@ -99,39 +110,82 @@
       "role": "admin"
     },
     {
-      "url": "painel/sessoes",
-      "name": "Sessões",
+      "url": "painel/servicos",
+      "name": "Serviços",
+      "icon": "menu-icon icon-base ti tabler-briefcase",
+      "slug": "admin.servicos",
+      "role": "admin"
+    },
+    {
+      "url": "painel/bancos",
+      "name": "Bancos",
+      "icon": "menu-icon icon-base ti tabler-building-bank",
+      "slug": "admin.bancos",
+      "role": "admin"
+    },
+    {
+      "name": "Agenda",
       "icon": "menu-icon icon-base ti tabler-calendar-event",
-      "slug": "admin.sessoes",
-      "role": "admin"
+      "slug": ["admin.sessoes", "admin.sessoes.calendario", "admin.sessoes.create", "admin.sessoes.edit"],
+      "role": "admin",
+      "submenu": [
+        {
+          "url": "painel/sessoes/calendario",
+          "name": "Calendário",
+          "slug": "admin.sessoes.calendario"
+        },
+        {
+          "url": "painel/sessoes",
+          "name": "Lista de eventos",
+          "slug": ["admin.sessoes", "admin.sessoes.edit"]
+        },
+        {
+          "url": "painel/sessoes/novo",
+          "name": "Novo evento",
+          "slug": "admin.sessoes.create"
+        }
+      ]
     },
     {
-      "url": "painel/conteudos-admin",
-      "name": "Conteúdos",
-      "icon": "menu-icon icon-base ti tabler-book-2",
-      "slug": "admin.conteudos",
-      "role": "admin"
+      "name": "Biblioteca",
+      "icon": "menu-icon icon-base ti tabler-books",
+      "slug": ["admin.conteudos", "admin.conteudos.create", "admin.conteudos.edit", "admin.materiais", "admin.materiais.create", "admin.materiais.edit"],
+      "role": "admin",
+      "submenu": [
+        {
+          "url": "painel/admin/conteudos",
+          "name": "Conteúdos",
+          "slug": ["admin.conteudos", "admin.conteudos.create", "admin.conteudos.edit"]
+        },
+        {
+          "url": "painel/admin/materiais",
+          "name": "Materiais",
+          "slug": ["admin.materiais", "admin.materiais.create", "admin.materiais.edit"]
+        }
+      ]
     },
     {
-      "url": "painel/materiais-admin",
-      "name": "Materiais",
-      "icon": "menu-icon icon-base ti tabler-folder",
-      "slug": "admin.materiais",
-      "role": "admin"
-    },
-    {
-      "url": "painel/comissoes-admin",
-      "name": "Comissões",
-      "icon": "menu-icon icon-base ti tabler-coin",
-      "slug": "admin.comissoes",
-      "role": "admin"
-    },
-    {
-      "url": "painel/financeiro",
       "name": "Financeiro",
       "icon": "menu-icon icon-base ti tabler-cash-banknote",
-      "slug": "admin.financeiro",
-      "role": "admin"
+      "slug": ["admin.financeiro", "admin.financeiro.show", "admin.financeiro.relatorios", "admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit"],
+      "role": "admin",
+      "submenu": [
+        {
+          "url": "painel/financeiro/relatorios",
+          "name": "Relatórios",
+          "slug": "admin.financeiro.relatorios"
+        },
+        {
+          "url": "painel/financeiro",
+          "name": "Faturas",
+          "slug": ["admin.financeiro", "admin.financeiro.show"]
+        },
+        {
+          "url": "painel/admin/comissoes",
+          "name": "Comissões",
+          "slug": ["admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit"]
+        }
+      ]
     },
     {
       "url": "painel/notificacoes",

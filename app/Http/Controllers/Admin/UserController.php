@@ -30,25 +30,63 @@ class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         $query = User::query()
-            ->with(['roles:id,name', 'currentSubscription.plan:id,nome']);
+            ->with(['roles:id,name', 'currentSubscription.plan:id,nome,tipo,preco,recorrencia'])
+            ->latest('created_at'); // newest first by default
+
+        // ---- Filtros customizados ----
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+        if ($role = $request->query('role')) {
+            $query->whereHas('roles', fn ($r) => $r->where('name', $role));
+        }
+        if ($planId = $request->query('plan_id')) {
+            $query->whereHas('currentSubscription', fn ($s) => $s->where('plan_id', $planId));
+        }
 
         return DataTables::eloquent($query)
             ->addColumn('role', function (User $u) {
-                return $u->getRoleNames()->first() ?? '—';
+                $role = $u->getRoleNames()->first() ?? '—';
+                $colors = ['admin' => 'primary', 'mentorado' => 'info', 'licenciado' => 'warning'];
+                $c = $colors[$role] ?? 'secondary';
+                return '<span class="badge bg-label-' . $c . '">' . ucfirst($role) . '</span>';
             })
             ->addColumn('plano', function (User $u) {
-                return $u->currentSubscription?->plan?->nome ?? '—';
+                return $u->currentSubscription?->plan?->nome ?? '<span class="text-muted">—</span>';
             })
             ->addColumn('status_badge', function (User $u) {
                 $map = ['ativo' => 'success', 'inativo' => 'secondary', 'bloqueado' => 'danger'];
                 $color = $map[$u->status] ?? 'secondary';
                 return '<span class="badge bg-label-' . $color . '">' . ucfirst($u->status) . '</span>';
             })
+            ->addColumn('criado_em', fn (User $u) => $u->created_at?->format('d/m/Y'))
             ->addColumn('actions', fn (User $u) => $u->id)
+            // Dados completos pra modal de detalhes
+            ->addColumn('details', function (User $u) {
+                $sub = $u->currentSubscription;
+                return [
+                    'name'              => $u->name,
+                    'email'             => $u->email,
+                    'phone'             => $u->phone,
+                    'cpf_cnpj'          => $u->cpf_cnpj,
+                    'role'              => $u->getRoleNames()->first(),
+                    'status'            => $u->status,
+                    'created_at'        => $u->created_at?->format('d/m/Y H:i'),
+                    'email_verified_at' => $u->email_verified_at?->format('d/m/Y H:i'),
+                    'last_login_at'     => $u->last_login_at?->format('d/m/Y H:i'),
+                    'plan_nome'         => $sub?->plan?->nome,
+                    'plan_tipo'         => $sub?->plan?->tipo,
+                    'plan_preco'        => $sub?->plan?->preco,
+                    'plan_recorrencia'  => $sub?->plan?->recorrencia,
+                    'sub_status'        => $sub?->status,
+                    'sub_started_at'    => $sub?->started_at?->format('d/m/Y'),
+                    'sub_ends_at'       => $sub?->ends_at?->format('d/m/Y'),
+                ];
+            })
             ->filterColumn('role', function ($q, $kw) {
                 $q->whereHas('roles', fn ($r) => $r->where('name', 'like', "%$kw%"));
             })
-            ->rawColumns(['status_badge'])
+            ->rawColumns(['role', 'plano', 'status_badge'])
             ->toJson();
     }
 

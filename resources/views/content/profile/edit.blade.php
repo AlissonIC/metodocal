@@ -31,7 +31,7 @@
       <div class="card-body">
         <div class="d-flex align-items-start align-items-sm-center gap-6 pb-4 border-bottom">
           @php
-            $avatarUrl = $user->avatar ? \Illuminate\Support\Facades\Storage::url($user->avatar) : asset('assets/img/avatars/1.png');
+            $avatarUrl = $user->avatar ? \Illuminate\Support\Facades\Storage::url($user->avatar) : asset('assets/img/avatars/1.jpg');
           @endphp
           <img src="{{ $avatarUrl }}" alt="user-avatar" class="d-block w-px-100 h-px-100 rounded" id="uploadedAvatar">
           <div class="button-wrapper">

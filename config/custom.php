@@ -8,7 +8,7 @@
 return [
   'custom' => [
     'myLayout' => 'vertical', // Layout type: 'vertical' (default), 'horizontal'
-    'primaryColor' => '#007da8', // Cor primária da marca metodocal (#007da8 → #09d2e8)
+    'primaryColor' => '#B8860B', // Cor primária da marca metodocal (#B8860B → #D4AF37 — dourado)
     'myTheme' => 'light', // Theme options: 'light' (default), 'dark', 'system'
     'mySkins' => 'default', // Skin options: 'default', 'bordered'
     'hasSemiDark' => false, // Semi-dark mode: true/false (false by default)

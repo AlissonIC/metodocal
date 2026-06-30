@@ -23,9 +23,16 @@ class NotificacaoController extends Controller
         ]);
     }
 
-    public function datatable(): JsonResponse
+    public function datatable(\Illuminate\Http\Request $request): JsonResponse
     {
-        $query = QueuedNotification::query()->with('user:id,name');
+        $query = QueuedNotification::query()
+            ->with('user:id,name')
+            ->latest('created_at');
+
+        if ($s = $request->query('status'))  $query->where('status', $s);
+        if ($c = $request->query('channel')) $query->where('channel', $c);
+        if ($de = $request->query('de'))     $query->whereDate('created_at', '>=', $de);
+        if ($ate = $request->query('ate'))   $query->whereDate('created_at', '<=', $ate);
 
         $channelIcons = [
             'email' => ['icon' => 'mail', 'color' => 'primary'],
@@ -81,6 +88,20 @@ class NotificacaoController extends Controller
                 }
                 return $badge;
             })
+            ->addColumn('actions', fn (QueuedNotification $n) => $n->id)
+            ->addColumn('details', fn (QueuedNotification $n) => [
+                'channel'         => $n->channel,
+                'to'              => $n->to,
+                'user_name'       => $n->user?->name,
+                'subject'         => $n->subject,
+                'body'            => $n->body,
+                'status'          => $n->status,
+                'attempts'        => $n->attempts,
+                'last_error'      => $n->last_error,
+                'next_attempt_at' => $n->next_attempt_at?->format('d/m/Y H:i'),
+                'sent_at'         => $n->sent_at?->format('d/m/Y H:i'),
+                'created_at'      => $n->created_at->format('d/m/Y H:i'),
+            ])
             ->rawColumns(['channel_cell', 'destinatario_cell', 'subject_cell', 'data_cell', 'status_badge'])
             ->toJson();
     }

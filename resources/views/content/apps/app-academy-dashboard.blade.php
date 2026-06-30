@@ -218,7 +218,7 @@
         <div class="d-flex justify-content-between align-items-center mb-6">
           <div class="d-flex align-items-center">
             <div class="avatar avatar me-4">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div>
               <div>

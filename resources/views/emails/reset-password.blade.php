@@ -20,6 +20,6 @@
 
   <hr style="border:none; border-top:1px solid #e9ecef; margin:24px 0;">
   <p style="margin:0; font-size:13px; color:#6c757d;">
-    Se você não solicitou a redefinição da sua senha, ignore esta mensagem — sua conta continua segura.
+    Se você não solicitou a redefinição da sua senha, ignore esta mensagem. Sua conta continua segura.
   </p>
 @endsection

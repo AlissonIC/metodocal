@@ -228,7 +228,7 @@ $configData = Helper::appClasses();
                       </div>
                       <div class="d-flex align-items-center">
                         <div class="avatar me-3 avatar-sm">
-                          <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                          <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                         </div>
                         <div>
                           <h6 class="mb-0">Cecilia Payne</h6>
@@ -368,7 +368,7 @@ $configData = Helper::appClasses();
                       </div>
                       <div class="d-flex align-items-center">
                         <div class="avatar me-3 avatar-sm">
-                          <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+                          <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
                         </div>
                         <div>
                           <h6 class="mb-0">Sara Smith</h6>

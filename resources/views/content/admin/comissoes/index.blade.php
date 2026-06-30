@@ -3,13 +3,33 @@
 @section('title', 'Comissões')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+  'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+])
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+@vite([
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+  'resources/assets/vendor/libs/flatpickr/flatpickr.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+])
+@endsection
+
+@section('page-style')
+<style>
+  @media (max-width: 575.98px) {
+    .dt-responsive td, .dt-responsive th { font-size: .82rem; }
+    .dt-responsive .badge { font-size: .68rem; }
+  }
+  table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+    background-color: var(--bs-primary);
+    border: 0;
+  }
+</style>
 @endsection
 
 @section('content')
@@ -28,18 +48,54 @@
     <div class="card-body pb-0"><div class="alert alert-success mb-0">{{ session('status') }}</div></div>
   @endif
 
+  <div class="card-body filtros-bar">
+    <div class="row g-2 g-md-3">
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Tipo</label>
+        <select id="filtro-tipo" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="a_receber">A receber</option>
+          <option value="a_pagar">A pagar</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Status</label>
+        <select id="filtro-status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="paga">Paga</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1">Data de</label>
+        <input type="text" id="filtro-de" class="form-control form-control-sm flatpickr-filtro" placeholder="dd/mm/aaaa">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1">Data até</label>
+        <input type="text" id="filtro-ate" class="form-control form-control-sm flatpickr-filtro" placeholder="dd/mm/aaaa">
+      </div>
+      <div class="col-12 col-md-2 d-flex align-items-end">
+        <button id="btn-limpar-filtros" class="btn btn-label-secondary btn-sm w-100" title="Limpar filtros">
+          <i class="icon-base ti tabler-eraser"></i>
+          <span class="ms-1">Limpar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="card-datatable">
-    <table class="datatables-comissoes-admin table border-top">
+    <table class="datatables-comissoes-admin table border-top dt-responsive" style="width:100%">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Licenciado</th>
-          <th>Cliente</th>
+          <th>Usuário</th>
+          <th>Tipo</th>
           <th>Descrição</th>
+          <th>Processo</th>
           <th>Data</th>
           <th>Valor</th>
           <th>Status</th>
-          <th>Ações</th>
+          <th class="text-end">Ações</th>
         </tr>
       </thead>
     </table>
@@ -51,27 +107,47 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
-  const baseUrl = "{{ url('/painel/comissoes-admin') }}";
+  const baseUrl = "{{ url('/painel/admin/comissoes') }}";
+
+  flatpickr('.flatpickr-filtro', {
+    altInput: true,
+    altFormat: 'd/m/Y',
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+  });
 
   const dt = new DataTable('.datatables-comissoes-admin', {
     processing: true,
     serverSide: true,
-    ajax: { url: baseUrl + '/datatable' },
+    responsive: true,
+    ajax: {
+      url: baseUrl + '/datatable',
+      data: function (d) {
+        d.tipo     = document.getElementById('filtro-tipo').value;
+        d.status   = document.getElementById('filtro-status').value;
+        d.data_de  = document.getElementById('filtro-de').value;
+        d.data_ate = document.getElementById('filtro-ate').value;
+      },
+    },
     columns: [
-      { data: 'id' },
-      { data: 'licenciado_nome' },
-      { data: 'cliente_nome' },
-      { data: 'descricao' },
-      { data: 'data_formatada' },
-      { data: 'valor_formatado' },
-      { data: 'status_badge' },
+      { data: 'licenciado_nome', responsivePriority: 1 },
+      { data: 'tipo_badge',      responsivePriority: 2 },
+      { data: 'descricao',       responsivePriority: 5 },
+      { data: 'processo_label',  responsivePriority: 4, className: 'text-nowrap' },
+      { data: 'data_formatada',  responsivePriority: 4, className: 'text-nowrap' },
+      { data: 'valor_formatado', responsivePriority: 1, className: 'text-nowrap fw-semibold' },
+      { data: 'status_badge',    responsivePriority: 2 },
       {
         data: 'id',
+        responsivePriority: 1,
         orderable: false,
         searchable: false,
+        className: 'text-end text-nowrap',
         render: id => `
-          <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon"><i class="icon-base ti tabler-edit icon-22px"></i></a>
-          <button class="btn btn-sm btn-icon delete-com text-danger" data-id="${id}"><i class="icon-base ti tabler-trash icon-22px"></i></button>`
+          <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+            <a href="${baseUrl}/${id}/editar" class="btn btn-sm btn-icon" title="Editar"><i class="icon-base ti tabler-edit icon-22px"></i></a>
+            <button class="btn btn-sm btn-icon delete-com text-danger" data-id="${id}" title="Excluir"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+          </div>`
       }
     ],
     order: [[4, 'desc']],
@@ -90,6 +166,17 @@ document.addEventListener('DOMContentLoaded', function () {
       topStart: { features: [{ pageLength: { menu: [10, 25, 50] } }] },
       topEnd: { features: [{ search: { placeholder: 'Buscar comissão' } }] }
     }
+  });
+
+  ['filtro-tipo', 'filtro-status', 'filtro-de', 'filtro-ate'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => dt.draw());
+  });
+  document.getElementById('btn-limpar-filtros').addEventListener('click', () => {
+    document.getElementById('filtro-tipo').value = '';
+    document.getElementById('filtro-status').value = '';
+    document.getElementById('filtro-de')._flatpickr?.clear();
+    document.getElementById('filtro-ate')._flatpickr?.clear();
+    dt.draw();
   });
 
   document.addEventListener('click', function (e) {

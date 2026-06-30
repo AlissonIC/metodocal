@@ -217,7 +217,7 @@
                 </div>
                 <span class="ms-sm-3 me-4 d-sm-inline-block d-none"><i
                     class="email-list-item-bookmark icon-base ti tabler-star icon-md cursor-pointer ms-1"></i></span>
-                <img src="{{ asset('assets/img/avatars/1.png') }}" alt="user-avatar"
+                <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="user-avatar"
                   class="d-block flex-shrink-0 rounded-circle me-sm-2 me-0" height="32" width="32" />
                 <div class="email-list-item-content ms-2 ms-sm-0 me-2">
                   <span class="email-list-item-username me-2 text-heading">Chandler Bing</span>
@@ -710,7 +710,7 @@
         <div class="card email-card-last mx-sm-6 mx-3 mt-4">
           <div class="card-header d-flex justify-content-between align-items-center flex-wrap border-bottom">
             <div class="d-flex align-items-center mb-sm-0 mb-3">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="user-avatar"
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="user-avatar"
                 class="flex-shrink-0 rounded-circle me-4" height="38" width="38" />
               <div class="flex-grow-1 ms-1">
                 <h6 class="m-0 fw-normal">Chandler Bing</h6>

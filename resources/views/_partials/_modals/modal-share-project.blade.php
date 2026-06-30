@@ -22,7 +22,7 @@
       <ul class="p-0 m-0 mx-4 mx-md-0">
         <li class="d-flex flex-wrap mb-4">
           <div class="avatar me-4">
-            <img src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar" class="rounded-circle" />
+            <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar" class="rounded-circle" />
           </div>
           <div class="d-flex justify-content-between flex-grow-1">
             <div class="me-2">

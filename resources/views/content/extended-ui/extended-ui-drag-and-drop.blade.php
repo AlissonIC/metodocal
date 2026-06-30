@@ -69,7 +69,7 @@
         <h5 class="card-header">Images</h5>
         <div class="card-body">
           <div class="d-flex flex-wrap mb-4 gap-2" id="image-list-1">
-            <img class="rounded-circle drag-item cursor-move" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+            <img class="rounded-circle drag-item cursor-move" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
               height="48" width="48" />
             <img class="rounded-circle drag-item cursor-move" src="{{ asset('assets/img/avatars/2.png') }}" alt="avatar"
               height="48" width="48" />
@@ -112,7 +112,7 @@
               <ul class="list-group list-group-flush" id="pending-tasks">
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
                   <span>Buy products.</span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
@@ -142,7 +142,7 @@
               <ul class="list-group list-group-flush" id="completed-tasks">
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
                   <span>New icons set for an iOS app.</span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
@@ -184,7 +184,7 @@
               <ul class="list-group list-group-flush" id="clone-source-1">
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
                   <span>Buy products.</span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
@@ -214,7 +214,7 @@
               <ul class="list-group list-group-flush" id="clone-source-2">
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
                   <span>New icons set for an iOS app.</span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item drag-item cursor-move d-flex justify-content-between align-items-center">
@@ -259,7 +259,7 @@
                     <i class="drag-handle cursor-move icon-base ti tabler-menu-2 align-text-bottom"></i>
                     <span>Buy products</span>
                   </span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -304,7 +304,7 @@
                     <i class="drag-handle cursor-move icon-base ti tabler-menu-2 align-text-bottom"></i>
                     <span>New icons set for an iOS app</span>
                   </span>
-                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.png') }}" alt="avatar"
+                  <img class="rounded-circle" src="{{ asset('assets/img/avatars/1.jpg') }}" alt="avatar"
                     height="32" width="32" />
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center">

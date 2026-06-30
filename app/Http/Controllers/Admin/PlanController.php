@@ -29,7 +29,18 @@ class PlanController extends Controller
         $this->authorize('viewAny', Plan::class);
 
         $query = Plan::query()
-            ->withCount(['subscriptions as ativas_count' => fn ($q) => $q->where('status', 'ativa')]);
+            ->withCount(['subscriptions as ativas_count' => fn ($q) => $q->where('status', 'ativa')])
+            ->latest('created_at');
+
+        if ($tipo = $request->query('tipo')) {
+            $query->where('tipo', $tipo);
+        }
+        if ($rec = $request->query('recorrencia')) {
+            $query->where('recorrencia', $rec);
+        }
+        if ($request->filled('ativo')) {
+            $query->where('ativo', (bool) $request->query('ativo'));
+        }
 
         return DataTables::eloquent($query)
             ->addColumn('preco_formatado', fn (Plan $plan) => 'R$ ' . number_format((float) $plan->preco, 2, ',', '.'))
@@ -39,6 +50,17 @@ class PlanController extends Controller
                 ? '<span class="badge bg-label-success">Ativo</span>'
                 : '<span class="badge bg-label-secondary">Inativo</span>')
             ->addColumn('actions', fn (Plan $plan) => $plan->id)
+            ->addColumn('details', fn (Plan $plan) => [
+                'nome'             => $plan->nome,
+                'slug'             => $plan->slug,
+                'tipo'             => ucfirst($plan->tipo),
+                'preco_formatado'  => 'R$ ' . number_format((float) $plan->preco, 2, ',', '.'),
+                'recorrencia'      => ucfirst($plan->recorrencia),
+                'descricao'        => $plan->descricao,
+                'ativo'            => (bool) $plan->ativo,
+                'ativas_count'     => $plan->ativas_count,
+                'permissions'      => $plan->permissions ?? [],
+            ])
             ->rawColumns(['status_badge'])
             ->toJson();
     }

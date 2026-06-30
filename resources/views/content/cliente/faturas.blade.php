@@ -80,7 +80,9 @@
         @empty
           <tr>
             <td colspan="6" class="text-center text-muted py-5">
-              <i class="icon-base ti tabler-receipt-off icon-48px text-muted mb-3 d-block"></i>
+              <div class="mb-3">
+                <i class="icon-base ti tabler-receipt-off icon-48px text-muted"></i>
+              </div>
               {{ $temFiltro ? 'Nenhuma fatura encontrada com esses filtros.' : 'Você ainda não tem faturas.' }}
             </td>
           </tr>

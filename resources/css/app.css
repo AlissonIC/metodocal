@@ -1,15 +1,15 @@
 /* ============================================================================
    Tema metodocal — paleta de marca
-   Primária:   #007da8 (azul institucional)
-   Secundária: #09d2e8 (ciano destaque)
+   Primária:   #B8860B (dourado escuro)
+   Secundária: #D4AF37 (dourado brilhante)
    Neutros vêm do próprio Vuexy (escala de cinzas próximas a branco/preto).
    ============================================================================ */
 
 :root {
-  --md-brand-1: #007da8;
-  --md-brand-2: #09d2e8;
-  --md-brand-gradient: linear-gradient(135deg, #007da8 0%, #09d2e8 100%);
-  --md-brand-gradient-soft: linear-gradient(135deg, rgba(0, 125, 168, 0.10) 0%, rgba(9, 210, 232, 0.10) 100%);
+  --md-brand-1: #B8860B;
+  --md-brand-2: #D4AF37;
+  --md-brand-gradient: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%);
+  --md-brand-gradient-soft: linear-gradient(135deg, rgba(184, 134, 11, 0.10) 0%, rgba(212, 175, 55, 0.10) 100%);
 }
 
 /* ----------------------- Marca / Logo no menu lateral ---------------------- */
@@ -69,19 +69,202 @@ a:hover {
 }
 
 /* --------------------------- Realce sutil de "atual" no menu ------------- */
-.menu-vertical .menu-item.active > .menu-link {
-  background: var(--md-brand-gradient-soft);
-  color: var(--md-brand-1);
+/* Item folha ativo (sem submenu): destaque dourado completo com sombra. */
+.menu-vertical .menu-item.active > .menu-link:not(.menu-toggle) {
+  background: var(--md-brand-gradient-soft) !important;
+  color: var(--md-brand-1) !important;
+  font-weight: 600;
+  box-shadow: 0 .125rem .375rem 0 rgba(184, 134, 11, 0.30) !important;
+}
+.menu-vertical .menu-item.active > .menu-link:not(.menu-toggle) i {
+  color: var(--md-brand-1) !important;
+}
+
+/* Item PAI com submenu cujo filho está ativo: destaque bem mais leve, só
+   cor do ícone/texto e fundo transparente, sem sombra dourada que poluía. */
+.menu-vertical .menu-item.active > .menu-link.menu-toggle,
+.menu-vertical .menu-item.open > .menu-link.menu-toggle {
+  background: transparent !important;
+  color: var(--md-brand-1) !important;
+  font-weight: 600;
+  box-shadow: none !important;
+}
+.menu-vertical .menu-item.active > .menu-link.menu-toggle i,
+.menu-vertical .menu-item.open > .menu-link.menu-toggle i {
+  color: var(--md-brand-1) !important;
+}
+
+/* Horizontal: mantém o realce no toggle ativo (sem o efeito de sub). */
+.menu-horizontal .menu-inner > .menu-item.active > .menu-link.menu-toggle {
+  background: var(--md-brand-gradient-soft) !important;
+  color: var(--md-brand-1) !important;
   font-weight: 600;
 }
-.menu-vertical .menu-item.active > .menu-link i {
+
+/* --------------------------- Rodapé (links do painel) ------------------- */
+.footer-link {
   color: var(--md-brand-1);
+}
+.footer-link:hover,
+.footer-link:focus {
+  color: var(--md-brand-2);
+}
+
+/* --------------------------- Sombra geral do menu lateral --------------- */
+/* O Vuexy aplica menu-box-shadow via rgba(black,.12) — neutro. Mas se algum
+   skin pintar com primary-rgb, garantimos que o tom seja dourado. */
+.layout-menu {
+  --bs-primary-rgb: 184, 134, 11;
+}
+
+/* ============================================================================
+   Select2 dentro de .filtros-bar — alinha altura/tipografia com form-control-sm
+   para ficar consistente com <input type="date"> e <select.form-select-sm> ao
+   lado. Sem isso, o Select2 fica mais alto que os vizinhos.
+   ============================================================================ */
+.filtros-bar .select2-container--default .select2-selection--single {
+  height: calc(1.5em + 0.5rem + 2px);
+  border-color: var(--bs-border-color);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-form-control-bg, #fff);
+  font-size: 0.812rem;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+}
+.filtros-bar .select2-container--default .select2-selection--single .select2-selection__rendered {
+  padding: 0;
+  line-height: 1.5;
+  color: var(--bs-body-color);
+}
+.filtros-bar .select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: var(--bs-secondary-color);
+}
+.filtros-bar .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 100%;
+  top: 0;
+  right: 0.25rem;
+}
+.filtros-bar .select2-container--default .select2-selection--single .select2-selection__clear {
+  margin-right: 1.25rem;
+  line-height: 1.5;
+}
+.filtros-bar .select2-container--default.select2-container--focus .select2-selection--single,
+.filtros-bar .select2-container--default.select2-container--open .select2-selection--single {
+  border-color: var(--md-brand-1);
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.15);
 }
 
 /* --------------------------- Barra de progresso primary ----------------- */
 .progress-bar.bg-primary,
 .progress-bar:not([class*="bg-"]) {
   background: var(--md-brand-gradient) !important;
+}
+
+/* --------------------------- Botão outline primary ---------------------- */
+.btn-outline-primary {
+  color: var(--md-brand-1);
+  border-color: var(--md-brand-1);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.btn-outline-primary:not(:disabled):not(.disabled):active,
+.show > .btn-outline-primary.dropdown-toggle {
+  background: var(--md-brand-gradient);
+  border-color: var(--md-brand-1);
+  color: #fff;
+}
+
+/* --------------------------- Label / soft primary ----------------------- */
+.btn-label-primary,
+.bg-label-primary {
+  background-color: rgba(184, 134, 11, 0.12) !important;
+  color: var(--md-brand-1) !important;
+}
+.btn-label-primary:hover {
+  background-color: rgba(184, 134, 11, 0.20) !important;
+  color: var(--md-brand-1) !important;
+}
+
+/* --------------------------- Texto primary ------------------------------ */
+.text-primary {
+  color: var(--md-brand-1) !important;
+}
+
+/* --------------------------- Foco em inputs / botões -------------------- */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+.btn:focus,
+.btn.focus,
+.btn-check:focus + .btn,
+.btn-check:checked + .btn {
+  border-color: var(--md-brand-1);
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.18);
+}
+
+/* --------------------------- Checkbox / radio marcados ------------------ */
+.form-check-input:checked {
+  background-color: var(--md-brand-1);
+  border-color: var(--md-brand-1);
+}
+.form-check-input:focus {
+  border-color: var(--md-brand-1);
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.18);
+}
+.form-switch .form-check-input:checked {
+  background-color: var(--md-brand-1);
+  border-color: var(--md-brand-1);
+}
+
+/* --------------------------- Alert primary ------------------------------ */
+.alert-primary {
+  color: var(--md-brand-1);
+  background-color: rgba(184, 134, 11, 0.10);
+  border-color: rgba(184, 134, 11, 0.30);
+}
+
+/* --------------------------- Paginação ativa ---------------------------- */
+.page-item.active .page-link,
+.page-link.active {
+  background: var(--md-brand-gradient);
+  border-color: var(--md-brand-1);
+  color: #fff;
+}
+.page-link {
+  color: var(--md-brand-1);
+}
+.page-link:hover {
+  color: var(--md-brand-1);
+}
+
+/* --------------------------- Dropdown item ativo ------------------------ */
+.dropdown-item.active,
+.dropdown-item:active {
+  background-color: var(--md-brand-1);
+  color: #fff;
+}
+
+/* --------------------------- Nav-pills / tabs ativos -------------------- */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background: var(--md-brand-gradient);
+  color: #fff;
+}
+
+/* --------------------------- Border-primary ----------------------------- */
+.border-primary {
+  border-color: var(--md-brand-1) !important;
+}
+
+/* --------------------------- Timeline-point primary --------------------- */
+.timeline-point-primary,
+.timeline-indicator-primary {
+  background-color: var(--md-brand-1) !important;
+  border-color: var(--md-brand-1) !important;
 }
 
 /* ============================================================================

@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DividaLimpaNome extends Model
+class Divida extends Model
 {
     use HasFactory;
 
-    protected $table = 'dividas_limpa_nome';
+    protected $table = 'dividas';
 
     protected $fillable = ['processo_id', 'credor', 'valor', 'descricao'];
 
@@ -21,6 +21,6 @@ class DividaLimpaNome extends Model
 
     public function processo(): BelongsTo
     {
-        return $this->belongsTo(ProcessoLimpaNome::class, 'processo_id');
+        return $this->belongsTo(Processo::class, 'processo_id');
     }
 }

@@ -11,22 +11,22 @@
         <div class="card-body">
           <div class="d-flex align-items-center flex-wrap">
             <div class="avatar avatar-xs me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar avatar-sm me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar avatar-md me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar avatar-lg me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar avatar-xl">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
           </div>
         </div>
@@ -99,13 +99,13 @@
         <div class="card-body">
           <div class="d-flex align-items-center my-4">
             <div class="avatar me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar me-2">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded" />
             </div>
             <div class="avatar">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" />
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@
               <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
             </div>
             <div class="avatar avatar-offline">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" />
+              <img src="{{ asset('assets/img/avatars/1.jpg') }}" alt="Avatar" class="rounded-circle" />
             </div>
           </div>
         </div>

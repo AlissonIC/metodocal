@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClienteLicenciado;
 use App\Models\Comissao;
+use App\Models\Processo;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,29 +19,48 @@ class ComissaoController extends Controller
         return view('content.admin.comissoes.index');
     }
 
-    public function datatable(): JsonResponse
+    public function datatable(Request $request): JsonResponse
     {
-        $query = Comissao::query()->with(['licenciado:id,name', 'cliente:id,nome']);
+        $query = Comissao::query()->with(['licenciado:id,name', 'cliente:id,nome', 'processo:id,nome_completo']);
+
+        if ($s = $request->query('status')) {
+            $query->where('status', $s);
+        }
+        if ($t = $request->query('tipo')) {
+            $query->where('tipo', $t);
+        }
+        if ($de = $request->query('data_de')) {
+            $query->whereDate('data_referencia', '>=', $de);
+        }
+        if ($ate = $request->query('data_ate')) {
+            $query->whereDate('data_referencia', '<=', $ate);
+        }
 
         return DataTables::eloquent($query)
             ->addColumn('licenciado_nome', fn (Comissao $c) => $c->licenciado?->name ?? '—')
             ->addColumn('cliente_nome', fn (Comissao $c) => $c->cliente?->nome ?? '—')
+            ->addColumn('processo_label', fn (Comissao $c) => $c->processo
+                ? '#' . $c->processo->id . ' · ' . \Illuminate\Support\Str::limit($c->processo->nome_completo, 30)
+                : '<span class="text-muted">—</span>')
             ->addColumn('valor_formatado', fn (Comissao $c) => 'R$ ' . number_format((float) $c->valor, 2, ',', '.'))
             ->addColumn('data_formatada', fn (Comissao $c) => $c->data_referencia->format('d/m/Y'))
+            ->addColumn('tipo_badge', fn (Comissao $c) =>
+                '<span class="badge bg-label-' . $c->tipoColor() . '">' . $c->tipoLabel() . '</span>')
             ->addColumn('status_badge', function (Comissao $c) {
                 $map = ['pendente' => 'warning', 'paga' => 'success', 'cancelada' => 'secondary'];
                 return '<span class="badge bg-label-' . ($map[$c->status] ?? 'secondary') . '">' . ucfirst($c->status) . '</span>';
             })
-            ->rawColumns(['status_badge'])
+            ->rawColumns(['status_badge', 'tipo_badge', 'processo_label'])
             ->toJson();
     }
 
     public function create()
     {
         return view('content.admin.comissoes.form', [
-            'comissao' => new Comissao(),
-            'licenciados' => User::role('licenciado')->orderBy('name')->get(['id', 'name']),
+            'comissao' => new Comissao(['tipo' => 'a_receber', 'status' => 'pendente']),
+            'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),
             'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
+            'processos' => Processo::orderByDesc('id')->limit(500)->get(['id', 'nome_completo']),
         ]);
     }
 
@@ -48,8 +68,9 @@ class ComissaoController extends Controller
     {
         return view('content.admin.comissoes.form', [
             'comissao' => $comissao,
-            'licenciados' => User::role('licenciado')->orderBy('name')->get(['id', 'name']),
+            'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),
             'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
+            'processos' => Processo::orderByDesc('id')->limit(500)->get(['id', 'nome_completo']),
         ]);
     }
 
@@ -88,8 +109,10 @@ class ComissaoController extends Controller
         return $request->validate([
             'licensed_by_user_id' => ['required', 'exists:users,id'],
             'cliente_id' => ['nullable', 'exists:clientes_licenciado,id'],
+            'processo_id' => ['nullable', 'exists:processos,id'],
             'descricao' => ['required', 'string', 'max:160'],
             'valor' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
+            'tipo' => ['required', 'in:a_receber,a_pagar'],
             'data_referencia' => ['required', 'date'],
             'status' => ['required', 'in:pendente,paga,cancelada'],
         ]);

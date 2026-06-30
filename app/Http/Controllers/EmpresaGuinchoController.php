@@ -85,6 +85,25 @@ class EmpresaGuinchoController extends Controller
             ->addColumn('status_badge', fn (EmpresaGuincho $e) => $e->ativo
                 ? '<span class="badge bg-label-success">Ativa</span>'
                 : '<span class="badge bg-label-secondary">Inativa</span>')
+            ->addColumn('actions', fn (EmpresaGuincho $e) => $e->id)
+            ->addColumn('details', fn (EmpresaGuincho $e) => [
+                'nome'              => $e->nome,
+                'cnpj'              => $e->cnpj,
+                'telefone'          => $e->telefone,
+                'whatsapp'          => $e->whatsapp,
+                'email'             => $e->email,
+                'site'              => $e->site,
+                'estado'            => $e->estado,
+                'cidade'            => $e->cidade,
+                'cep'               => $e->cep,
+                'endereco'          => $e->endereco,
+                'numero'            => $e->numero,
+                'complemento'       => $e->complemento,
+                'bairro'            => $e->bairro,
+                'cidades_atendidas' => $e->cidades_atendidas ?? [],
+                'descricao'         => $e->descricao,
+                'ativo'             => $e->ativo,
+            ])
             ->rawColumns(['logo_html', 'cidades_resumo', 'contatos_html', 'status_badge'])
             ->toJson();
     }
