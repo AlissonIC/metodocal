@@ -18,10 +18,11 @@ class UpdateCompradorRequest extends BaseFormRequest
             'nome' => ['required', 'string', 'min:2', 'max:160'],
             'tipo_documento' => ['required', 'in:cpf,cnpj'],
             'documento' => ['required', 'string', 'min:11', 'max:20', Rule::unique('compradores', 'documento')->ignore($this->route('comprador'))],
-            'email' => ['nullable', 'email', 'max:160'],
+            'email' => [$this->boolean('criar_login') ? 'required' : 'nullable', 'email', 'max:160'],
             'telefone' => ['nullable', 'string', 'max:40'],
             'observacoes' => ['nullable', 'string', 'max:3000'],
             'ativo' => ['nullable', 'boolean'],
+            'criar_login' => ['nullable', 'boolean'],
         ];
     }
 
@@ -30,6 +31,7 @@ class UpdateCompradorRequest extends BaseFormRequest
         $this->merge([
             'documento' => preg_replace('/\D/', '', (string) $this->documento),
             'ativo' => $this->boolean('ativo'),
+            'criar_login' => $this->boolean('criar_login'),
         ]);
     }
 }

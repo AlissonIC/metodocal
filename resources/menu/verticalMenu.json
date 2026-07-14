@@ -11,7 +11,7 @@
       "name": "Meu Perfil",
       "icon": "menu-icon icon-base ti tabler-user",
       "slug": "profile.edit",
-      "role": "admin|mentorado|licenciado"
+      "role": "admin|mentorado|licenciado|comprador"
     },
     {
       "url": "painel/minha-assinatura",
@@ -41,7 +41,7 @@
       "name": "Processos",
       "icon": "menu-icon icon-base ti tabler-id",
       "slug": "processos.index",
-      "role": "admin|mentorado|licenciado"
+      "role": "admin|mentorado|licenciado|comprador"
     },
 
     { "menuHeader": "Mentoria" },

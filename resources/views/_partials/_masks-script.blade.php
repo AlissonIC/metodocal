@@ -7,6 +7,7 @@
        <input class="mask-cnpj">                     → XX.XXX.XXX/XXXX-XX
        <input class="mask-cpf-cnpj">                 → alterna entre CPF e CNPJ conforme o tamanho
        <input class="mask-cep">                      → XXXXX-XXX
+       <input class="mask-placa">                    → AAA-1B34 (aceita antiga e Mercosul, uppercase)
        <input class="mask-money">                    → 1.234,56 (use junto com prefixo "R$" se quiser)
 --}}
 <script>
@@ -118,12 +119,32 @@ function initMetodocalMasks() {
     });
   }, true);
 
+  // Placa: aceita antiga (LLL-NNNN) e Mercosul (LLLNLNN). Uppercase e hífen após 3 chars.
+  function applyPlaca(selector) {
+    document.querySelectorAll(selector).forEach(function (input) {
+      if (input.dataset.maskApplied) return;
+      input.dataset.maskApplied = '1';
+
+      const format = function (raw) {
+        const cleaned = (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+        if (cleaned.length <= 3) return cleaned;
+        return cleaned.slice(0, 3) + '-' + cleaned.slice(3);
+      };
+
+      input.value = format(input.value);
+      input.addEventListener('input', function () {
+        input.value = format(input.value);
+      });
+    });
+  }
+
   function applyAll() {
     apply('.mask-phone', phone);
     apply('.mask-cpf', cpf);
     apply('.mask-cnpj', cnpj);
     apply('.mask-cpf-cnpj', cpfCnpj);
     apply('.mask-cep', cep);
+    applyPlaca('.mask-placa');
     applyMoney('.mask-money');
   }
 

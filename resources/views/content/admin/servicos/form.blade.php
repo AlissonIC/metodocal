@@ -2,6 +2,10 @@
 
 @section('title', $servico->exists ? 'Editar serviço' : 'Novo serviço')
 
+@section('vendor-script')
+@vite(['resources/assets/vendor/libs/cleave-zen/cleave-zen.js'])
+@endsection
+
 @section('content')
 @php
   $editing = $servico->exists;
@@ -39,8 +43,8 @@
           </div>
           <div class="mb-4">
             <label class="form-label">Valor padrão (R$)</label>
-            <input type="text" inputmode="numeric" class="form-control mask-money" name="valor_padrao" placeholder="0,00" value="{{ old('valor_padrao', $servico->valor_padrao) }}">
-            <small class="text-muted">Sugestão para uso ao criar faturas vinculadas ao serviço. Opcional.</small>
+            <input type="text" inputmode="numeric" class="form-control mask-money" name="valor_padrao" placeholder="0,00" value="{{ old('valor_padrao', $servico->valor_padrao ? number_format((float) $servico->valor_padrao, 2, ',', '.') : '') }}">
+            <small class="text-muted">Ao criar um processo com este serviço, uma comissão <strong>a receber</strong> deste valor é gerada automaticamente em nome do cliente. Deixe em branco se o serviço não tem custo fixo.</small>
           </div>
           <div class="mb-0">
             <label class="form-label">Descrição</label>

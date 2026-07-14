@@ -58,7 +58,7 @@ class ComissaoController extends Controller
     {
         return view('content.admin.comissoes.form', [
             'comissao' => new Comissao(['tipo' => 'a_receber', 'status' => 'pendente']),
-            'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),
+            'usuarios' => User::with('roles:id,name')->orderBy('name')->get(['id', 'name', 'email']),
             'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
             'processos' => Processo::orderByDesc('id')->limit(500)->get(['id', 'nome_completo']),
         ]);
@@ -68,7 +68,7 @@ class ComissaoController extends Controller
     {
         return view('content.admin.comissoes.form', [
             'comissao' => $comissao,
-            'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),
+            'usuarios' => User::with('roles:id,name')->orderBy('name')->get(['id', 'name', 'email']),
             'clientes' => ClienteLicenciado::orderBy('nome')->get(['id', 'nome', 'licensed_by_user_id']),
             'processos' => Processo::orderByDesc('id')->limit(500)->get(['id', 'nome_completo']),
         ]);

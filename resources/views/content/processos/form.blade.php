@@ -13,6 +13,14 @@
 ])
 @endsection
 
+@section('page-style')
+<style>
+  /* Chevron rotaciona quando o collapse abre */
+  .collapse-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
+  .collapse-toggle:hover { background-color: rgba(0,0,0,.02); }
+</style>
+@endsection
+
 @section('content')
 @php
   $editing = $processo->exists;
@@ -88,9 +96,12 @@
     </div>
   </div>
 
+  {{-- =============== DADOS DA PESSOA + ENDEREÇO =============== --}}
   <div class="card mb-4">
-    <div class="card-header"><h5 class="card-title mb-0">Dados da pessoa</h5></div>
+    <div class="card-header"><h5 class="card-title mb-0">Dados pessoais e endereço</h5></div>
     <div class="card-body">
+      {{-- Identificação --}}
+      <h6 class="text-muted small text-uppercase mb-3" style="letter-spacing: .05em;">Identificação</h6>
       <div class="row">
         <div class="col-md-8 mb-4">
           <label class="form-label">Nome completo *</label>
@@ -115,6 +126,137 @@
         <div class="col-md-4 mb-4">
           <label class="form-label">Telefone de contato</label>
           <input type="text" name="telefone_contato" class="form-control mask-phone" maxlength="40" value="{{ old('telefone_contato', $processo->telefone_contato) }}" placeholder="(00) 00000-0000">
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      {{-- Endereço --}}
+      <h6 class="text-muted small text-uppercase mb-3" style="letter-spacing: .05em;">Endereço</h6>
+      <div class="row">
+        <div class="col-md-3 mb-4">
+          <label class="form-label">CEP</label>
+          <input type="text" name="cep" class="form-control mask-cep" maxlength="10" value="{{ old('cep', $processo->cep) }}" placeholder="00000-000">
+        </div>
+        <div class="col-md-7 mb-4">
+          <label class="form-label">Logradouro</label>
+          <input type="text" name="logradouro" class="form-control" maxlength="160" value="{{ old('logradouro', $processo->logradouro) }}" placeholder="Rua, avenida...">
+        </div>
+        <div class="col-md-2 mb-4">
+          <label class="form-label">Número</label>
+          <input type="text" name="numero" class="form-control" maxlength="20" value="{{ old('numero', $processo->numero) }}">
+        </div>
+        <div class="col-md-4 mb-4">
+          <label class="form-label">Complemento</label>
+          <input type="text" name="complemento" class="form-control" maxlength="80" value="{{ old('complemento', $processo->complemento) }}" placeholder="Apto, sala, bloco...">
+        </div>
+        <div class="col-md-3 mb-4">
+          <label class="form-label">Bairro</label>
+          <input type="text" name="bairro" class="form-control" maxlength="80" value="{{ old('bairro', $processo->bairro) }}">
+        </div>
+        <div class="col-md-3 mb-4">
+          <label class="form-label">Cidade</label>
+          <input type="text" name="cidade" class="form-control" maxlength="80" value="{{ old('cidade', $processo->cidade) }}">
+        </div>
+        <div class="col-md-2 mb-0">
+          <label class="form-label">Estado</label>
+          <select name="uf" class="form-select">
+            <option value="">—</option>
+            @foreach (['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as $uf)
+              <option value="{{ $uf }}" @selected(strtoupper(old('uf', $processo->uf)) === $uf)>{{ $uf }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- =============== VEÍCULO (opcional / expandível) =============== --}}
+  @php
+    // Abre expandido se: houve validation error nos campos veiculo[*], se já existe veículo, ou se old() tem valores
+    $veiculoAberto = (bool) ($veiculo && $veiculo->exists) || collect(old('veiculo', []))->filter()->isNotEmpty() || $errors->has('veiculo.*');
+  @endphp
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center collapse-toggle" role="button"
+         data-bs-toggle="collapse" data-bs-target="#veiculo-section" aria-expanded="{{ $veiculoAberto ? 'true' : 'false' }}" aria-controls="veiculo-section" style="cursor: pointer;">
+      <h5 class="card-title mb-0">
+        <i class="icon-base ti tabler-car me-1"></i>
+        Veículo
+        <small class="text-muted fw-normal ms-1">(opcional)</small>
+      </h5>
+      <i class="icon-base ti tabler-chevron-down toggle-icon" style="transition: transform .2s;"></i>
+    </div>
+    <div class="collapse {{ $veiculoAberto ? 'show' : '' }}" id="veiculo-section">
+      <div class="card-body">
+        <div class="alert alert-primary py-2 mb-4 small d-flex align-items-center gap-2" role="alert">
+          <i class="icon-base ti tabler-info-circle"></i>
+          <div>Escolha o <strong>tipo</strong> e comece a digitar a marca — os modelos vêm direto da tabela FIPE (via BrasilAPI, gratuito).</div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-2 mb-4">
+            <label class="form-label">Tipo *</label>
+            <select id="veiculo-tipo" class="form-select">
+              <option value="carros" selected>Carro</option>
+              <option value="motos">Moto</option>
+              <option value="caminhoes">Caminhão</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-4">
+            <label class="form-label">Placa</label>
+            <input type="text" name="veiculo[placa]" class="form-control mask-placa" maxlength="10" value="{{ old('veiculo.placa', $veiculo?->placa) }}" placeholder="AAA-0A00">
+          </div>
+          <div class="col-md-3 mb-4">
+            <label class="form-label">Marca (FIPE)</label>
+            <select id="veiculo-marca-select" class="form-select"></select>
+            <input type="hidden" name="veiculo[marca]" id="veiculo-marca-input" value="{{ old('veiculo.marca', $veiculo?->marca) }}">
+          </div>
+          <div class="col-md-4 mb-4">
+            <label class="form-label">Modelo (FIPE)</label>
+            <select id="veiculo-modelo-select" class="form-select"></select>
+            <input type="hidden" name="veiculo[modelo]" id="veiculo-modelo-input" value="{{ old('veiculo.modelo', $veiculo?->modelo) }}">
+          </div>
+          <div class="col-md-2 mb-4">
+            <label class="form-label">Ano fab.</label>
+            <input type="number" name="veiculo[ano_fabricacao]" class="form-control" min="1900" max="{{ now()->year + 1 }}" value="{{ old('veiculo.ano_fabricacao', $veiculo?->ano_fabricacao) }}">
+          </div>
+          <div class="col-md-2 mb-4">
+            <label class="form-label">Ano mod.</label>
+            <input type="number" name="veiculo[ano_modelo]" class="form-control" min="1900" max="{{ now()->year + 2 }}" value="{{ old('veiculo.ano_modelo', $veiculo?->ano_modelo) }}">
+          </div>
+          <div class="col-md-2 mb-4">
+            <label class="form-label">Cor</label>
+            <input type="text" name="veiculo[cor]" class="form-control" maxlength="30" value="{{ old('veiculo.cor', $veiculo?->cor) }}">
+          </div>
+          <div class="col-md-3 mb-4">
+            <label class="form-label">Combustível</label>
+            <select name="veiculo[combustivel]" class="form-select">
+              <option value="">—</option>
+              @foreach (\App\Models\Veiculo::COMBUSTIVEIS as $v => $l)
+                <option value="{{ $v }}" @selected(old('veiculo.combustivel', $veiculo?->combustivel) === $v)>{{ $l }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="col-md-3 mb-4">
+            <label class="form-label">KM</label>
+            <input type="number" name="veiculo[quilometragem]" class="form-control" min="0" max="9999999" value="{{ old('veiculo.quilometragem', $veiculo?->quilometragem) }}">
+          </div>
+          <div class="col-md-4 mb-4">
+            <label class="form-label">Chassi</label>
+            <input type="text" name="veiculo[chassi]" class="form-control text-uppercase" maxlength="17" value="{{ old('veiculo.chassi', $veiculo?->chassi) }}" placeholder="17 caracteres">
+          </div>
+          <div class="col-md-4 mb-4">
+            <label class="form-label">RENAVAM</label>
+            <input type="text" name="veiculo[renavam]" class="form-control" maxlength="20" value="{{ old('veiculo.renavam', $veiculo?->renavam) }}">
+          </div>
+          <div class="col-md-4 mb-4">
+            <label class="form-label">Valor FIPE (R$)</label>
+            <input type="text" inputmode="numeric" name="veiculo[valor_fipe]" class="form-control mask-money" value="{{ old('veiculo.valor_fipe', $veiculo && $veiculo->valor_fipe ? number_format((float) $veiculo->valor_fipe, 2, ',', '.') : '') }}" placeholder="0,00">
+          </div>
+          <div class="col-12 mb-0">
+            <label class="form-label">Observações do veículo</label>
+            <textarea name="veiculo[observacoes]" class="form-control" rows="2" maxlength="2000" placeholder="Detalhes de conservação, itens de série, avarias...">{{ old('veiculo.observacoes', $veiculo?->observacoes) }}</textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -196,6 +338,121 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.closest('.divida-row').remove();
     }
   });
+
+  // ================================================================
+  // AUTOCOMPLETE CEP (BrasilAPI) — preenche endereço ao sair do campo
+  // ================================================================
+  const cepInput = document.querySelector('input[name="cep"]');
+  if (cepInput) {
+    cepInput.addEventListener('blur', function () {
+      const cep = (this.value || '').replace(/\D/g, '');
+      if (cep.length !== 8) return;
+
+      fetch(`{{ url('painel/api/cep') }}/${cep}`, { headers: { Accept: 'application/json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (! d) return;
+          // Preenche apenas campos vazios pra não sobrescrever edições manuais
+          const setIfEmpty = (name, value) => {
+            const el = document.querySelector(`[name="${name}"]`);
+            if (el && ! el.value && value) el.value = value;
+          };
+          setIfEmpty('logradouro', d.street);
+          setIfEmpty('bairro', d.neighborhood);
+          setIfEmpty('cidade', d.city);
+          const uf = document.querySelector('[name="uf"]');
+          if (uf && ! uf.value && d.state) uf.value = d.state;
+          // Move foco pro número se ainda estiver vazio
+          const numero = document.querySelector('[name="numero"]');
+          if (numero && ! numero.value) numero.focus();
+        })
+        .catch(() => {});
+    });
+  }
+
+  // ================================================================
+  // AUTOCOMPLETE VEÍCULO (FIPE via BrasilAPI) — marca depois modelo
+  // ================================================================
+  if (window.jQuery && jQuery('#veiculo-marca-select').length) {
+    const $tipo   = jQuery('#veiculo-tipo');
+    const $marca  = jQuery('#veiculo-marca-select');
+    const $modelo = jQuery('#veiculo-modelo-select');
+    const marcaInput  = document.getElementById('veiculo-marca-input');
+    const modeloInput = document.getElementById('veiculo-modelo-input');
+
+    function setupSelect2($el, placeholder, urlFn) {
+      $el.wrap('<div class="position-relative"></div>').select2({
+        placeholder: placeholder,
+        allowClear: true,
+        dropdownParent: $el.parent(),
+        width: '100%',
+        minimumInputLength: 0,
+        ajax: {
+          delay: 250,
+          transport: function (params, success, failure) {
+            const url = urlFn();
+            if (! url) { success({ results: [] }); return; }
+            fetch(url, { headers: { Accept: 'application/json' } })
+              .then(r => r.ok ? r.json() : [])
+              .then(list => {
+                const q = (params.data.term || '').toLowerCase();
+                const filtered = q
+                  ? list.filter(it => (it.nome || '').toLowerCase().includes(q))
+                  : list;
+                success({ results: filtered.map(it => ({ id: it.nome, text: it.nome, codigo: it.codigo })) });
+              })
+              .catch(failure);
+          },
+        },
+      });
+    }
+
+    // Popula marca a partir do tipo escolhido
+    setupSelect2($marca, 'Selecione a marca',
+      () => `{{ url('painel/api/fipe/marcas') }}/${$tipo.val()}`);
+
+    // Popula modelo a partir da marca escolhida (usa código FIPE da marca)
+    let codigoMarcaAtual = null;
+    setupSelect2($modelo, 'Selecione o modelo',
+      () => codigoMarcaAtual ? `{{ url('painel/api/fipe/modelos') }}/${$tipo.val()}/${codigoMarcaAtual}` : null);
+
+    // Se já existe marca salva (edição), semeia o select com uma option pré-selecionada
+    if (marcaInput.value) {
+      const opt = new Option(marcaInput.value, marcaInput.value, true, true);
+      $marca.append(opt).trigger('change.select2');
+    }
+    if (modeloInput.value) {
+      const opt = new Option(modeloInput.value, modeloInput.value, true, true);
+      $modelo.append(opt).trigger('change.select2');
+    }
+
+    // Espelha seleção nos hidden inputs (é isso que vai pro backend)
+    $marca.on('change', function () {
+      const data = $marca.select2('data')[0];
+      marcaInput.value = data ? data.text : '';
+      codigoMarcaAtual = data ? data.codigo : null;
+      // Ao trocar de marca, limpa modelo
+      $modelo.val(null).trigger('change');
+      // Modelo precisa reabrir para carregar da nova marca
+      $modelo.empty();
+    });
+
+    $modelo.on('change', function () {
+      const data = $modelo.select2('data')[0];
+      modeloInput.value = data ? data.text : '';
+    });
+
+    // Ao trocar tipo, limpa marca e modelo
+    $tipo.on('change', function () {
+      $marca.val(null).trigger('change');
+      $marca.empty();
+      $modelo.val(null).trigger('change');
+      $modelo.empty();
+      marcaInput.value = '';
+      modeloInput.value = '';
+      codigoMarcaAtual = null;
+    });
+  }
 });
 </script>
 @include('_partials._masks-script')

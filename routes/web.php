@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ConteudoController as AdminConteudoController;
 use App\Http\Controllers\Admin\FinanceiroController;
 use App\Http\Controllers\Admin\MaterialController as AdminMaterialController;
 use App\Http\Controllers\Admin\BancoController as AdminBancoController;
+use App\Http\Controllers\Api\BrasilApiController;
 use App\Http\Controllers\Admin\CompradorController as AdminCompradorController;
 use App\Http\Controllers\Admin\NotificacaoController;
 use App\Http\Controllers\Admin\PlanController;
@@ -72,8 +73,15 @@ Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadopago'])-
 Route::prefix('painel')->middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Proxy BrasilAPI (autocomplete de FIPE e CEP no cadastro de processos)
+    Route::prefix('api')->middleware('role:admin|mentorado|licenciado')->group(function () {
+        Route::get('/fipe/marcas/{tipo}', [BrasilApiController::class, 'marcasFipe'])->name('api.fipe.marcas');
+        Route::get('/fipe/modelos/{tipo}/{codigoMarca}', [BrasilApiController::class, 'modelosFipe'])->name('api.fipe.modelos');
+        Route::get('/cep/{cep}', [BrasilApiController::class, 'cep'])->name('api.cep');
+    });
+
     // Perfil — qualquer usuário autenticado
-    Route::middleware('role:admin|mentorado|licenciado')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
         Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
         Route::patch('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -116,19 +124,33 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/guincho/{empresaGuincho}', [EmpresaGuinchoController::class, 'destroy'])->name('guincho.destroy');
     });
 
-    // Processos (cliente + admin servidos pela mesma URL)
+    // Processos - rotas com caminho fixo (precisam vir ANTES do {processo} pra não serem
+    // capturadas pelo route model binding).
+    // Ações de criar/editar são bloqueadas para role 'comprador'.
     Route::middleware('role:admin|mentorado|licenciado')->group(function () {
-        Route::get('/processos', [ProcessoController::class, 'index'])->name('processos.index');
-        Route::get('/processos/datatable', [ProcessoController::class, 'datatable'])->name('processos.datatable');
         Route::get('/processos/novo', [ProcessoController::class, 'create'])->name('processos.create');
         Route::post('/processos', [ProcessoController::class, 'store'])->name('processos.store');
-        Route::get('/processos/{processo}', [ProcessoController::class, 'show'])->name('processos.show');
+    });
+
+    // Processos - listagem + endpoints com caminho fixo (comprador acessa aqui também)
+    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
+        Route::get('/processos', [ProcessoController::class, 'index'])->name('processos.index');
+        Route::get('/processos/datatable', [ProcessoController::class, 'datatable'])->name('processos.datatable');
+        Route::get('/processos/documentos/{documento}/download', [ProcessoController::class, 'downloadDocumento'])->name('processos.documentos.download');
+    });
+
+    // Processos - ações que exigem {processo} e permitem escrita (comprador NÃO pode escrever)
+    Route::middleware('role:admin|mentorado|licenciado')->group(function () {
         Route::get('/processos/{processo}/editar', [ProcessoController::class, 'edit'])->name('processos.edit');
         Route::patch('/processos/{processo}', [ProcessoController::class, 'update'])->name('processos.update');
         Route::delete('/processos/{processo}', [ProcessoController::class, 'destroy'])->name('processos.destroy');
         Route::post('/processos/{processo}/documentos', [ProcessoController::class, 'uploadDocumento'])->name('processos.documentos.store');
         Route::delete('/processos/documentos/{documento}', [ProcessoController::class, 'destroyDocumento'])->name('processos.documentos.destroy');
-        Route::get('/processos/documentos/{documento}/download', [ProcessoController::class, 'downloadDocumento'])->name('processos.documentos.download');
+    });
+
+    // Processos - visualização (comprador pode ver processos vinculados)
+    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
+        Route::get('/processos/{processo}', [ProcessoController::class, 'show'])->name('processos.show');
     });
 
     // Processos — ações admin (mesmo prefixo, role diferente)
@@ -139,6 +161,8 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/processos/faturas/{fatura}', [ProcessoController::class, 'destroyFatura'])->name('processos.faturas.destroy');
         Route::post('/processos/{processo}/comissoes', [ProcessoController::class, 'storeComissao'])->name('processos.comissoes.store');
         Route::delete('/processos/comissoes/{comissao}', [ProcessoController::class, 'destroyComissao'])->name('processos.comissoes.destroy');
+        Route::post('/processos/{processo}/negociacoes', [ProcessoController::class, 'storeNegociacao'])->name('processos.negociacoes.store');
+        Route::delete('/processos/negociacoes/{negociacao}', [ProcessoController::class, 'destroyNegociacao'])->name('processos.negociacoes.destroy');
     });
 
     // Admin - Financeiro

@@ -51,9 +51,10 @@
             <div class="col-md-6 mb-4">
               <label class="form-label">Usuário do sistema *</label>
               <select name="licensed_by_user_id" id="usuario" class="select2 form-select">
-                <option value="">Selecione...</option>
+                <option value=""></option>
                 @foreach ($usuarios as $u)
-                  <option value="{{ $u->id }}" @selected(old('licensed_by_user_id', $comissao->licensed_by_user_id) == $u->id)>{{ $u->name }} · {{ $u->email }}</option>
+                  @php $roleU = optional($u->roles->first())->name ?? 'sem_role'; @endphp
+                  <option value="{{ $u->id }}" data-role="{{ $roleU }}" data-email="{{ $u->email }}" @selected(old('licensed_by_user_id', $comissao->licensed_by_user_id) == $u->id)>{{ $u->name }}</option>
                 @endforeach
               </select>
               <small class="text-muted">A quem essa comissão se refere (a pagar ou a receber).</small>
@@ -143,11 +144,45 @@
 @section('page-script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  $('#usuario, #cliente, #processo').each(function () {
+  const roleMap = {
+    admin:      { color: 'danger',    label: 'Admin' },
+    mentorado:  { color: 'info',      label: 'Mentorado' },
+    licenciado: { color: 'success',   label: 'Licenciado' },
+    comprador:  { color: 'primary',   label: 'Comprador' },
+    sem_role:   { color: 'secondary', label: '—' },
+  };
+  function renderUsuario(option) {
+    if (! option.id) return option.text;
+    const $opt  = jQuery(option.element);
+    const role  = $opt.data('role') || 'sem_role';
+    const email = $opt.data('email') || '';
+    const info  = roleMap[role] || roleMap.sem_role;
+    return jQuery(
+      `<span class="d-flex align-items-center gap-2">
+         <span class="badge bg-label-${info.color}" style="font-size:.7rem;">${info.label}</span>
+         <span class="fw-medium">${option.text}</span>
+         ${email ? `<small class="text-muted ms-auto">${email}</small>` : ''}
+       </span>`
+    );
+  }
+
+  // Usuario: select2 com badge por role
+  const $usuario = jQuery('#usuario');
+  $usuario.wrap('<div class="position-relative"></div>').select2({
+    placeholder: 'Selecione o usuário',
+    dropdownParent: $usuario.parent(),
+    width: '100%',
+    templateResult: renderUsuario,
+    templateSelection: renderUsuario,
+    escapeMarkup: m => m,
+  });
+
+  // Cliente e processo: select2 padrão com clear
+  $('#cliente, #processo').each(function () {
     const $s = $(this);
     $s.wrap('<div class="position-relative"></div>').select2({
       placeholder: $s.find('option:first').text() || 'Selecione...',
-      allowClear: $s.attr('id') !== 'usuario',
+      allowClear: true,
       dropdownParent: $s.parent(),
       width: '100%',
     });

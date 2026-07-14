@@ -32,6 +32,13 @@ class Processo extends Model
         'documento',
         'email_contato',
         'telefone_contato',
+        'cep',
+        'logradouro',
+        'numero',
+        'complemento',
+        'bairro',
+        'cidade',
+        'uf',
         'status',
         'data_protocolo_liminar',
         'data_previsao_conclusao',
@@ -87,6 +94,28 @@ class Processo extends Model
     public function comissoes(): HasMany
     {
         return $this->hasMany(Comissao::class, 'processo_id')->orderByDesc('data_referencia');
+    }
+
+    public function negociacoes(): HasMany
+    {
+        return $this->hasMany(Negociacao::class)->orderByDesc('data')->orderByDesc('id');
+    }
+
+    public function veiculo(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Veiculo::class);
+    }
+
+    public function enderecoFormatado(): string
+    {
+        $linhas = array_filter([
+            trim(($this->logradouro ?? '') . ($this->numero ? ', ' . $this->numero : '')),
+            $this->complemento,
+            $this->bairro,
+            trim(($this->cidade ?? '') . ($this->uf ? '/' . strtoupper($this->uf) : '')),
+            $this->cep,
+        ]);
+        return implode(' · ', $linhas) ?: '—';
     }
 
     public function isEditavelPeloCliente(): bool

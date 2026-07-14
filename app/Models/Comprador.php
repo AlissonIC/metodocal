@@ -15,6 +15,7 @@ class Comprador extends Model
     protected $table = 'compradores';
 
     protected $fillable = [
+        'user_id',
         'nome',
         'tipo_documento',
         'documento',
@@ -32,6 +33,11 @@ class Comprador extends Model
     public function processos(): HasMany
     {
         return $this->hasMany(Processo::class);
+    }
+
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function documentoFormatado(): string

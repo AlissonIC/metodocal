@@ -69,7 +69,7 @@
     </div>
 
     <div class="col-lg-4">
-      <div class="card">
+      <div class="card mb-4">
         <div class="card-header border-bottom"><h5 class="card-title mb-0">Status</h5></div>
         <div class="card-body">
           <div class="form-check form-switch">
@@ -77,6 +77,28 @@
             <label class="form-check-label" for="ativo">Comprador ativo</label>
           </div>
           <small class="text-muted d-block mt-2">Compradores inativos não aparecem na seleção ao vincular a processos.</small>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header border-bottom"><h5 class="card-title mb-0">Acesso à plataforma</h5></div>
+        <div class="card-body">
+          @if ($editing && $comprador->user_id)
+            <div class="alert alert-success py-2 mb-0 small">
+              <i class="icon-base ti tabler-check me-1"></i>
+              Este comprador já tem login (<code>{{ $comprador->email }}</code>) e vê os processos aos quais está vinculado.
+            </div>
+          @else
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="criar_login" name="criar_login" value="1" @checked(old('criar_login', false))>
+              <label class="form-check-label" for="criar_login">Criar login de acesso</label>
+            </div>
+            <small class="text-muted d-block mt-2">
+              Se marcado, será criado um usuário no sistema com o e-mail informado.
+              A senha inicial aparecerá após o salvamento — repasse-a ao comprador para o primeiro acesso.
+              Ele verá apenas os processos aos quais estiver vinculado.
+            </small>
+          @endif
         </div>
       </div>
     </div>
