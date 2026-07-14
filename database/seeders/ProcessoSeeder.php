@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Comprador;
 use App\Models\Divida;
 use App\Models\HistoricoProcesso;
 use App\Models\Processo;
@@ -130,6 +131,34 @@ class ProcessoSeeder extends Seeder
                     ]);
                     $atual = $proximo;
                 }
+            }
+        }
+
+        // Garante que o comprador demo (comprador@metodocal.com.br) tenha processos
+        // visíveis ao logar. Vincula 3 processos existentes ao Comprador dele.
+        $compDemoUser = User::where('email', 'comprador@metodocal.com.br')->first();
+        if ($compDemoUser) {
+            $compDemo = Comprador::where('user_id', $compDemoUser->id)->first();
+            if ($compDemo) {
+                Processo::whereNull('comprador_id')
+                    ->orderByDesc('id')
+                    ->limit(3)
+                    ->update(['comprador_id' => $compDemo->id]);
+            }
+        }
+
+        // Vincula alguns compradores fake (com login) a 1-2 processos cada
+        $outrosCompradores = Comprador::whereNotNull('user_id')
+            ->when($compDemoUser, fn ($q) => $q->where('user_id', '!=', $compDemoUser->id))
+            ->get();
+        foreach ($outrosCompradores as $c) {
+            $qtd = rand(1, 2);
+            $processosLivres = Processo::whereNull('comprador_id')
+                ->inRandomOrder()
+                ->limit($qtd)
+                ->get();
+            foreach ($processosLivres as $p) {
+                $p->update(['comprador_id' => $c->id]);
             }
         }
     }

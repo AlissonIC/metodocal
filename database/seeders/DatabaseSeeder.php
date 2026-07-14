@@ -20,12 +20,12 @@ class DatabaseSeeder extends Seeder
             EmpresaGuinchoSeeder::class,
             ServicoSeeder::class,
             BancoSeeder::class,
-            CompradorSeeder::class,
 
             // 3) Users + Subscriptions + Faturas
             UserSeeder::class,
 
             // 4) Domínios que dependem de users + subscriptions
+            CompradorSeeder::class, // depende de User (vincula user_id de compradores)
             SessaoSeeder::class,
             ProgressoConteudoSeeder::class,
             ClienteLicenciadoSeeder::class,

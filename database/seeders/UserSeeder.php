@@ -13,13 +13,21 @@ use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * Senhas padrão para login rápido nos ambientes de dev/staging:
+     *   admin@metodocal.com.br      / admin@2026
+     *   mentorado@metodocal.com.br  / mentorado@2026
+     *   licenciado@metodocal.com.br / licenciado@2026
+     *   comprador@metodocal.com.br  / comprador@2026
+     *   usuários fake (25 mentorados + 12 licenciados + 6 compradores) / metodocal@2026
+     */
     public function run(): void
     {
         $faker = \Faker\Factory::create('pt_BR');
 
         // ===== ADMIN (fixo, demo) =====
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@metodocal.local'],
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@metodocal.com.br'],
             [
                 'name' => 'Administrador Demo',
                 'password' => Hash::make('admin@2026'),
@@ -33,8 +41,8 @@ class UserSeeder extends Seeder
         $admin->syncRoles(['admin']);
 
         // ===== MENTORADO DEMO (fixo) =====
-        $mentDemo = User::firstOrCreate(
-            ['email' => 'mentorado@metodocal.local'],
+        $mentDemo = User::updateOrCreate(
+            ['email' => 'mentorado@metodocal.com.br'],
             [
                 'name' => 'Mentorado Demo',
                 'password' => Hash::make('mentorado@2026'),
@@ -49,8 +57,8 @@ class UserSeeder extends Seeder
         $this->giveSubscription($mentDemo, 'mentorado', 'ativa');
 
         // ===== LICENCIADO DEMO (fixo) =====
-        $licDemo = User::firstOrCreate(
-            ['email' => 'licenciado@metodocal.local'],
+        $licDemo = User::updateOrCreate(
+            ['email' => 'licenciado@metodocal.com.br'],
             [
                 'name' => 'Licenciado Demo',
                 'password' => Hash::make('licenciado@2026'),
@@ -64,15 +72,34 @@ class UserSeeder extends Seeder
         $licDemo->syncRoles(['licenciado']);
         $this->giveSubscription($licDemo, 'licenciado', 'ativa');
 
-        // ===== ADMINS EXTRAS =====
+        // ===== COMPRADOR DEMO (fixo) =====
+        // Acesso limitado — só vê processos aos quais estiver vinculado (via tabela compradores.user_id)
+        $compDemo = User::updateOrCreate(
+            ['email' => 'comprador@metodocal.com.br'],
+            [
+                'name' => 'Comprador Demo',
+                'password' => Hash::make('comprador@2026'),
+                'phone' => $faker->cellphoneNumber(),
+                'cpf_cnpj' => $faker->cpf(),
+                'status' => 'ativo',
+                'email_verified_at' => now()->subMonths(rand(1, 6)),
+                'last_login_at' => now()->subHours(rand(1, 120)),
+            ]
+        );
+        $compDemo->syncRoles(['comprador']);
+
+        // ===== ADMINS EXTRAS (2) =====
         for ($i = 0; $i < 2; $i++) {
-            $u = $this->createBaseUser($faker, $faker->safeEmail(), 'ativo');
+            $slug = Str::slug($faker->unique()->firstName());
+            $email = "admin.{$slug}{$i}@metodocal.com.br";
+            $u = $this->createBaseUser($faker, $email, 'ativo');
             $u->syncRoles(['admin']);
         }
 
-        // ===== MENTORADOS (25) — mix de statuses e subscriptions =====
+        // ===== MENTORADOS (25) =====
         for ($i = 0; $i < 25; $i++) {
-            $email = 'mentorado.' . Str::slug($faker->unique()->firstName()) . $i . '@example.com';
+            $slug = Str::slug($faker->unique()->firstName());
+            $email = "mentorado.{$slug}{$i}@metodocal.com.br";
             $status = $faker->randomElement(['ativo', 'ativo', 'ativo', 'ativo', 'inativo', 'bloqueado']);
             $u = $this->createBaseUser($faker, $email, $status);
             $u->syncRoles(['mentorado']);
@@ -88,7 +115,8 @@ class UserSeeder extends Seeder
 
         // ===== LICENCIADOS (12) =====
         for ($i = 0; $i < 12; $i++) {
-            $email = 'licenciado.' . Str::slug($faker->unique()->lastName()) . $i . '@example.com';
+            $slug = Str::slug($faker->unique()->lastName());
+            $email = "licenciado.{$slug}{$i}@metodocal.com.br";
             $status = $faker->randomElement(['ativo', 'ativo', 'ativo', 'inativo']);
             $u = $this->createBaseUser($faker, $email, $status);
             $u->syncRoles(['licenciado']);
@@ -100,6 +128,16 @@ class UserSeeder extends Seeder
                 $this->giveSubscription($u, 'licenciado', $faker->randomElement(['suspensa', 'cancelada']));
             }
         }
+
+        // ===== COMPRADORES (6) — usuários com role comprador, sem subscription =====
+        // A vinculação com processos é feita depois pelo CompradorSeeder / ProcessoSeeder.
+        for ($i = 0; $i < 6; $i++) {
+            $slug = Str::slug($faker->unique()->firstName());
+            $email = "comprador.{$slug}{$i}@metodocal.com.br";
+            $status = $faker->randomElement(['ativo', 'ativo', 'ativo', 'inativo']);
+            $u = $this->createBaseUser($faker, $email, $status);
+            $u->syncRoles(['comprador']);
+        }
     }
 
     private function createBaseUser(\Faker\Generator $faker, string $email, string $status): User
@@ -109,7 +147,7 @@ class UserSeeder extends Seeder
         return User::create([
             'name' => $faker->name(),
             'email' => $email,
-            'password' => Hash::make('senha123'),
+            'password' => Hash::make('metodocal@2026'),
             'phone' => $faker->cellphoneNumber(),
             'cpf_cnpj' => rand(0, 100) < 70 ? $faker->cpf() : $faker->cnpj(),
             'status' => $status,

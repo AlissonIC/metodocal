@@ -71,8 +71,8 @@ class ClienteLicenciadoSeeder extends Seeder
             }
         }
 
-        // Garante que o licenciado@metodocal.local tenha pelo menos alguns
-        $licDemo = User::where('email', 'licenciado@metodocal.local')->first();
+        // Garante que o licenciado@metodocal.com.br tenha pelo menos alguns
+        $licDemo = User::where('email', 'licenciado@metodocal.com.br')->first();
         if ($licDemo && ClienteLicenciado::where('licensed_by_user_id', $licDemo->id)->doesntExist()) {
             for ($i = 0; $i < 8; $i++) {
                 $cliente = ClienteLicenciado::create([
