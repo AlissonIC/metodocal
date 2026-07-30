@@ -23,9 +23,11 @@ class UpdateUserRequest extends BaseFormRequest
             'email' => ['required', 'email', 'max:180', Rule::unique('users', 'email')->ignore($targetId)],
             'phone' => ['nullable', 'string', 'max:20'],
             'cpf_cnpj' => ['nullable', 'string', 'max:20'],
+            'tipo_documento' => ['nullable', 'in:cpf,cnpj'],
+            'data_nascimento' => ['nullable', 'date'],
             'role' => [
                 'required',
-                'in:admin,mentorado,licenciado',
+                'in:admin,mentorado,licenciado,comprador',
                 function ($attr, $value, $fail) use ($isSelf) {
                     if ($isSelf && $value !== 'admin' && $this->user()->hasRole('admin')) {
                         $fail('Você não pode rebaixar seu próprio acesso de admin.');
@@ -35,6 +37,16 @@ class UpdateUserRequest extends BaseFormRequest
             'status' => ['required', 'in:ativo,inativo,bloqueado'],
             'plan_id' => ['nullable', 'exists:plans,id'],
             'password' => ['nullable', Password::min(8)->letters()->numbers()],
+
+            'cep' => ['nullable', 'string', 'max:10'],
+            'logradouro' => ['nullable', 'string', 'max:160'],
+            'numero' => ['nullable', 'string', 'max:20'],
+            'complemento' => ['nullable', 'string', 'max:80'],
+            'bairro' => ['nullable', 'string', 'max:80'],
+            'cidade' => ['nullable', 'string', 'max:80'],
+            'uf' => ['nullable', 'string', 'size:2'],
+
+            'observacoes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

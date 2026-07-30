@@ -43,9 +43,11 @@
         @endif
       </p>
     </div>
-    <a href="{{ route('processos.create') }}" class="btn btn-primary">
-      <i class="icon-base ti tabler-plus me-1"></i> Novo processo
-    </a>
+    @unless ($isComprador)
+      <a href="{{ route('processos.create') }}" class="btn btn-primary">
+        <i class="icon-base ti tabler-plus me-1"></i> Novo processo
+      </a>
+    @endunless
   </div>
 
   <div class="card-body filtros-bar">

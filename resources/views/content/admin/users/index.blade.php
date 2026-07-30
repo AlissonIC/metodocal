@@ -31,8 +31,27 @@
     background-color: var(--bs-primary);
     border: 0;
   }
-  /* Filtros: select2 ajustado ao bs5 */
+  /* Alinha inputs no rodapé da linha (labels acima podem ter alturas diferentes) */
+  .filtros-bar .row { align-items: end; }
   .filtros-bar .select2-container { width: 100% !important; }
+
+  /* Iguala altura de Select2 single, form-select nativo e botão ao Select2 multi
+     do filtro "Nível" (que fica ~40px quando tem chips selecionados). */
+  .filtros-bar .select2-container--default .select2-selection--single {
+    height: 2.5rem !important;
+  }
+  .filtros-bar .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: calc(2.5rem - 2px);
+  }
+  .filtros-bar .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 2.5rem;
+  }
+  .filtros-bar .select2-container--default .select2-selection--multiple {
+    min-height: 2.5rem;
+  }
+  .filtros-bar .btn {
+    min-height: 2.5rem;
+  }
 </style>
 @endsection
 
@@ -55,18 +74,18 @@
   {{-- ==================== FILTROS ==================== --}}
   <div class="card-body filtros-bar">
     <div class="row g-2 g-md-3">
-      <div class="col-6 col-md-3">
-        <label class="form-label small mb-1">Nível</label>
-        <select id="filtro-role" class="form-select form-select-sm" data-placeholder="Todos">
-          <option value=""></option>
+      <div class="col-12 col-md-4">
+        <label class="form-label small mb-1">Nível <span class="text-muted">(múltiplo)</span></label>
+        <select id="filtro-role" class="form-select" multiple data-placeholder="Todos">
           <option value="admin">Admin</option>
           <option value="mentorado">Mentorado</option>
           <option value="licenciado">Licenciado</option>
+          <option value="comprador">Comprador</option>
         </select>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-2">
         <label class="form-label small mb-1">Status</label>
-        <select id="filtro-status" class="form-select form-select-sm" data-placeholder="Todos">
+        <select id="filtro-status" class="form-select" data-placeholder="Todos">
           <option value=""></option>
           <option value="ativo">Ativo</option>
           <option value="inativo">Inativo</option>
@@ -75,7 +94,7 @@
       </div>
       <div class="col-8 col-md-4">
         <label class="form-label small mb-1">Plano</label>
-        <select id="filtro-plano" class="form-select form-select-sm" data-placeholder="Todos">
+        <select id="filtro-plano" class="form-select" data-placeholder="Todos">
           <option value=""></option>
           @foreach ($plans as $p)
             <option value="{{ $p->id }}">{{ $p->nome }} ({{ ucfirst($p->tipo) }})</option>
@@ -83,7 +102,7 @@
         </select>
       </div>
       <div class="col-4 col-md-2 d-flex align-items-end">
-        <button id="btn-limpar-filtros" class="btn btn-label-secondary btn-sm w-100" title="Limpar filtros">
+        <button id="btn-limpar-filtros" class="btn btn-label-secondary w-100" title="Limpar filtros">
           <i class="icon-base ti tabler-eraser"></i>
           <span class="d-none d-md-inline ms-1">Limpar</span>
         </button>
@@ -139,7 +158,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const baseUrl = "{{ url('/painel/usuarios') }}";
 
   // ---- Select2 nos filtros ----
-  $('#filtro-role, #filtro-status, #filtro-plano').select2({
+  $('#filtro-role').select2({
+    allowClear: true,
+    placeholder: 'Todos',
+    width: '100%',
+    closeOnSelect: false,
+  });
+  $('#filtro-status, #filtro-plano').select2({
     allowClear: true,
     placeholder: function () { return $(this).data('placeholder') || ''; },
     width: '100%',
@@ -153,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ajax: {
       url: baseUrl + '/datatable',
       data: function (d) {
-        d.role     = $('#filtro-role').val();
+        d.roles    = $('#filtro-role').val() || [];
         d.status   = $('#filtro-status').val();
         d.plan_id  = $('#filtro-plano').val();
       },
@@ -205,7 +230,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // ---- Aplicar filtros ----
   $('#filtro-role, #filtro-status, #filtro-plano').on('change', () => dt.draw());
   $('#btn-limpar-filtros').on('click', () => {
-    $('#filtro-role, #filtro-status, #filtro-plano').val(null).trigger('change');
+    $('#filtro-role').val([]).trigger('change');
+    $('#filtro-status, #filtro-plano').val(null).trigger('change');
   });
 
   // ---- Modal de detalhes ----
@@ -243,6 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
       renderField('Cadastrado em', d.created_at),
       renderField('E-mail verificado em', d.email_verified_at),
       renderField('Último login', d.last_login_at),
+      renderField('Endereço', d.endereco, { full: true }),
       '<div class="col-12"><hr class="my-2"><h6 class="text-muted small text-uppercase mb-3">Assinatura</h6></div>',
       renderField('Plano', d.plan_nome),
       renderField('Tipo', d.plan_tipo ? d.plan_tipo[0].toUpperCase() + d.plan_tipo.slice(1) : null),

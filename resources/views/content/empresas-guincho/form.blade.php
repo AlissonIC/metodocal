@@ -112,7 +112,8 @@
           <div class="row">
             <div class="col-md-4 mb-4">
               <label class="form-label">CEP</label>
-              <input type="text" class="form-control mask-cep" name="cep" maxlength="10" placeholder="00000-000" value="{{ old('cep', $empresa->cep) }}">
+              <input type="text" class="form-control mask-cep" name="cep" maxlength="10" placeholder="00000-000" value="{{ old('cep', $empresa->cep) }}"
+                     data-cep-autocomplete data-target-street="endereco" data-target-state="estado">
             </div>
             <div class="col-md-8 mb-4">
               <label class="form-label">Logradouro</label>
@@ -190,4 +191,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @include('_partials._masks-script')
+@include('_partials._cep-autocomplete')
 @endsection

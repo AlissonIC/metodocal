@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\ComissaoController as AdminComissaoController;
+use App\Http\Controllers\Admin\DespesaController as AdminDespesaController;
 use App\Http\Controllers\Admin\ConteudoController as AdminConteudoController;
 use App\Http\Controllers\Admin\FinanceiroController;
 use App\Http\Controllers\Admin\MaterialController as AdminMaterialController;
 use App\Http\Controllers\Admin\BancoController as AdminBancoController;
 use App\Http\Controllers\Api\BrasilApiController;
-use App\Http\Controllers\Admin\CompradorController as AdminCompradorController;
 use App\Http\Controllers\Admin\NotificacaoController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ServicoController as AdminServicoController;
@@ -89,6 +89,10 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/perfil/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
     });
 
+    // Calculadora — admin + assinantes (mentorado/licenciado)
+    Route::get('/calculadora', [App\Http\Controllers\CalculadoraController::class, 'index'])
+        ->middleware('role:admin|mentorado|licenciado')->name('calculadora');
+
     // Minha Assinatura — só clientes (admin não assina)
     Route::get('/minha-assinatura', [SubscriptionController::class, 'show'])
         ->middleware('role:mentorado|licenciado')->name('subscription.view');
@@ -156,12 +160,28 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     // Processos — ações admin (mesmo prefixo, role diferente)
     Route::middleware('role:admin')->group(function () {
         Route::patch('/processos/{processo}/status', [ProcessoController::class, 'updateStatus'])->name('processos.status');
-        Route::patch('/processos/{processo}/observacoes', [ProcessoController::class, 'updateObservacoes'])->name('processos.observacoes');
+        Route::get('/processos/{processo}/observacoes/datatable', [ProcessoController::class, 'datatableObservacoes'])->name('processos.observacoes.datatable');
+        Route::post('/processos/{processo}/observacoes', [ProcessoController::class, 'storeObservacao'])->name('processos.observacoes.store');
+        Route::get('/processos/observacoes/{observacao}', [ProcessoController::class, 'showObservacao'])->name('processos.observacoes.show');
+        Route::patch('/processos/observacoes/{observacao}', [ProcessoController::class, 'updateObservacao'])->name('processos.observacoes.update');
+        Route::delete('/processos/observacoes/{observacao}', [ProcessoController::class, 'destroyObservacao'])->name('processos.observacoes.destroy');
+        Route::get('/processos/observacoes/{observacao}/anexo', [ProcessoController::class, 'downloadAnexoObservacao'])->name('processos.observacoes.anexo.download');
+        Route::get('/processos/{processo}/faturas/datatable', [ProcessoController::class, 'datatableFaturas'])->name('processos.faturas.datatable');
         Route::post('/processos/{processo}/faturas', [ProcessoController::class, 'storeFatura'])->name('processos.faturas.store');
+        Route::get('/processos/faturas/{fatura}', [ProcessoController::class, 'showFatura'])->name('processos.faturas.show');
+        Route::patch('/processos/faturas/{fatura}', [ProcessoController::class, 'updateFatura'])->name('processos.faturas.update');
         Route::delete('/processos/faturas/{fatura}', [ProcessoController::class, 'destroyFatura'])->name('processos.faturas.destroy');
+
+        Route::get('/processos/{processo}/comissoes/datatable', [ProcessoController::class, 'datatableComissoes'])->name('processos.comissoes.datatable');
         Route::post('/processos/{processo}/comissoes', [ProcessoController::class, 'storeComissao'])->name('processos.comissoes.store');
+        Route::get('/processos/comissoes/{comissao}', [ProcessoController::class, 'showComissao'])->name('processos.comissoes.show');
+        Route::patch('/processos/comissoes/{comissao}', [ProcessoController::class, 'updateComissao'])->name('processos.comissoes.update');
         Route::delete('/processos/comissoes/{comissao}', [ProcessoController::class, 'destroyComissao'])->name('processos.comissoes.destroy');
+
+        Route::get('/processos/{processo}/negociacoes/datatable', [ProcessoController::class, 'datatableNegociacoes'])->name('processos.negociacoes.datatable');
         Route::post('/processos/{processo}/negociacoes', [ProcessoController::class, 'storeNegociacao'])->name('processos.negociacoes.store');
+        Route::get('/processos/negociacoes/{negociacao}', [ProcessoController::class, 'showNegociacao'])->name('processos.negociacoes.show');
+        Route::patch('/processos/negociacoes/{negociacao}', [ProcessoController::class, 'updateNegociacao'])->name('processos.negociacoes.update');
         Route::delete('/processos/negociacoes/{negociacao}', [ProcessoController::class, 'destroyNegociacao'])->name('processos.negociacoes.destroy');
     });
 
@@ -170,6 +190,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('admin.financeiro');
         Route::get('/financeiro/relatorios', [FinanceiroController::class, 'relatorios'])->name('admin.financeiro.relatorios');
         Route::get('/financeiro/relatorios/data', [FinanceiroController::class, 'relatoriosData'])->name('admin.financeiro.relatorios.data');
+        Route::get('/financeiro/relatorios/fluxo-caixa', [FinanceiroController::class, 'fluxoCaixaData'])->name('admin.financeiro.relatorios.fluxo-caixa');
         Route::get('/financeiro/datatable', [FinanceiroController::class, 'datatable'])->name('admin.financeiro.datatable');
         Route::get('/financeiro/eventos-pagamento/datatable', [FinanceiroController::class, 'paymentEvents']);
         Route::get('/financeiro/{fatura}', [FinanceiroController::class, 'show'])->name('admin.financeiro.show');
@@ -267,15 +288,6 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::delete('/sessoes/{sessao}', [AdminSessaoController::class, 'destroy'])->name('admin.sessoes.destroy');
     });
     Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::get('/compradores', [AdminCompradorController::class, 'index'])->name('admin.compradores');
-        Route::get('/compradores/datatable', [AdminCompradorController::class, 'datatable']);
-        Route::get('/compradores/novo', [AdminCompradorController::class, 'create'])->name('admin.compradores.create');
-        Route::post('/compradores', [AdminCompradorController::class, 'store'])->name('admin.compradores.store');
-        Route::get('/compradores/{comprador}/editar', [AdminCompradorController::class, 'edit'])->name('admin.compradores.edit');
-        Route::patch('/compradores/{comprador}', [AdminCompradorController::class, 'update'])->name('admin.compradores.update');
-        Route::delete('/compradores/{comprador}', [AdminCompradorController::class, 'destroy'])->name('admin.compradores.destroy');
-    });
-    Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/conteudos', [AdminConteudoController::class, 'index'])->name('admin.conteudos');
         Route::get('/conteudos/datatable', [AdminConteudoController::class, 'datatable']);
         Route::get('/conteudos/novo', [AdminConteudoController::class, 'create'])->name('admin.conteudos.create');
@@ -301,5 +313,20 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::get('/comissoes/{comissao}/editar', [AdminComissaoController::class, 'edit'])->name('admin.comissoes.edit');
         Route::patch('/comissoes/{comissao}', [AdminComissaoController::class, 'update'])->name('admin.comissoes.update');
         Route::delete('/comissoes/{comissao}', [AdminComissaoController::class, 'destroy'])->name('admin.comissoes.destroy');
+    });
+
+    Route::middleware('role:admin')->prefix('financeiro')->group(function () {
+        Route::get('/despesas', [AdminDespesaController::class, 'index'])->name('admin.despesas');
+        Route::get('/despesas/datatable', [AdminDespesaController::class, 'datatable'])->name('admin.despesas.datatable');
+        Route::post('/despesas', [AdminDespesaController::class, 'storeDespesa'])->name('admin.despesas.store');
+        Route::get('/despesas/{despesa}', [AdminDespesaController::class, 'showDespesa'])->name('admin.despesas.show');
+        Route::patch('/despesas/{despesa}', [AdminDespesaController::class, 'updateDespesa'])->name('admin.despesas.update');
+        Route::delete('/despesas/{despesa}', [AdminDespesaController::class, 'destroyDespesa'])->name('admin.despesas.destroy');
+        Route::patch('/despesas/{despesa}/encerrar', [AdminDespesaController::class, 'encerrarDespesa'])->name('admin.despesas.encerrar');
+        Route::patch('/despesas/{despesa}/reabrir', [AdminDespesaController::class, 'reabrirDespesa'])->name('admin.despesas.reabrir');
+
+        Route::patch('/despesas/ocorrencias/{ocorrencia}/paga', [AdminDespesaController::class, 'marcarPaga'])->name('admin.despesas.ocorrencias.paga');
+        Route::patch('/despesas/ocorrencias/{ocorrencia}/pendente', [AdminDespesaController::class, 'marcarPendente'])->name('admin.despesas.ocorrencias.pendente');
+        Route::delete('/despesas/ocorrencias/{ocorrencia}', [AdminDespesaController::class, 'destroyOcorrencia'])->name('admin.despesas.ocorrencias.destroy');
     });
 });

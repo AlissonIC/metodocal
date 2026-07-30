@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comissao;
+use App\Models\DespesaOcorrencia;
 use App\Models\Fatura;
 use App\Models\PaymentEvent;
 use App\Models\Plan;
@@ -334,6 +335,128 @@ class FinanceiroController extends Controller
             'serie_comissoes' => $serieComissoes,
             'status_faturas' => $statusFaturas,
             'top_usuarios' => $topUsuarios,
+        ]);
+    }
+
+    /**
+     * Fluxo de caixa consolidado do período: unifica faturas + comissões + despesas
+     * em uma lista cronológica com sinal (+ entrada, - saída) e totais realizados.
+     *
+     * Realizado = já pago (pago_em preenchido). Previsto = pendente com vencimento no período.
+     */
+    public function fluxoCaixaData(Request $request): JsonResponse
+    {
+        $de = $request->query('de') ? Carbon::parse($request->query('de'))->startOfDay() : now()->startOfMonth();
+        $ate = $request->query('ate') ? Carbon::parse($request->query('ate'))->endOfDay() : now()->endOfMonth();
+
+        // Filtra pela DATA DE REFERÊNCIA (pago_em para realizados; vencimento para previstos).
+        // Para incluir o item no relatório, sua data relevante precisa cair no período.
+
+        $linhas = collect();
+
+        // ---- FATURAS ----
+        Fatura::query()
+            ->with(['user:id,name', 'processo:id,nome_completo'])
+            ->where(function ($q) use ($de, $ate) {
+                $q->whereBetween('pago_em', [$de, $ate])
+                  ->orWhere(fn ($q2) => $q2->whereBetween('vencimento', [$de->toDateString(), $ate->toDateString()])->whereIn('status', ['pendente']));
+            })
+            ->orderByDesc('vencimento')
+            ->chunk(500, function ($chunk) use (&$linhas) {
+                foreach ($chunk as $f) {
+                    $realizada = $f->status === 'paga' && $f->pago_em;
+                    $data = $realizada ? $f->pago_em : $f->vencimento;
+                    $descricao = 'Fatura: ' . ($f->descricao ?: 'cobrança')
+                        . ($f->user?->name ? ' — ' . $f->user->name : '')
+                        . ($f->processo_id ? ' (proc. #' . $f->processo_id . ')' : '');
+
+                    $linhas->push([
+                        'data' => Carbon::parse($data)->toDateString(),
+                        'tipo' => 'fatura',
+                        'descricao' => $descricao,
+                        'valor' => (float) $f->valor,
+                        'sinal' => '+', // fatura é sempre entrada
+                        'status' => $f->isAtrasada() ? 'atrasada' : $f->status,
+                        'realizada' => $realizada,
+                        'url' => route('admin.financeiro.show', $f),
+                    ]);
+                }
+            });
+
+        // ---- COMISSÕES ----
+        Comissao::query()
+            ->with('licenciado:id,name')
+            ->whereBetween('data_referencia', [$de->toDateString(), $ate->toDateString()])
+            ->where('status', '!=', 'cancelada')
+            ->orderByDesc('data_referencia')
+            ->chunk(500, function ($chunk) use (&$linhas) {
+                foreach ($chunk as $c) {
+                    $realizada = $c->status === 'paga' && $c->pago_em;
+                    $sinal = $c->tipo === 'a_receber' ? '+' : '-';
+                    $descricao = 'Comissão (' . $c->tipoLabel() . '): ' . $c->descricao
+                        . ($c->licenciado?->name ? ' — ' . $c->licenciado->name : '');
+
+                    $linhas->push([
+                        'data' => $c->data_referencia->toDateString(),
+                        'tipo' => 'comissao',
+                        'descricao' => $descricao,
+                        'valor' => (float) $c->valor,
+                        'sinal' => $sinal,
+                        'status' => $c->status,
+                        'realizada' => $realizada,
+                        'url' => route('admin.comissoes.edit', $c),
+                    ]);
+                }
+            });
+
+        // ---- DESPESAS (ocorrências) ----
+        DespesaOcorrencia::query()
+            ->with('despesa:id,nome,categoria')
+            ->where('status', '!=', 'cancelada')
+            ->where(function ($q) use ($de, $ate) {
+                $q->whereBetween('pago_em', [$de, $ate])
+                  ->orWhereBetween('vencimento', [$de->toDateString(), $ate->toDateString()]);
+            })
+            ->orderByDesc('vencimento')
+            ->chunk(500, function ($chunk) use (&$linhas) {
+                foreach ($chunk as $o) {
+                    $realizada = $o->status === 'paga' && $o->pago_em;
+                    $data = $realizada ? $o->pago_em : $o->vencimento;
+                    $descricao = 'Despesa: ' . ($o->despesa?->nome ?? '—')
+                        . ($o->despesa?->categoria ? ' [' . $o->despesa->categoria . ']' : '')
+                        . ' (comp. ' . $o->competencia->format('m/Y') . ')';
+
+                    $linhas->push([
+                        'data' => Carbon::parse($data)->toDateString(),
+                        'tipo' => 'despesa',
+                        'descricao' => $descricao,
+                        'valor' => (float) $o->valor,
+                        'sinal' => '-', // despesa é sempre saída
+                        'status' => $o->isAtrasada() ? 'atrasada' : $o->status,
+                        'realizada' => $realizada,
+                        'url' => route('admin.despesas'),
+                    ]);
+                }
+            });
+
+        // Ordena mais recente primeiro
+        $linhas = $linhas->sortByDesc('data')->values();
+
+        $totais = [
+            'entradas_realizadas' => $linhas->where('realizada', true)->where('sinal', '+')->sum('valor'),
+            'saidas_realizadas' => $linhas->where('realizada', true)->where('sinal', '-')->sum('valor'),
+            'entradas_previstas' => $linhas->where('realizada', false)->where('sinal', '+')->sum('valor'),
+            'saidas_previstas' => $linhas->where('realizada', false)->where('sinal', '-')->sum('valor'),
+            'qtd' => $linhas->count(),
+        ];
+        $totais['saldo_realizado'] = $totais['entradas_realizadas'] - $totais['saidas_realizadas'];
+        $totais['saldo_projetado'] = $totais['saldo_realizado']
+            + ($totais['entradas_previstas'] - $totais['saidas_previstas']);
+
+        return response()->json([
+            'periodo' => ['de' => $de->toDateString(), 'ate' => $ate->toDateString()],
+            'linhas' => $linhas,
+            'totais' => $totais,
         ]);
     }
 

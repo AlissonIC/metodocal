@@ -7,6 +7,9 @@
 @vite([
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
   'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 ])
 @endsection
 
@@ -15,6 +18,8 @@
   'resources/assets/vendor/libs/flatpickr/flatpickr.js',
   'resources/assets/vendor/libs/select2/select2.js',
   'resources/assets/vendor/libs/cleave-zen/cleave-zen.js',
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 ])
 @endsection
 
@@ -50,6 +55,13 @@
   /* No campo já fechado, mantém badge + nome em 1 linha compacta */
   .select2-selection__rendered .badge { flex-shrink: 0; }
   .select2-selection--single { overflow: hidden; }
+
+  /* Sem busca / sem "por página" — remove o espaço vazio do dt-container em todas as tabelas do show */
+  .dt-collapse-empty ~ .dt-layout-row:has(.dt-layout-start:empty):has(.dt-layout-end:empty),
+  .datatables-observacoes_wrapper .dt-layout-row:has(.dt-layout-start:empty):has(.dt-layout-end:empty),
+  .datatables-faturas_wrapper .dt-layout-row:has(.dt-layout-start:empty):has(.dt-layout-end:empty),
+  .datatables-comissoes_wrapper .dt-layout-row:has(.dt-layout-start:empty):has(.dt-layout-end:empty),
+  .datatables-negociacoes_wrapper .dt-layout-row:has(.dt-layout-start:empty):has(.dt-layout-end:empty) { display: none; }
 </style>
 @endsection
 @endif
@@ -269,223 +281,50 @@
         </div>
       </div>
 
+      {{-- ================= DÍVIDAS DO PROCESSO (Faturas) ================= --}}
       <div class="card mb-4">
         <div class="card-header border-bottom d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0"><i class="icon-base ti tabler-receipt me-1"></i> Dívidas do processo</h5>
-          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nova-fatura-form">
+          <button type="button" class="btn btn-sm btn-primary" id="btn-nova-fatura">
             <i class="icon-base ti tabler-plus me-1"></i> Nova dívida
           </button>
         </div>
-        <div class="collapse" id="nova-fatura-form">
-          <div class="card-body border-bottom bg-light">
-            <form method="POST" action="{{ route('processos.faturas.store', $processo) }}" class="row g-2">
-              @csrf
-              <div class="col-md-5">
-                <label class="form-label small mb-1">Descrição</label>
-                <input type="text" name="descricao" class="form-control form-control-sm" maxlength="255" placeholder="Ex.: Entrada do serviço, dívida assumida do banco X">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Valor (R$) *</label>
-                <input type="text" inputmode="numeric" name="valor" class="form-control form-control-sm mask-money" required value="{{ $processo->servico?->valor_padrao ? number_format((float) $processo->servico->valor_padrao, 2, ',', '.') : '' }}" placeholder="0,00">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Vencimento *</label>
-                <input type="text" name="vencimento" class="form-control form-control-sm flatpickr-date" required value="{{ now()->addDays(7)->toDateString() }}" placeholder="dd/mm/aaaa">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Status *</label>
-                <select name="status" class="form-select form-select-sm" required>
-                  <option value="pendente">Pendente</option>
-                  <option value="paga">Paga</option>
-                  <option value="cancelada">Cancelada</option>
-                </select>
-              </div>
-              <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-sm btn-primary w-100" title="Salvar"><i class="icon-base ti tabler-device-floppy"></i></button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div class="card-body pt-2">
-          @php
-            // Consolida "dívidas com credores" (Divida) e "cobranças" (Fatura) num único stream ordenado
-            $itensDivida = collect();
-            foreach ($processo->dividas as $d) {
-              $itensDivida->push((object) [
-                'tipo' => 'credor',
-                'valor' => $d->valor,
-                'descricao' => $d->descricao ?: 'Dívida com credor',
-                'origem' => $d->credor,
-                'status' => 'assumida',
-                'status_label' => 'Assumida',
-                'status_color' => 'info',
-                'data' => $processo->created_at,
-                'data_label' => 'Registrada em ' . $processo->created_at->format('d/m/Y'),
-                'icon' => 'tabler-building-bank',
-                'actions' => null,
-              ]);
-            }
-            foreach ($processo->faturas as $f) {
-              $map = ['pendente' => 'warning', 'paga' => 'success', 'cancelada' => 'secondary', 'estornada' => 'info', 'atrasada' => 'danger'];
-              $color = $f->isAtrasada() ? 'danger' : ($map[$f->status] ?? 'secondary');
-              $label = $f->isAtrasada() ? 'Atrasada' : ucfirst($f->status);
-              $itensDivida->push((object) [
-                'tipo' => 'fatura',
-                'valor' => $f->valor,
-                'descricao' => $f->descricao ?: 'Cobrança do processo',
-                'origem' => null,
-                'status' => $f->status,
-                'status_label' => $label,
-                'status_color' => $color,
-                'data' => $f->vencimento,
-                'data_label' => 'Vence ' . $f->vencimento->format('d/m/Y'),
-                'icon' => 'tabler-file-invoice',
-                'actions' => $f,
-              ]);
-            }
-            $totalDividas = $itensDivida->sum('valor');
-          @endphp
-          @if ($itensDivida->isEmpty())
-            <p class="text-muted mb-0 text-center py-3">Nenhuma dívida vinculada a este processo.</p>
-          @else
-            <div class="list-group list-group-flush">
-              @foreach ($itensDivida as $item)
-                <div class="list-group-item px-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-sm">
-                      <span class="avatar-initial rounded-circle bg-label-{{ $item->status_color }}">
-                        <i class="icon-base ti {{ $item->icon }}"></i>
-                      </span>
-                    </div>
-                    <div>
-                      <div class="fw-semibold" style="font-size: 1.05rem;">R$ {{ number_format((float) $item->valor, 2, ',', '.') }}</div>
-                      <div class="small text-muted">{{ $item->descricao }}</div>
-                      @if ($item->origem)<div class="small text-muted"><i class="icon-base ti tabler-building-bank" style="font-size:.75rem;"></i> {{ $item->origem }}</div>@endif
-                    </div>
-                  </div>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="text-end">
-                      <span class="badge bg-label-{{ $item->status_color }}">{{ $item->status_label }}</span>
-                      <div class="small text-muted mt-1">{{ $item->data_label }}</div>
-                    </div>
-                    <div class="d-flex gap-1">
-                      @if ($item->actions)
-                        <a href="{{ route('admin.financeiro.show', $item->actions) }}" class="btn btn-sm btn-icon btn-label-primary" title="Detalhes"><i class="icon-base ti tabler-eye"></i></a>
-                        <form method="POST" action="{{ route('processos.faturas.destroy', $item->actions) }}" class="d-inline" onsubmit="return confirm('Excluir esta dívida?')">
-                          @csrf @method('DELETE')
-                          <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Excluir"><i class="icon-base ti tabler-trash"></i></button>
-                        </form>
-                      @endif
-                    </div>
-                  </div>
-                </div>
-              @endforeach
-              <div class="list-group-item px-0 pt-3 d-flex justify-content-between align-items-center">
-                <span class="text-muted small">Total consolidado</span>
-                <span class="fw-bold" style="font-size: 1.1rem;">R$ {{ number_format((float) $totalDividas, 2, ',', '.') }}</span>
-              </div>
-            </div>
-          @endif
+        <div class="card-body">
+          <table class="datatables-faturas dt-collapse-empty table dt-responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+          </table>
         </div>
       </div>
 
+      {{-- ================= COMISSÕES DO PROCESSO ================= --}}
       <div class="card mb-4">
         <div class="card-header border-bottom d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0"><i class="icon-base ti tabler-cash me-1"></i> Comissões do processo</h5>
-          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nova-comissao-form">
+          <button type="button" class="btn btn-sm btn-primary" id="btn-nova-comissao">
             <i class="icon-base ti tabler-plus me-1"></i> Nova comissão
           </button>
         </div>
-        <div class="collapse" id="nova-comissao-form">
-          <div class="card-body border-bottom bg-light">
-            <form method="POST" action="{{ route('processos.comissoes.store', $processo) }}" class="row g-2">
-              @csrf
-              <div class="col-md-4">
-                <label class="form-label small mb-1">Usuário *</label>
-                <select name="licensed_by_user_id" id="comissao-usuario-select" class="form-select form-select-sm select2-role" required>
-                  <option value=""></option>
-                  @foreach ($usuariosParaComissao as $u)
-                    <option value="{{ $u['id'] }}" data-role="{{ $u['role'] }}" data-email="{{ $u['email'] }}">{{ $u['name'] }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small mb-1">Descrição *</label>
-                <input type="text" name="descricao" class="form-control form-control-sm" required maxlength="160" placeholder="Comissão do fechamento">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Valor (R$) *</label>
-                <input type="text" inputmode="numeric" name="valor" class="form-control form-control-sm mask-money" required placeholder="0,00">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Tipo *</label>
-                <select name="tipo" class="form-select form-select-sm" required>
-                  <option value="a_receber">A receber</option>
-                  <option value="a_pagar">A pagar</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Data *</label>
-                <input type="text" name="data_referencia" class="form-control form-control-sm flatpickr-date" required value="{{ now()->toDateString() }}" placeholder="dd/mm/aaaa">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Status *</label>
-                <select name="status" class="form-select form-select-sm" required>
-                  <option value="pendente">Pendente</option>
-                  <option value="paga">Paga</option>
-                  <option value="cancelada">Cancelada</option>
-                </select>
-              </div>
-              <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-sm btn-primary w-100" title="Salvar"><i class="icon-base ti tabler-device-floppy"></i></button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div class="card-body pt-2">
-          @if ($processo->comissoes->isEmpty())
-            <p class="text-muted mb-0 text-center py-3">Nenhuma comissão vinculada a este processo.</p>
-          @else
-            <div class="list-group list-group-flush">
-              @foreach ($processo->comissoes as $c)
-                @php
-                  $sMap = ['pendente' => 'warning', 'paga' => 'success', 'cancelada' => 'secondary'];
-                  $sColor = $sMap[$c->status] ?? 'secondary';
-                  $isReceber = $c->tipo === 'a_receber';
-                @endphp
-                <div class="list-group-item px-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-sm">
-                      <span class="avatar-initial rounded-circle bg-label-{{ $isReceber ? 'success' : 'warning' }}">
-                        <i class="icon-base ti tabler-{{ $isReceber ? 'arrow-down-right' : 'arrow-up-right' }}"></i>
-                      </span>
-                    </div>
-                    <div>
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="fw-semibold" style="font-size: 1.05rem;">R$ {{ number_format((float) $c->valor, 2, ',', '.') }}</span>
-                        <span class="badge bg-label-{{ $c->tipoColor() }}">{{ $c->tipoLabel() }}</span>
-                      </div>
-                      <div class="small text-muted">{{ $c->descricao }}</div>
-                      <div class="small text-muted">{{ $c->licenciado?->name ?? '—' }}</div>
-                    </div>
-                  </div>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="text-end">
-                      <span class="badge bg-label-{{ $sColor }}">{{ ucfirst($c->status) }}</span>
-                      <div class="small text-muted mt-1">{{ $c->data_referencia->format('d/m/Y') }}</div>
-                    </div>
-                    <div class="d-flex gap-1">
-                      <a href="{{ url('/painel/admin/comissoes/' . $c->id . '/editar') }}" class="btn btn-sm btn-icon" title="Editar"><i class="icon-base ti tabler-edit"></i></a>
-                      <form method="POST" action="{{ route('processos.comissoes.destroy', $c) }}" class="d-inline" onsubmit="return confirm('Excluir esta comissão?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Excluir"><i class="icon-base ti tabler-trash"></i></button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              @endforeach
-            </div>
-          @endif
+        <div class="card-body">
+          <table class="datatables-comissoes dt-collapse-empty table dt-responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Tipo</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+          </table>
         </div>
       </div>
 
@@ -500,99 +339,268 @@
             <h5 class="card-title mb-0"><i class="icon-base ti tabler-message-2 me-1"></i> Negociação do contrato</h5>
             <small class="text-muted">Valor em mãos atual: <strong>R$ {{ number_format((float) $valorEmMaosAtual, 2, ',', '.') }}</strong></small>
           </div>
-          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#nova-negociacao-form">
+          <button type="button" class="btn btn-sm btn-primary" id="btn-nova-negociacao">
             <i class="icon-base ti tabler-plus me-1"></i> Registrar negociação
           </button>
         </div>
-        <div class="collapse" id="nova-negociacao-form">
-          <div class="card-body border-bottom bg-light">
-            <form method="POST" action="{{ route('processos.negociacoes.store', $processo) }}" class="row g-2">
-              @csrf
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Data *</label>
-                <input type="text" name="data" class="form-control form-control-sm flatpickr-date" required value="{{ now()->toDateString() }}" placeholder="dd/mm/aaaa">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small mb-1">Assessoria</label>
-                <input type="text" name="assessoria" class="form-control form-control-sm" maxlength="120" placeholder="Ex.: JCS, Banco XYZ...">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Val. atualizado</label>
-                <input type="text" inputmode="numeric" name="val_atualizado" class="form-control form-control-sm mask-money" placeholder="0,00">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Val. análise</label>
-                <input type="text" inputmode="numeric" name="val_analise" class="form-control form-control-sm mask-money" placeholder="0,00">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label small mb-1">Val. em mãos</label>
-                <input type="text" inputmode="numeric" name="val_em_maos" class="form-control form-control-sm mask-money" placeholder="0,00">
-              </div>
-              <div class="col-12">
-                <label class="form-label small mb-1">Resumo da negociação *</label>
-                <textarea name="resumo" class="form-control form-control-sm" rows="2" required maxlength="2000" placeholder="Plano de quitação: R$ 6.000,00 a R$ 6.500,00. Proposta de 10 mil para pré-análise..."></textarea>
-              </div>
-              <div class="col-12">
-                <label class="form-label small mb-1">Feedback (opcional)</label>
-                <textarea name="feedback" class="form-control form-control-sm" rows="1" maxlength="1000" placeholder="Retorno do banco, próxima ação..."></textarea>
-              </div>
-              <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-sm btn-primary"><i class="icon-base ti tabler-device-floppy me-1"></i> Registrar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div class="card-body pt-2">
-          @if ($processo->negociacoes->isEmpty())
-            <p class="text-muted mb-0 text-center py-3">Nenhuma negociação registrada. Clique em "Registrar negociação" para iniciar o histórico.</p>
-          @else
-            <div class="list-group list-group-flush">
-              @foreach ($processo->negociacoes as $n)
-                <div class="list-group-item px-0">
-                  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="badge bg-label-secondary">{{ $n->data->format('d/m/Y') }}</span>
-                      @if ($n->assessoria)<span class="badge bg-label-info">{{ $n->assessoria }}</span>@endif
-                    </div>
-                    <form method="POST" action="{{ route('processos.negociacoes.destroy', $n) }}" onsubmit="return confirm('Excluir esta negociação?')">
-                      @csrf @method('DELETE')
-                      <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Excluir"><i class="icon-base ti tabler-trash"></i></button>
-                    </form>
-                  </div>
-                  <p class="mb-2">{{ $n->resumo }}</p>
-                  <div class="row g-2 mb-2 small">
-                    @if ($n->val_atualizado)
-                      <div class="col-md-4"><span class="text-muted">Val. atualizado:</span> <strong>R$ {{ number_format((float) $n->val_atualizado, 2, ',', '.') }}</strong></div>
-                    @endif
-                    @if ($n->val_analise)
-                      <div class="col-md-4"><span class="text-muted">Val. análise:</span> <strong>R$ {{ number_format((float) $n->val_analise, 2, ',', '.') }}</strong></div>
-                    @endif
-                    @if ($n->val_em_maos)
-                      <div class="col-md-4"><span class="text-muted">Val. em mãos:</span> <strong class="text-success">R$ {{ number_format((float) $n->val_em_maos, 2, ',', '.') }}</strong></div>
-                    @endif
-                  </div>
-                  @if ($n->feedback)
-                    <div class="alert alert-info py-2 mb-2 small">
-                      <i class="icon-base ti tabler-message-circle me-1"></i>
-                      <strong>Feedback:</strong> {{ $n->feedback }}
-                    </div>
-                  @endif
-                  <small class="text-muted">Registrado por {{ $n->inseridaPor?->name ?? 'sistema' }} em {{ $n->created_at->format('d/m/Y H:i') }}</small>
-                </div>
-              @endforeach
-            </div>
-          @endif
+        <div class="card-body">
+          <table class="datatables-negociacoes dt-collapse-empty table dt-responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>Resumo</th>
+                <th>Assessoria</th>
+                <th>Val. em mãos</th>
+                <th>Data</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+          </table>
         </div>
       </div>
 
       <div class="card mb-4">
-        <div class="card-header border-bottom"><h5 class="card-title mb-0">Observações internas (admin)</h5></div>
+        <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="card-title mb-0"><i class="icon-base ti tabler-notes me-1"></i> Observações internas (admin)</h5>
+            <small class="text-muted">Notas visíveis apenas para a equipe administrativa.</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" id="btn-nova-observacao">
+            <i class="icon-base ti tabler-plus me-1"></i> Nova observação
+          </button>
+        </div>
         <div class="card-body">
-          <form method="POST" action="{{ route('processos.observacoes', $processo) }}">
-            @csrf @method('PATCH')
-            <textarea name="observacoes_admin" class="form-control mb-3" rows="4" maxlength="5000" placeholder="Notas visíveis apenas para a equipe administrativa...">{{ old('observacoes_admin', $processo->observacoes_admin) }}</textarea>
-            <button type="submit" class="btn btn-primary"><i class="icon-base ti tabler-device-floppy me-1"></i> Salvar</button>
-          </form>
+          <table class="datatables-observacoes table dt-responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>Resumo</th>
+                <th>Atualizado em</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+
+      {{-- Modal: criar/editar observação --}}
+      <div class="modal fade" id="observacaoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <form id="observacao-form" autocomplete="off" enctype="multipart/form-data">
+              <div class="modal-header">
+                <h5 class="modal-title" id="observacaoModalTitle">Nova observação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div id="observacao-meta" class="alert alert-secondary py-2 small mb-3" style="display:none;"></div>
+                <div id="observacao-error" class="alert alert-danger py-2 small mb-3" style="display:none;"></div>
+                <input type="hidden" name="id" id="observacao-id">
+                <input type="hidden" name="remover_anexo" id="observacao-remover-anexo" value="0">
+                <div class="mb-3">
+                  <label class="form-label">Resumo *</label>
+                  <input type="text" class="form-control" name="resumo" id="observacao-resumo" required maxlength="200" placeholder="Ex.: Contato com credor; documento pendente">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Descrição *</label>
+                  <textarea class="form-control" name="descricao" id="observacao-descricao" rows="6" required maxlength="5000" placeholder="Detalhes da observação..."></textarea>
+                </div>
+
+                {{-- Anexo existente (aparece só no editar quando há arquivo) --}}
+                <div id="observacao-anexo-atual" class="mb-3" style="display:none;">
+                  <label class="form-label small text-muted text-uppercase" style="letter-spacing:.05em;">Anexo atual</label>
+                  <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
+                    <img id="observacao-anexo-thumb" src="" alt="" class="rounded" style="height:48px;width:48px;object-fit:cover;display:none;">
+                    <i id="observacao-anexo-icon" class="icon-base ti tabler-file text-muted" style="font-size:1.75rem;display:none;"></i>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <a id="observacao-anexo-link" href="#" target="_blank" class="fw-medium text-truncate d-block">arquivo</a>
+                      <small id="observacao-anexo-meta" class="text-muted"></small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-label-danger" id="observacao-anexo-remover" title="Remover anexo">
+                      <i class="icon-base ti tabler-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-0" id="observacao-anexo-upload">
+                  <label class="form-label" for="observacao-anexo">
+                    <i class="icon-base ti tabler-paperclip me-1"></i>
+                    Anexar documento/imagem <span class="text-muted small">(opcional)</span>
+                  </label>
+                  <input type="file" class="form-control" name="anexo" id="observacao-anexo"
+                         accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+                  <small class="text-muted">JPG, PNG, GIF, WEBP, PDF, DOC, XLS, TXT ou ZIP · até 10 MB</small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="observacao-save-btn">
+                  <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {{-- Modal: criar/editar dívida (Fatura) --}}
+      <div class="modal fade" id="faturaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <form id="fatura-form" autocomplete="off">
+              <div class="modal-header">
+                <h5 class="modal-title" id="faturaModalTitle">Nova dívida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div id="fatura-error" class="alert alert-danger py-2 small mb-3" style="display:none;"></div>
+                <input type="hidden" name="id" id="fatura-id">
+                <div class="mb-3">
+                  <label class="form-label">Descrição</label>
+                  <input type="text" class="form-control" name="descricao" id="fatura-descricao" maxlength="255" placeholder="Ex.: Entrada do serviço, dívida assumida do banco X">
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Valor (R$) *</label>
+                    <input type="text" inputmode="numeric" class="form-control mask-money" name="valor" id="fatura-valor" required placeholder="0,00">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Vencimento *</label>
+                    <input type="text" class="form-control flatpickr-date" name="vencimento" id="fatura-vencimento" required placeholder="dd/mm/aaaa">
+                  </div>
+                  <div class="col-md-4 mb-0">
+                    <label class="form-label">Status *</label>
+                    <select class="form-select" name="status" id="fatura-status" required>
+                      <option value="pendente">Pendente</option>
+                      <option value="paga">Paga</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="fatura-save-btn">
+                  <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {{-- Modal: criar/editar comissão --}}
+      <div class="modal fade" id="comissaoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <form id="comissao-form" autocomplete="off">
+              <div class="modal-header">
+                <h5 class="modal-title" id="comissaoModalTitle">Nova comissão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div id="comissao-error" class="alert alert-danger py-2 small mb-3" style="display:none;"></div>
+                <input type="hidden" name="id" id="comissao-id">
+                <div class="row">
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label">Usuário *</label>
+                    <select name="licensed_by_user_id" id="comissao-usuario-select" class="form-select" required>
+                      <option value=""></option>
+                      @foreach ($usuariosParaComissao as $u)
+                        <option value="{{ $u['id'] }}" data-role="{{ $u['role'] }}" data-email="{{ $u['email'] }}">{{ $u['name'] }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col-md-8 mb-3">
+                    <label class="form-label">Descrição *</label>
+                    <input type="text" class="form-control" name="descricao" id="comissao-descricao" required maxlength="160" placeholder="Comissão do fechamento">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Valor (R$) *</label>
+                    <input type="text" inputmode="numeric" class="form-control mask-money" name="valor" id="comissao-valor" required placeholder="0,00">
+                  </div>
+                  <div class="col-md-4 mb-0">
+                    <label class="form-label">Tipo *</label>
+                    <select class="form-select" name="tipo" id="comissao-tipo" required>
+                      <option value="a_receber">A receber</option>
+                      <option value="a_pagar">A pagar</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-0">
+                    <label class="form-label">Data *</label>
+                    <input type="text" class="form-control flatpickr-date" name="data_referencia" id="comissao-data" required placeholder="dd/mm/aaaa">
+                  </div>
+                  <div class="col-md-4 mb-0">
+                    <label class="form-label">Status *</label>
+                    <select class="form-select" name="status" id="comissao-status" required>
+                      <option value="pendente">Pendente</option>
+                      <option value="paga">Paga</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="comissao-save-btn">
+                  <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {{-- Modal: registrar/editar negociação --}}
+      <div class="modal fade" id="negociacaoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <form id="negociacao-form" autocomplete="off">
+              <div class="modal-header">
+                <h5 class="modal-title" id="negociacaoModalTitle">Registrar negociação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div id="negociacao-meta" class="alert alert-secondary py-2 small mb-3" style="display:none;"></div>
+                <div id="negociacao-error" class="alert alert-danger py-2 small mb-3" style="display:none;"></div>
+                <input type="hidden" name="id" id="negociacao-id">
+                <div class="row">
+                  <div class="col-md-3 mb-3">
+                    <label class="form-label">Data *</label>
+                    <input type="text" class="form-control flatpickr-date" name="data" id="negociacao-data" required placeholder="dd/mm/aaaa">
+                  </div>
+                  <div class="col-md-9 mb-3">
+                    <label class="form-label">Assessoria</label>
+                    <input type="text" class="form-control" name="assessoria" id="negociacao-assessoria" maxlength="120" placeholder="Ex.: JCS, Banco XYZ...">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Val. atualizado</label>
+                    <input type="text" inputmode="numeric" class="form-control mask-money" name="val_atualizado" id="negociacao-val-atualizado" placeholder="0,00">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Val. análise</label>
+                    <input type="text" inputmode="numeric" class="form-control mask-money" name="val_analise" id="negociacao-val-analise" placeholder="0,00">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Val. em mãos</label>
+                    <input type="text" inputmode="numeric" class="form-control mask-money" name="val_em_maos" id="negociacao-val-em-maos" placeholder="0,00">
+                  </div>
+                  <div class="col-12 mb-3">
+                    <label class="form-label">Resumo da negociação *</label>
+                    <textarea class="form-control" name="resumo" id="negociacao-resumo" rows="3" required maxlength="2000" placeholder="Plano de quitação..."></textarea>
+                  </div>
+                  <div class="col-12 mb-0">
+                    <label class="form-label">Feedback (opcional)</label>
+                    <textarea class="form-control" name="feedback" id="negociacao-feedback" rows="2" maxlength="1000" placeholder="Retorno do banco, próxima ação..."></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="negociacao-save-btn">
+                  <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     @endif
@@ -674,22 +682,33 @@
     @endif
 
     <div class="card">
-      <div class="card-header border-bottom"><h5 class="card-title mb-0">Acompanhamento</h5></div>
-      <div class="card-body">
+      <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="icon-base ti tabler-history me-1"></i> Log de atividades</h5>
+        <span class="badge bg-label-secondary">{{ $processo->historico->count() }}</span>
+      </div>
+      <div class="card-body" style="max-height: 700px; overflow-y: auto;">
         @if ($processo->historico->isEmpty())
-          <p class="text-muted mb-0">Sem movimentações.</p>
+          <p class="text-muted mb-0">Nenhuma atividade registrada.</p>
         @else
           <ul class="timeline mb-0">
             @foreach ($processo->historico as $h)
               <li class="timeline-item timeline-item-transparent">
-                <span class="timeline-point timeline-point-{{ $h->statusNovoColor() }}"></span>
-                <div class="timeline-event">
-                  <div class="timeline-header">
-                    <h6 class="mb-0">{{ $h->statusNovoLabel() }}</h6>
-                    <small class="text-muted">{{ $h->created_at->format('d/m/Y H:i') }}</small>
+                <span class="timeline-point timeline-point-{{ $h->cor() }}"></span>
+                <div class="timeline-event pb-3">
+                  <div class="timeline-header d-flex justify-content-between align-items-baseline gap-2 mb-1">
+                    <h6 class="mb-0 small text-uppercase d-flex align-items-center gap-1" style="letter-spacing: .04em;">
+                      <i class="icon-base ti {{ $h->icone() }} text-{{ $h->cor() }}"></i>
+                      {{ $h->acaoLabel() }}
+                    </h6>
+                    <small class="text-muted text-nowrap">{{ $h->created_at->format('d/m/Y H:i') }}</small>
                   </div>
-                  @if ($h->observacao)<p class="mb-0 small">{{ $h->observacao }}</p>@endif
-                  @if ($h->user)<small class="text-muted">por {{ $h->user->name }}</small>@endif
+                  @if ($h->observacao)
+                    <p class="mb-1 small">{{ $h->observacao }}</p>
+                  @endif
+                  <small class="text-muted">
+                    <i class="icon-base ti tabler-user" style="font-size:.72rem;"></i>
+                    {{ $h->user?->name ?? 'sistema' }}
+                  </small>
                 </div>
               </li>
             @endforeach
@@ -762,16 +781,712 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const $sel = jQuery('#comissao-usuario-select');
-    $sel.wrap('<div class="position-relative"></div>').select2({
+    $sel.select2({
       placeholder: 'Selecione o usuário',
       allowClear: true,
       width: '100%',
-      dropdownParent: $sel.parent(),
+      dropdownParent: jQuery('#comissaoModal'),
       templateResult: renderResult,
       templateSelection: renderSelection,
       escapeMarkup: m => m,
     });
   }
+
+  // ================================================================
+  // OBSERVAÇÕES — DataTable + Modal (criar / editar / excluir)
+  // ================================================================
+  (function () {
+    const table = document.querySelector('.datatables-observacoes');
+    if (! table || ! window.DataTable) return;
+
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const dtUrl     = @json(route('processos.observacoes.datatable', $processo));
+    const storeUrl  = @json(route('processos.observacoes.store', $processo));
+    const baseObs   = @json(url('painel/processos/observacoes'));
+
+    const modalEl   = document.getElementById('observacaoModal');
+    const modal     = new bootstrap.Modal(modalEl);
+    const form      = document.getElementById('observacao-form');
+    const titleEl   = document.getElementById('observacaoModalTitle');
+    const idEl      = document.getElementById('observacao-id');
+    const resumoEl  = document.getElementById('observacao-resumo');
+    const descEl    = document.getElementById('observacao-descricao');
+    const metaEl    = document.getElementById('observacao-meta');
+    const errorEl   = document.getElementById('observacao-error');
+    const saveBtn   = document.getElementById('observacao-save-btn');
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    const dt = new DataTable(table, {
+      processing: true, serverSide: true, responsive: true,
+      searching: false, lengthChange: false,
+      pageLength: 10,
+      ajax: { url: dtUrl },
+      columns: [
+        {
+          data: null, responsivePriority: 1,
+          render: (row) => {
+            const clip = row.tem_anexo
+              ? `<i class="icon-base ti ${row.anexo_is_image ? 'tabler-photo' : 'tabler-paperclip'} text-primary me-1" title="Com anexo"></i>`
+              : '';
+            return clip + escapeHtml(row.resumo || '');
+          },
+        },
+        {
+          data: null, responsivePriority: 2, orderable: false, searchable: false, className: 'text-nowrap',
+          render: (row) => {
+            const foiEditada = !! row.editada_em_formatada;
+            const data   = foiEditada ? row.editada_em_formatada : (row.criada_em || '');
+            const autor  = (foiEditada ? row.editada_por_nome : row.inserida_por_nome) || '—';
+            const rotulo = foiEditada ? 'editado por' : 'criado por';
+            return `<div>${escapeHtml(data)}</div><small class="text-muted">${rotulo} ${escapeHtml(autor)}</small>`;
+          },
+        },
+        {
+          data: 'id', responsivePriority: 1,
+          orderable: false, searchable: false, className: 'text-end text-nowrap',
+          render: id => `
+            <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+              <button class="btn btn-sm btn-icon obs-edit" data-id="${id}" title="Visualizar"><i class="icon-base ti tabler-eye icon-22px"></i></button>
+              <button class="btn btn-sm btn-icon obs-delete text-danger" data-id="${id}" title="Remover"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+            </div>`,
+        },
+      ],
+      order: [],
+      language: { processing: 'Carregando...', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: 'Nenhum registro', zeroRecords: 'Nenhuma observação encontrada', emptyTable: 'Nenhuma observação cadastrada', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+      layout: { topStart: null, topEnd: null },
+    });
+
+    // Elementos do anexo
+    const anexoInput   = document.getElementById('observacao-anexo');
+    const anexoAtual   = document.getElementById('observacao-anexo-atual');
+    const anexoThumb   = document.getElementById('observacao-anexo-thumb');
+    const anexoIcon    = document.getElementById('observacao-anexo-icon');
+    const anexoLink    = document.getElementById('observacao-anexo-link');
+    const anexoMeta    = document.getElementById('observacao-anexo-meta');
+    const anexoRemover = document.getElementById('observacao-anexo-remover');
+    const anexoFlag    = document.getElementById('observacao-remover-anexo');
+
+    function limparAnexoAtual() {
+      anexoAtual.style.display = 'none';
+      anexoThumb.style.display = 'none';
+      anexoIcon.style.display = 'none';
+      anexoThumb.src = '';
+      anexoLink.href = '#';
+      anexoLink.textContent = '';
+      anexoMeta.textContent = '';
+    }
+
+    function preencherAnexoAtual(anexo) {
+      anexoLink.href = anexo.url;
+      anexoLink.textContent = anexo.nome;
+      anexoMeta.textContent = anexo.tamanho + ' · ' + (anexo.mime || 'arquivo');
+      if (anexo.is_image) {
+        anexoThumb.src = anexo.url;
+        anexoThumb.style.display = '';
+        anexoIcon.style.display = 'none';
+      } else {
+        anexoIcon.style.display = '';
+        anexoThumb.style.display = 'none';
+      }
+      anexoAtual.style.display = '';
+    }
+
+    anexoRemover.addEventListener('click', function () {
+      anexoFlag.value = '1';
+      limparAnexoAtual();
+    });
+
+    function resetForm() {
+      idEl.value = '';
+      resumoEl.value = '';
+      descEl.value = '';
+      metaEl.style.display = 'none';
+      metaEl.innerHTML = '';
+      errorEl.style.display = 'none';
+      errorEl.innerHTML = '';
+      anexoInput.value = '';
+      anexoFlag.value = '0';
+      limparAnexoAtual();
+    }
+
+    function openNew() {
+      resetForm();
+      titleEl.textContent = 'Nova observação';
+      modal.show();
+      setTimeout(() => resumoEl.focus(), 200);
+    }
+
+    async function openEdit(id) {
+      resetForm();
+      titleEl.textContent = 'Editar observação';
+      idEl.value = id;
+      try {
+        const r = await fetch(`${baseObs}/${id}`, { headers: { Accept: 'application/json' } });
+        if (! r.ok) throw new Error('Não foi possível carregar a observação.');
+        const d = await r.json();
+        resumoEl.value = d.resumo || '';
+        descEl.value = d.descricao || '';
+        const linhas = [];
+        if (d.inserida_por || d.criada_em) linhas.push(`<strong>Inserida por:</strong> ${escapeHtml(d.inserida_por || '—')}${d.criada_em ? ' em ' + escapeHtml(d.criada_em) : ''}`);
+        if (d.editada_por || d.editada_em) linhas.push(`<strong>Última edição:</strong> ${escapeHtml(d.editada_por || '—')}${d.editada_em ? ' em ' + escapeHtml(d.editada_em) : ''}`);
+        if (linhas.length) {
+          metaEl.innerHTML = linhas.join('<br>');
+          metaEl.style.display = '';
+        }
+        if (d.anexo) preencherAnexoAtual(d.anexo);
+        modal.show();
+        setTimeout(() => resumoEl.focus(), 200);
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false });
+      }
+    }
+
+    document.getElementById('btn-nova-observacao').addEventListener('click', openNew);
+
+    table.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.obs-edit');
+      if (editBtn) { openEdit(editBtn.dataset.id); return; }
+      const delBtn = e.target.closest('.obs-delete');
+      if (delBtn) {
+        const id = delBtn.dataset.id;
+        Swal.fire({
+          title: 'Excluir observação?', text: 'Esta ação não pode ser desfeita.', icon: 'warning',
+          showCancelButton: true, confirmButtonText: 'Sim, excluir', cancelButtonText: 'Cancelar',
+          customClass: { confirmButton: 'btn btn-danger me-3', cancelButton: 'btn btn-label-secondary' }, buttonsStyling: false,
+        }).then(r => {
+          if (! r.value) return;
+          fetch(`${baseObs}/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' } })
+            .then(r => r.json().then(b => ({ ok: r.ok, body: b })))
+            .then(({ ok, body }) => {
+              if (! ok) throw new Error(body.message || 'Erro ao excluir');
+              dt.draw(false);
+              Swal.fire({ icon: 'success', title: 'Excluída', text: body.message, customClass: { confirmButton: 'btn btn-success' }, buttonsStyling: false });
+            })
+            .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+        });
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      errorEl.innerHTML = '';
+      const id = idEl.value;
+      const isEdit = !! id;
+      const url = isEdit ? `${baseObs}/${id}` : storeUrl;
+
+      // FormData + method spoofing (PATCH via POST) — necessário para upload multipart
+      const fd = new FormData();
+      fd.append('resumo', resumoEl.value.trim());
+      fd.append('descricao', descEl.value.trim());
+      fd.append('remover_anexo', anexoFlag.value);
+      if (anexoInput.files[0]) fd.append('anexo', anexoInput.files[0]);
+      if (isEdit) fd.append('_method', 'PATCH');
+
+      saveBtn.disabled = true;
+      fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+        body: fd,
+      })
+        .then(r => r.json().then(b => ({ ok: r.ok, status: r.status, body: b })))
+        .then(({ ok, status, body }) => {
+          if (! ok) {
+            if (status === 422 && body.errors) {
+              const msgs = Object.values(body.errors).flat().map(escapeHtml).join('<br>');
+              errorEl.innerHTML = msgs;
+              errorEl.style.display = '';
+              return;
+            }
+            throw new Error(body.message || 'Erro ao salvar');
+          }
+          modal.hide();
+          dt.draw(false);
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 1600, showConfirmButton: false });
+        })
+        .catch(err => {
+          errorEl.textContent = err.message;
+          errorEl.style.display = '';
+        })
+        .finally(() => { saveBtn.disabled = false; });
+    });
+  })();
+
+  // ================================================================
+  // Helpers reutilizados nas três próximas seções
+  // ================================================================
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+  // Aceita "1.234,56" (BR) OU "1234.56" (EN, já normalizado pelo listener global de submit)
+  function moneyToRaw(v) {
+    const s = String(v || '').trim();
+    if (! s) return null;
+    const cleaned = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s;
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? null : n.toFixed(2);
+  }
+
+  // Reaplica máscara em campos monetários após setar valores programaticamente
+  function refreshMasks() {
+    document.dispatchEvent(new CustomEvent('mask:refresh'));
+  }
+
+  function setDate(inputEl, iso) {
+    if (! inputEl) return;
+    if (inputEl._flatpickr) inputEl._flatpickr.setDate(iso || null, true);
+    else inputEl.value = iso || '';
+  }
+
+  function readDate(inputEl) {
+    if (! inputEl) return '';
+    const fp = inputEl._flatpickr;
+    if (fp && fp.selectedDates[0]) return fp.formatDate(fp.selectedDates[0], 'Y-m-d');
+    return inputEl.value || '';
+  }
+
+  function commonSubmit({ url, method, payload, saveBtn, errorEl, onOk }) {
+    saveBtn.disabled = true;
+    return fetch(url, {
+      method,
+      headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(r => r.json().then(b => ({ ok: r.ok, status: r.status, body: b })))
+      .then(({ ok, status, body }) => {
+        if (! ok) {
+          if (status === 422 && body.errors) {
+            errorEl.innerHTML = Object.values(body.errors).flat().map(escapeHtml).join('<br>');
+            errorEl.style.display = '';
+            return;
+          }
+          throw new Error(body.message || 'Erro ao salvar');
+        }
+        onOk(body);
+      })
+      .catch(err => {
+        errorEl.textContent = err.message;
+        errorEl.style.display = '';
+      })
+      .finally(() => {
+        saveBtn.disabled = false;
+        // O listener global converteu campos mask-money para valor cru antes do submit;
+        // restaura formatação visual caso o modal continue aberto (erro/validação).
+        refreshMasks();
+      });
+  }
+
+  function commonDelete({ url, titulo, texto, onOk }) {
+    Swal.fire({
+      title: titulo, text: texto, icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Sim, excluir', cancelButtonText: 'Cancelar',
+      customClass: { confirmButton: 'btn btn-danger me-3', cancelButton: 'btn btn-label-secondary' }, buttonsStyling: false,
+    }).then(r => {
+      if (! r.value) return;
+      fetch(url, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': csrfToken, Accept: 'application/json' } })
+        .then(r => r.json().then(b => ({ ok: r.ok, body: b })))
+        .then(({ ok, body }) => {
+          if (! ok) throw new Error(body.message || 'Erro ao excluir');
+          onOk();
+          Swal.fire({ icon: 'success', title: 'Excluída', text: body.message, timer: 1600, showConfirmButton: false });
+        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+    });
+  }
+
+  // ================================================================
+  // DÍVIDAS (Faturas) — DataTable + Modal
+  // ================================================================
+  (function () {
+    const table = document.querySelector('.datatables-faturas');
+    if (! table || ! window.DataTable) return;
+
+    const dtUrl    = @json(route('processos.faturas.datatable', $processo));
+    const storeUrl = @json(route('processos.faturas.store', $processo));
+    const baseUrl  = @json(url('painel/processos/faturas'));
+
+    const modalEl  = document.getElementById('faturaModal');
+    const modal    = new bootstrap.Modal(modalEl);
+    const form     = document.getElementById('fatura-form');
+    const titleEl  = document.getElementById('faturaModalTitle');
+    const idEl     = document.getElementById('fatura-id');
+    const descEl   = document.getElementById('fatura-descricao');
+    const valorEl  = document.getElementById('fatura-valor');
+    const vencEl   = document.getElementById('fatura-vencimento');
+    const statusEl = document.getElementById('fatura-status');
+    const errorEl  = document.getElementById('fatura-error');
+    const saveBtn  = document.getElementById('fatura-save-btn');
+
+    const dt = new DataTable(table, {
+      processing: true, serverSide: true, responsive: true,
+      searching: false, lengthChange: false, pageLength: 10,
+      ajax: { url: dtUrl },
+      columns: [
+        { data: 'descricao_fmt', responsivePriority: 1, render: v => escapeHtml(v) },
+        { data: 'valor_fmt', responsivePriority: 2, className: 'fw-semibold text-nowrap' },
+        { data: 'vencimento_fmt', responsivePriority: 3, className: 'text-nowrap' },
+        { data: 'status_badge', responsivePriority: 2, orderable: false, searchable: false },
+        {
+          data: 'id', responsivePriority: 1, orderable: false, searchable: false, className: 'text-end text-nowrap',
+          render: id => `
+            <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+              <button class="btn btn-sm btn-icon fatura-edit" data-id="${id}" title="Visualizar"><i class="icon-base ti tabler-eye icon-22px"></i></button>
+              <button class="btn btn-sm btn-icon fatura-delete text-danger" data-id="${id}" title="Remover"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+            </div>`,
+        },
+      ],
+      order: [],
+      language: { processing: 'Carregando...', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: 'Nenhum registro', zeroRecords: 'Nenhuma dívida encontrada', emptyTable: 'Nenhuma dívida cadastrada', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+      layout: { topStart: null, topEnd: null },
+    });
+
+    function resetForm(defaults = {}) {
+      idEl.value = '';
+      descEl.value = defaults.descricao || '';
+      valorEl.value = defaults.valor || '';
+      setDate(vencEl, defaults.vencimento || '');
+      statusEl.value = defaults.status || 'pendente';
+      errorEl.style.display = 'none'; errorEl.innerHTML = '';
+      refreshMasks();
+    }
+
+    function openNew() {
+      resetForm({
+        vencimento: '{{ now()->addDays(7)->toDateString() }}',
+        valor: {!! json_encode($processo->servico?->valor_padrao ? number_format((float) $processo->servico->valor_padrao, 2, ',', '.') : '') !!},
+      });
+      titleEl.textContent = 'Nova dívida';
+      modal.show();
+    }
+
+    function openEdit(id) {
+      resetForm();
+      titleEl.textContent = 'Editar dívida';
+      idEl.value = id;
+      fetch(`${baseUrl}/${id}`, { headers: { Accept: 'application/json' } })
+        .then(r => { if (! r.ok) throw new Error('Não foi possível carregar a dívida.'); return r.json(); })
+        .then(d => {
+          descEl.value = d.descricao || '';
+          valorEl.value = d.valor || '';
+          setDate(vencEl, d.vencimento);
+          statusEl.value = d.status || 'pendente';
+          refreshMasks();
+          modal.show();
+        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+    }
+
+    document.getElementById('btn-nova-fatura').addEventListener('click', openNew);
+
+    table.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.fatura-edit');
+      if (editBtn) return openEdit(editBtn.dataset.id);
+      const delBtn = e.target.closest('.fatura-delete');
+      if (delBtn) {
+        commonDelete({
+          url: `${baseUrl}/${delBtn.dataset.id}`,
+          titulo: 'Excluir dívida?',
+          texto: 'Esta ação não pode ser desfeita.',
+          onOk: () => dt.draw(false),
+        });
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const id = idEl.value;
+      const isEdit = !! id;
+      commonSubmit({
+        url: isEdit ? `${baseUrl}/${id}` : storeUrl,
+        method: isEdit ? 'PATCH' : 'POST',
+        payload: {
+          descricao: descEl.value.trim() || null,
+          valor: moneyToRaw(valorEl.value),
+          vencimento: readDate(vencEl),
+          status: statusEl.value,
+        },
+        saveBtn, errorEl,
+        onOk: (body) => {
+          modal.hide();
+          dt.draw(false);
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 1600, showConfirmButton: false });
+        },
+      });
+    });
+  })();
+
+  // ================================================================
+  // COMISSÕES — DataTable + Modal
+  // ================================================================
+  (function () {
+    const table = document.querySelector('.datatables-comissoes');
+    if (! table || ! window.DataTable) return;
+
+    const dtUrl    = @json(route('processos.comissoes.datatable', $processo));
+    const storeUrl = @json(route('processos.comissoes.store', $processo));
+    const baseUrl  = @json(url('painel/processos/comissoes'));
+
+    const modalEl  = document.getElementById('comissaoModal');
+    const modal    = new bootstrap.Modal(modalEl);
+    const form     = document.getElementById('comissao-form');
+    const titleEl  = document.getElementById('comissaoModalTitle');
+    const idEl     = document.getElementById('comissao-id');
+    const $userEl  = jQuery('#comissao-usuario-select');
+    const descEl   = document.getElementById('comissao-descricao');
+    const valorEl  = document.getElementById('comissao-valor');
+    const tipoEl   = document.getElementById('comissao-tipo');
+    const dataEl   = document.getElementById('comissao-data');
+    const statusEl = document.getElementById('comissao-status');
+    const errorEl  = document.getElementById('comissao-error');
+    const saveBtn  = document.getElementById('comissao-save-btn');
+
+    const dt = new DataTable(table, {
+      processing: true, serverSide: true, responsive: true,
+      searching: false, lengthChange: false, pageLength: 10,
+      ajax: { url: dtUrl },
+      columns: [
+        {
+          data: null, responsivePriority: 1, orderable: false, searchable: false,
+          render: (row) => `<div>${escapeHtml(row.descricao_fmt || '')}</div><small class="text-muted">${escapeHtml(row.usuario_nome || '—')}</small>`,
+        },
+        { data: 'valor_fmt', responsivePriority: 2, className: 'fw-semibold text-nowrap' },
+        { data: 'tipo_badge', responsivePriority: 3, orderable: false, searchable: false },
+        { data: 'data_fmt', responsivePriority: 4, className: 'text-nowrap' },
+        { data: 'status_badge', responsivePriority: 2, orderable: false, searchable: false },
+        {
+          data: 'id', responsivePriority: 1, orderable: false, searchable: false, className: 'text-end text-nowrap',
+          render: id => `
+            <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+              <button class="btn btn-sm btn-icon comissao-edit" data-id="${id}" title="Visualizar"><i class="icon-base ti tabler-eye icon-22px"></i></button>
+              <button class="btn btn-sm btn-icon comissao-delete text-danger" data-id="${id}" title="Remover"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+            </div>`,
+        },
+      ],
+      order: [],
+      language: { processing: 'Carregando...', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: 'Nenhum registro', zeroRecords: 'Nenhuma comissão encontrada', emptyTable: 'Nenhuma comissão cadastrada', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+      layout: { topStart: null, topEnd: null },
+    });
+
+    function resetForm(defaults = {}) {
+      idEl.value = '';
+      $userEl.val(defaults.licensed_by_user_id || null).trigger('change');
+      descEl.value = defaults.descricao || '';
+      valorEl.value = defaults.valor || '';
+      tipoEl.value = defaults.tipo || 'a_receber';
+      setDate(dataEl, defaults.data_referencia || '');
+      statusEl.value = defaults.status || 'pendente';
+      errorEl.style.display = 'none'; errorEl.innerHTML = '';
+      refreshMasks();
+    }
+
+    function openNew() {
+      resetForm({ data_referencia: '{{ now()->toDateString() }}' });
+      titleEl.textContent = 'Nova comissão';
+      modal.show();
+    }
+
+    function openEdit(id) {
+      resetForm();
+      titleEl.textContent = 'Editar comissão';
+      idEl.value = id;
+      fetch(`${baseUrl}/${id}`, { headers: { Accept: 'application/json' } })
+        .then(r => { if (! r.ok) throw new Error('Não foi possível carregar a comissão.'); return r.json(); })
+        .then(d => {
+          $userEl.val(d.licensed_by_user_id).trigger('change');
+          descEl.value = d.descricao || '';
+          valorEl.value = d.valor || '';
+          tipoEl.value = d.tipo || 'a_receber';
+          setDate(dataEl, d.data_referencia);
+          statusEl.value = d.status || 'pendente';
+          refreshMasks();
+          modal.show();
+        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+    }
+
+    document.getElementById('btn-nova-comissao').addEventListener('click', openNew);
+
+    table.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.comissao-edit');
+      if (editBtn) return openEdit(editBtn.dataset.id);
+      const delBtn = e.target.closest('.comissao-delete');
+      if (delBtn) {
+        commonDelete({
+          url: `${baseUrl}/${delBtn.dataset.id}`,
+          titulo: 'Excluir comissão?',
+          texto: 'Esta ação não pode ser desfeita.',
+          onOk: () => dt.draw(false),
+        });
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const id = idEl.value;
+      const isEdit = !! id;
+      commonSubmit({
+        url: isEdit ? `${baseUrl}/${id}` : storeUrl,
+        method: isEdit ? 'PATCH' : 'POST',
+        payload: {
+          licensed_by_user_id: $userEl.val() || null,
+          descricao: descEl.value.trim(),
+          valor: moneyToRaw(valorEl.value),
+          tipo: tipoEl.value,
+          data_referencia: readDate(dataEl),
+          status: statusEl.value,
+        },
+        saveBtn, errorEl,
+        onOk: (body) => {
+          modal.hide();
+          dt.draw(false);
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 1600, showConfirmButton: false });
+        },
+      });
+    });
+  })();
+
+  // ================================================================
+  // NEGOCIAÇÕES — DataTable + Modal
+  // ================================================================
+  (function () {
+    const table = document.querySelector('.datatables-negociacoes');
+    if (! table || ! window.DataTable) return;
+
+    const dtUrl    = @json(route('processos.negociacoes.datatable', $processo));
+    const storeUrl = @json(route('processos.negociacoes.store', $processo));
+    const baseUrl  = @json(url('painel/processos/negociacoes'));
+
+    const modalEl    = document.getElementById('negociacaoModal');
+    const modal      = new bootstrap.Modal(modalEl);
+    const form       = document.getElementById('negociacao-form');
+    const titleEl    = document.getElementById('negociacaoModalTitle');
+    const idEl       = document.getElementById('negociacao-id');
+    const dataEl     = document.getElementById('negociacao-data');
+    const assessEl   = document.getElementById('negociacao-assessoria');
+    const atualEl    = document.getElementById('negociacao-val-atualizado');
+    const analiseEl  = document.getElementById('negociacao-val-analise');
+    const maosEl     = document.getElementById('negociacao-val-em-maos');
+    const resumoEl   = document.getElementById('negociacao-resumo');
+    const feedbackEl = document.getElementById('negociacao-feedback');
+    const metaEl     = document.getElementById('negociacao-meta');
+    const errorEl    = document.getElementById('negociacao-error');
+    const saveBtn    = document.getElementById('negociacao-save-btn');
+
+    const dt = new DataTable(table, {
+      processing: true, serverSide: true, responsive: true,
+      searching: false, lengthChange: false, pageLength: 10,
+      ajax: { url: dtUrl },
+      columns: [
+        {
+          data: null, responsivePriority: 1, orderable: false, searchable: false,
+          render: (row) => {
+            const autor = row.autor_nome ? `<small class="text-muted">por ${escapeHtml(row.autor_nome)}</small>` : '';
+            return `<div>${escapeHtml(row.resumo_curto || '')}</div>${autor}`;
+          },
+        },
+        { data: 'assessoria_fmt', responsivePriority: 3, render: v => v ? escapeHtml(v) : '<span class="text-muted">—</span>' },
+        { data: 'val_em_maos_fmt', responsivePriority: 2, className: 'text-nowrap fw-semibold text-success', render: v => v || '<span class="text-muted fw-normal">—</span>' },
+        { data: 'data_fmt', responsivePriority: 2, className: 'text-nowrap' },
+        {
+          data: 'id', responsivePriority: 1, orderable: false, searchable: false, className: 'text-end text-nowrap',
+          render: id => `
+            <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
+              <button class="btn btn-sm btn-icon negociacao-edit" data-id="${id}" title="Visualizar"><i class="icon-base ti tabler-eye icon-22px"></i></button>
+              <button class="btn btn-sm btn-icon negociacao-delete text-danger" data-id="${id}" title="Remover"><i class="icon-base ti tabler-trash icon-22px"></i></button>
+            </div>`,
+        },
+      ],
+      order: [],
+      language: { processing: 'Carregando...', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: 'Nenhum registro', zeroRecords: 'Nenhuma negociação encontrada', emptyTable: 'Nenhuma negociação registrada', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+      layout: { topStart: null, topEnd: null },
+    });
+
+    function resetForm(defaults = {}) {
+      idEl.value = '';
+      setDate(dataEl, defaults.data || '');
+      assessEl.value = defaults.assessoria || '';
+      atualEl.value = defaults.val_atualizado || '';
+      analiseEl.value = defaults.val_analise || '';
+      maosEl.value = defaults.val_em_maos || '';
+      resumoEl.value = defaults.resumo || '';
+      feedbackEl.value = defaults.feedback || '';
+      metaEl.style.display = 'none'; metaEl.innerHTML = '';
+      errorEl.style.display = 'none'; errorEl.innerHTML = '';
+      refreshMasks();
+    }
+
+    function openNew() {
+      resetForm({ data: '{{ now()->toDateString() }}' });
+      titleEl.textContent = 'Registrar negociação';
+      modal.show();
+    }
+
+    function openEdit(id) {
+      resetForm();
+      titleEl.textContent = 'Editar negociação';
+      idEl.value = id;
+      fetch(`${baseUrl}/${id}`, { headers: { Accept: 'application/json' } })
+        .then(r => { if (! r.ok) throw new Error('Não foi possível carregar a negociação.'); return r.json(); })
+        .then(d => {
+          setDate(dataEl, d.data);
+          assessEl.value = d.assessoria || '';
+          atualEl.value = d.val_atualizado || '';
+          analiseEl.value = d.val_analise || '';
+          maosEl.value = d.val_em_maos || '';
+          resumoEl.value = d.resumo || '';
+          feedbackEl.value = d.feedback || '';
+          if (d.autor || d.criada_em) {
+            metaEl.innerHTML = `<strong>Registrada por:</strong> ${escapeHtml(d.autor || '—')}${d.criada_em ? ' em ' + escapeHtml(d.criada_em) : ''}`;
+            metaEl.style.display = '';
+          }
+          refreshMasks();
+          modal.show();
+        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+    }
+
+    document.getElementById('btn-nova-negociacao').addEventListener('click', openNew);
+
+    table.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.negociacao-edit');
+      if (editBtn) return openEdit(editBtn.dataset.id);
+      const delBtn = e.target.closest('.negociacao-delete');
+      if (delBtn) {
+        commonDelete({
+          url: `${baseUrl}/${delBtn.dataset.id}`,
+          titulo: 'Excluir negociação?',
+          texto: 'Esta ação não pode ser desfeita.',
+          onOk: () => dt.draw(false),
+        });
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const id = idEl.value;
+      const isEdit = !! id;
+      commonSubmit({
+        url: isEdit ? `${baseUrl}/${id}` : storeUrl,
+        method: isEdit ? 'PATCH' : 'POST',
+        payload: {
+          data: readDate(dataEl),
+          assessoria: assessEl.value.trim() || null,
+          val_atualizado: moneyToRaw(atualEl.value),
+          val_analise: moneyToRaw(analiseEl.value),
+          val_em_maos: moneyToRaw(maosEl.value),
+          resumo: resumoEl.value.trim(),
+          feedback: feedbackEl.value.trim() || null,
+        },
+        saveBtn, errorEl,
+        onOk: (body) => {
+          modal.hide();
+          dt.draw(false);
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 1600, showConfirmButton: false });
+        },
+      });
+    });
+  })();
 });
 </script>
 @include('_partials._masks-script')

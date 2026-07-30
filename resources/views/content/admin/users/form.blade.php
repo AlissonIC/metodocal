@@ -3,12 +3,15 @@
 @section('title', $user->exists ? 'Editar usuário' : 'Novo usuário')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/select2/select2.scss'])
+@vite(['resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss'])
 @endsection
 
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/select2/select2.js',
-'resources/assets/vendor/libs/cleave-zen/cleave-zen.js'])
+@vite([
+  'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/cleave-zen/cleave-zen.js',
+  'resources/assets/vendor/libs/flatpickr/flatpickr.js',
+])
 @endsection
 
 @section('content')
@@ -42,19 +45,30 @@
         <div class="card-header border-bottom"><h5 class="card-title mb-0">Dados pessoais</h5></div>
         <div class="card-body">
           <div class="row">
-            <div class="col-md-12 mb-4">
+            <div class="col-md-8 mb-4">
               <label class="form-label">Nome *</label>
-              <input type="text" class="form-control" name="name" required maxlength="160" value="{{ old('name', $user->name) }}">
+              <input type="text" class="form-control" name="name" required maxlength="120" value="{{ old('name', $user->name) }}">
             </div>
-            <div class="col-md-12 mb-4">
+            <div class="col-md-4 mb-4">
+              <label class="form-label">Data de nascimento</label>
+              <input type="text" class="form-control flatpickr-date" name="data_nascimento" value="{{ old('data_nascimento', $user->data_nascimento?->toDateString()) }}" placeholder="dd/mm/aaaa">
+            </div>
+            <div class="col-md-6 mb-4">
               <label class="form-label">E-mail *</label>
-              <input type="email" class="form-control" name="email" required maxlength="160" value="{{ old('email', $user->email) }}">
+              <input type="email" class="form-control" name="email" required maxlength="180" value="{{ old('email', $user->email) }}">
             </div>
             <div class="col-md-6 mb-4">
               <label class="form-label">Telefone</label>
               <input type="text" class="form-control mask-phone" name="phone" placeholder="(11) 99999-9999" value="{{ old('phone', $user->phone) }}">
             </div>
-            <div class="col-md-6 mb-4">
+            <div class="col-md-4 mb-4">
+              <label class="form-label">Tipo de documento</label>
+              <select name="tipo_documento" class="form-select">
+                <option value="cpf" @selected(old('tipo_documento', $user->tipo_documento ?? 'cpf') === 'cpf')>CPF</option>
+                <option value="cnpj" @selected(old('tipo_documento', $user->tipo_documento) === 'cnpj')>CNPJ</option>
+              </select>
+            </div>
+            <div class="col-md-8 mb-0">
               <label class="form-label">CPF / CNPJ</label>
               <input type="text" class="form-control mask-cpf-cnpj" name="cpf_cnpj" placeholder="000.000.000-00" value="{{ old('cpf_cnpj', $user->cpf_cnpj) }}">
             </div>
@@ -63,12 +77,60 @@
       </div>
 
       <div class="card mb-4">
+        <div class="card-header border-bottom"><h5 class="card-title mb-0">Endereço</h5></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 mb-4">
+              <label class="form-label">CEP</label>
+              <input type="text" class="form-control mask-cep" name="cep" maxlength="10" placeholder="00000-000" value="{{ old('cep', $user->cep) }}" data-cep-autocomplete>
+            </div>
+            <div class="col-md-7 mb-4">
+              <label class="form-label">Logradouro</label>
+              <input type="text" class="form-control" name="logradouro" maxlength="160" value="{{ old('logradouro', $user->logradouro) }}" placeholder="Rua, avenida...">
+            </div>
+            <div class="col-md-2 mb-4">
+              <label class="form-label">Número</label>
+              <input type="text" class="form-control" name="numero" maxlength="20" value="{{ old('numero', $user->numero) }}">
+            </div>
+            <div class="col-md-4 mb-4">
+              <label class="form-label">Complemento</label>
+              <input type="text" class="form-control" name="complemento" maxlength="80" value="{{ old('complemento', $user->complemento) }}" placeholder="Apto, sala, bloco...">
+            </div>
+            <div class="col-md-3 mb-4">
+              <label class="form-label">Bairro</label>
+              <input type="text" class="form-control" name="bairro" maxlength="80" value="{{ old('bairro', $user->bairro) }}">
+            </div>
+            <div class="col-md-3 mb-4">
+              <label class="form-label">Cidade</label>
+              <input type="text" class="form-control" name="cidade" maxlength="80" value="{{ old('cidade', $user->cidade) }}">
+            </div>
+            <div class="col-md-2 mb-0">
+              <label class="form-label">Estado</label>
+              <select name="uf" class="form-select">
+                <option value="">—</option>
+                @foreach (['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as $uf)
+                  <option value="{{ $uf }}" @selected(strtoupper(old('uf', $user->uf)) === $uf)>{{ $uf }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
         <div class="card-header border-bottom"><h5 class="card-title mb-0">Acesso</h5></div>
         <div class="card-body">
-          <div class="mb-4">
+          <div class="mb-0">
             <label class="form-label">Senha {!! $editing ? '<span class="text-muted small">(deixe em branco para manter)</span>' : '*' !!}</label>
             <input type="password" class="form-control" name="password" autocomplete="new-password" {{ $editing ? '' : 'required' }}>
           </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header border-bottom"><h5 class="card-title mb-0">Observações</h5></div>
+        <div class="card-body">
+          <textarea class="form-control" name="observacoes" rows="4" maxlength="5000" placeholder="Notas internas sobre este usuário...">{{ old('observacoes', $user->observacoes) }}</textarea>
         </div>
       </div>
     </div>
@@ -82,8 +144,10 @@
             <select name="role" class="form-select">
               <option value="mentorado" @selected(old('role', $currentRole) === 'mentorado')>Mentorado</option>
               <option value="licenciado" @selected(old('role', $currentRole) === 'licenciado')>Licenciado</option>
+              <option value="comprador" @selected(old('role', $currentRole) === 'comprador')>Comprador</option>
               <option value="admin" @selected(old('role', $currentRole) === 'admin')>Admin</option>
             </select>
+            <small class="text-muted">Compradores podem ser vinculados como parte destino em processos.</small>
           </div>
           <div class="mb-0">
             <label class="form-label">Status</label>
@@ -128,7 +192,17 @@ document.addEventListener('DOMContentLoaded', function () {
     allowClear: true,
     dropdownParent: $plan.parent(),
   });
+
+  if (window.flatpickr) {
+    flatpickr('.flatpickr-date', {
+      altInput: true,
+      altFormat: 'd/m/Y',
+      dateFormat: 'Y-m-d',
+      allowInput: true,
+    });
+  }
 });
 </script>
 @include('_partials._masks-script')
+@include('_partials._cep-autocomplete')
 @endsection

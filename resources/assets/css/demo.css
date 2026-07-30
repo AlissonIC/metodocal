@@ -3,6 +3,10 @@
 * File include item demo only specific css only
 ******************************************************************************/
 
+/* Reserva o espaço da barra de rolagem mesmo quando a página cabe sem ela —
+   evita o "pulo" de layout quando Select2/Modais abrem e a barra aparece. */
+html { scrollbar-gutter: stable; }
+
 .menu .app-brand.demo {
   height: 64px;
 }

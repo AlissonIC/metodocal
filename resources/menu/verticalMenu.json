@@ -43,6 +43,13 @@
       "slug": "processos.index",
       "role": "admin|mentorado|licenciado|comprador"
     },
+    {
+      "url": "painel/calculadora",
+      "name": "Calculadora",
+      "icon": "menu-icon icon-base ti tabler-calculator",
+      "slug": "calculadora",
+      "role": "admin|mentorado|licenciado"
+    },
 
     { "menuHeader": "Mentoria" },
     {
@@ -85,22 +92,11 @@
 
     { "menuHeader": "Administração" },
     {
-      "name": "Pessoas",
+      "url": "painel/usuarios",
+      "name": "Usuários",
       "icon": "menu-icon icon-base ti tabler-users",
-      "slug": ["admin.users", "admin.users.create", "admin.users.edit", "admin.compradores", "admin.compradores.create", "admin.compradores.edit"],
-      "role": "admin",
-      "submenu": [
-        {
-          "url": "painel/usuarios",
-          "name": "Usuários do sistema",
-          "slug": ["admin.users", "admin.users.create", "admin.users.edit"]
-        },
-        {
-          "url": "painel/admin/compradores",
-          "name": "Compradores",
-          "slug": ["admin.compradores", "admin.compradores.create", "admin.compradores.edit"]
-        }
-      ]
+      "slug": ["admin.users", "admin.users.create", "admin.users.edit"],
+      "role": "admin"
     },
     {
       "url": "painel/planos",
@@ -167,7 +163,7 @@
     {
       "name": "Financeiro",
       "icon": "menu-icon icon-base ti tabler-cash-banknote",
-      "slug": ["admin.financeiro", "admin.financeiro.show", "admin.financeiro.relatorios", "admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit"],
+      "slug": ["admin.financeiro", "admin.financeiro.show", "admin.financeiro.relatorios", "admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit", "admin.despesas"],
       "role": "admin",
       "submenu": [
         {
@@ -184,6 +180,11 @@
           "url": "painel/admin/comissoes",
           "name": "Comissões",
           "slug": ["admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit"]
+        },
+        {
+          "url": "painel/financeiro/despesas",
+          "name": "Despesas",
+          "slug": "admin.despesas"
         }
       ]
     },

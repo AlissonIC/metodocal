@@ -8,6 +8,7 @@ use App\Models\DocumentoProcesso;
 use App\Models\Fatura;
 use App\Models\HistoricoProcesso;
 use App\Models\Negociacao;
+use App\Models\ObservacaoProcesso;
 use App\Models\Processo;
 use App\Models\Servico;
 use App\Models\User;
@@ -24,10 +25,12 @@ class ProcessoController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
         return view('content.processos.index', [
             'statuses' => Processo::STATUSES,
             'servicos' => Servico::orderBy('nome')->get(['id', 'nome']),
-            'isAdmin' => auth()->user()->hasRole('admin'),
+            'isAdmin' => $user->hasRole('admin'),
+            'isComprador' => $user->hasRole('comprador'),
         ]);
     }
 
@@ -131,15 +134,15 @@ class ProcessoController extends Controller
                 ]);
             }
 
-            HistoricoProcesso::create([
-                'processo_id' => $processo->id,
-                'user_id' => $request->user()->id,
-                'status_anterior' => null,
-                'status_novo' => 'cadastrado',
-                'observacao' => $isAdmin
-                    ? 'Processo cadastrado pelo administrador.'
-                    : 'Processo cadastrado pelo cliente.',
-            ]);
+            $this->logAtividade(
+                $processo,
+                HistoricoProcesso::ACAO_CREATED,
+                'processo',
+                $processo->id,
+                $isAdmin ? 'Processo cadastrado pelo administrador.' : 'Processo cadastrado pelo cliente.',
+                null,
+                'cadastrado',
+            );
 
             return $processo;
         });
@@ -247,6 +250,8 @@ class ProcessoController extends Controller
             } else {
                 $processo->veiculo()->delete();
             }
+
+            $this->logAtividade($processo, HistoricoProcesso::ACAO_UPDATED, 'processo', $processo->id, 'Dados do processo atualizados.');
         });
 
         return redirect()
@@ -284,7 +289,7 @@ class ProcessoController extends Controller
         $file = $request->file('arquivo');
         $path = $file->store('processos/' . $processo->id, 'local');
 
-        $processo->documentos()->create([
+        $doc = $processo->documentos()->create([
             'uploaded_by_user_id' => $request->user()->id,
             'categoria' => $request->input('categoria') ?: null,
             'nome_original' => $file->getClientOriginalName(),
@@ -292,6 +297,8 @@ class ProcessoController extends Controller
             'tamanho_bytes' => $file->getSize(),
             'mime' => $file->getMimeType(),
         ]);
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'documento', $doc->id, 'Enviou o documento "' . $doc->nome_original . '".');
 
         return back()->with('status', 'Documento enviado.');
     }
@@ -304,8 +311,13 @@ class ProcessoController extends Controller
         $isUploader = $documento->uploaded_by_user_id === $request->user()->id;
         abort_unless($isAdmin || $isUploader, 403, 'Você só pode excluir documentos que enviou.');
 
+        $nome = $documento->nome_original;
+        $processo = $documento->processo;
+
         Storage::disk('local')->delete($documento->arquivo);
         $documento->delete();
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_DELETED, 'documento', $documento->id, 'Removeu o documento "' . $nome . '".');
 
         return back()->with('status', 'Documento excluído.');
     }
@@ -342,31 +354,210 @@ class ProcessoController extends Controller
 
         $processo->update($updates);
 
-        HistoricoProcesso::create([
-            'processo_id' => $processo->id,
-            'user_id' => $request->user()->id,
-            'status_anterior' => $anterior,
-            'status_novo' => $data['status'],
-            'observacao' => $data['observacao'] ?? null,
-        ]);
+        $anteriorLabel = Processo::STATUSES[$anterior][0] ?? $anterior ?? '—';
+        $novoLabel = Processo::STATUSES[$data['status']][0] ?? $data['status'];
+        $desc = 'Alterou status: "' . $anteriorLabel . '" → "' . $novoLabel . '"';
+        if (! empty($data['observacao'])) $desc .= '. ' . $data['observacao'];
+
+        $this->logAtividade(
+            $processo,
+            HistoricoProcesso::ACAO_STATUS,
+            'status',
+            null,
+            $desc,
+            $anterior,
+            $data['status'],
+        );
 
         return back()->with('status', 'Status atualizado.');
     }
 
-    public function updateObservacoes(Request $request, Processo $processo): RedirectResponse
+    public function datatableObservacoes(Request $request, Processo $processo): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
 
-        $data = $request->validate([
-            'observacoes_admin' => ['nullable', 'string', 'max:5000'],
-        ]);
+        $query = ObservacaoProcesso::query()
+            ->where('processo_id', $processo->id)
+            ->with(['inseridaPor:id,name', 'editadaPor:id,name']);
 
-        $processo->update($data);
-
-        return back()->with('status', 'Observações salvas.');
+        return DataTables::eloquent($query->orderByDesc('created_at'))
+            ->addColumn('inserida_por_nome', fn (ObservacaoProcesso $o) => $o->inseridaPor?->name ?? '—')
+            ->addColumn('editada_por_nome', fn (ObservacaoProcesso $o) => $o->editadaPor?->name ?? '—')
+            ->addColumn('criada_em', fn (ObservacaoProcesso $o) => $o->created_at?->format('d/m/Y H:i'))
+            ->addColumn('editada_em_formatada', fn (ObservacaoProcesso $o) => $o->editada_em?->format('d/m/Y H:i'))
+            ->addColumn('tem_anexo', fn (ObservacaoProcesso $o) => $o->hasAnexo())
+            ->addColumn('anexo_is_image', fn (ObservacaoProcesso $o) => $o->anexoIsImage())
+            ->toJson();
     }
 
-    public function storeFatura(Request $request, Processo $processo): RedirectResponse
+    public function storeObservacao(Request $request, Processo $processo): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $data = $this->validateObservacao($request);
+
+        $obs = ObservacaoProcesso::create([
+            'processo_id' => $processo->id,
+            'inserida_por_user_id' => $request->user()->id,
+            'resumo' => $data['resumo'],
+            'descricao' => $data['descricao'],
+        ]);
+
+        if ($file = $request->file('anexo')) {
+            $this->attachFile($obs, $file, $processo);
+        }
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'observacao', $obs->id, 'Criou observação: "' . $obs->resumo . '"' . ($obs->hasAnexo() ? ' (+ anexo)' : ''));
+
+        return response()->json(['message' => 'Observação registrada.', 'id' => $obs->id]);
+    }
+
+    public function showObservacao(Request $request, ObservacaoProcesso $observacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $observacao->load(['inseridaPor:id,name', 'editadaPor:id,name']);
+
+        return response()->json([
+            'id' => $observacao->id,
+            'resumo' => $observacao->resumo,
+            'descricao' => $observacao->descricao,
+            'inserida_por' => $observacao->inseridaPor?->name,
+            'editada_por' => $observacao->editadaPor?->name,
+            'criada_em' => $observacao->created_at?->format('d/m/Y H:i'),
+            'editada_em' => $observacao->editada_em?->format('d/m/Y H:i'),
+            'anexo' => $observacao->hasAnexo() ? [
+                'nome' => $observacao->anexo_nome_original,
+                'mime' => $observacao->anexo_mime,
+                'tamanho' => $observacao->anexoTamanhoFormatado(),
+                'is_image' => $observacao->anexoIsImage(),
+                'url' => route('processos.observacoes.anexo.download', $observacao),
+            ] : null,
+        ]);
+    }
+
+    public function updateObservacao(Request $request, ObservacaoProcesso $observacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $data = $this->validateObservacao($request);
+
+        $observacao->update([
+            'resumo' => $data['resumo'],
+            'descricao' => $data['descricao'],
+            'editada_por_user_id' => $request->user()->id,
+            'editada_em' => now(),
+        ]);
+
+        // Remoção explícita do anexo existente (usuário clicou "Remover anexo")
+        if ($request->boolean('remover_anexo') && $observacao->hasAnexo()) {
+            $this->detachFile($observacao);
+        }
+
+        // Upload de novo anexo (substitui o anterior, se houver)
+        if ($file = $request->file('anexo')) {
+            if ($observacao->hasAnexo()) $this->detachFile($observacao);
+            $this->attachFile($observacao, $file, $observacao->processo);
+        }
+
+        $this->logAtividade($observacao->processo, HistoricoProcesso::ACAO_UPDATED, 'observacao', $observacao->id, 'Editou observação: "' . $observacao->resumo . '"');
+
+        return response()->json(['message' => 'Observação atualizada.']);
+    }
+
+    public function destroyObservacao(Request $request, ObservacaoProcesso $observacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $resumo = $observacao->resumo;
+        $processo = $observacao->processo;
+
+        if ($observacao->hasAnexo()) {
+            Storage::disk('local')->delete($observacao->anexo_arquivo);
+        }
+        $observacao->delete();
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_DELETED, 'observacao', $observacao->id, 'Removeu observação: "' . $resumo . '"');
+
+        return response()->json(['message' => 'Observação excluída.']);
+    }
+
+    public function downloadAnexoObservacao(Request $request, ObservacaoProcesso $observacao): StreamedResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($observacao->hasAnexo() && Storage::disk('local')->exists($observacao->anexo_arquivo), 404);
+
+        return Storage::disk('local')->download($observacao->anexo_arquivo, $observacao->anexo_nome_original);
+    }
+
+    private function validateObservacao(Request $request): array
+    {
+        return $request->validate([
+            'resumo' => ['required', 'string', 'max:200'],
+            'descricao' => ['required', 'string', 'max:5000'],
+            'anexo' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,zip'],
+        ]);
+    }
+
+    private function attachFile(ObservacaoProcesso $obs, \Illuminate\Http\UploadedFile $file, Processo $processo): void
+    {
+        $path = $file->store('observacoes/' . $processo->id, 'local');
+        $obs->update([
+            'anexo_arquivo' => $path,
+            'anexo_nome_original' => $file->getClientOriginalName(),
+            'anexo_mime' => $file->getMimeType(),
+            'anexo_tamanho_bytes' => $file->getSize(),
+        ]);
+    }
+
+    private function detachFile(ObservacaoProcesso $obs): void
+    {
+        if ($obs->anexo_arquivo) {
+            Storage::disk('local')->delete($obs->anexo_arquivo);
+        }
+        $obs->update([
+            'anexo_arquivo' => null,
+            'anexo_nome_original' => null,
+            'anexo_mime' => null,
+            'anexo_tamanho_bytes' => null,
+        ]);
+    }
+
+    public function datatableFaturas(Request $request, Processo $processo): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $query = Fatura::query()->where('processo_id', $processo->id);
+
+        return DataTables::eloquent($query->orderByDesc('vencimento')->orderByDesc('id'))
+            ->addColumn('descricao_fmt', fn (Fatura $f) => $f->descricao ?: 'Cobrança do processo')
+            ->addColumn('valor_fmt', fn (Fatura $f) => 'R$ ' . number_format((float) $f->valor, 2, ',', '.'))
+            ->addColumn('vencimento_fmt', fn (Fatura $f) => $f->vencimento?->format('d/m/Y'))
+            ->addColumn('status_badge', function (Fatura $f) {
+                $map = ['pendente' => 'warning', 'paga' => 'success', 'cancelada' => 'secondary', 'estornada' => 'info', 'atrasada' => 'danger'];
+                $color = $f->isAtrasada() ? 'danger' : ($map[$f->status] ?? 'secondary');
+                $label = $f->isAtrasada() ? 'Atrasada' : ucfirst($f->status);
+                return '<span class="badge bg-label-' . $color . '">' . e($label) . '</span>';
+            })
+            ->rawColumns(['status_badge'])
+            ->toJson();
+    }
+
+    public function showFatura(Request $request, Fatura $fatura): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($fatura->processo_id, 404);
+
+        return response()->json([
+            'id' => $fatura->id,
+            'descricao' => $fatura->descricao,
+            'valor' => number_format((float) $fatura->valor, 2, ',', '.'),
+            'vencimento' => $fatura->vencimento?->toDateString(),
+            'status' => $fatura->status,
+        ]);
+    }
+
+    public function storeFatura(Request $request, Processo $processo): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
 
@@ -379,7 +570,7 @@ class ProcessoController extends Controller
 
         $processo->loadMissing('user:id,name,email,cpf_cnpj');
 
-        Fatura::create([
+        $fatura = Fatura::create([
             'processo_id' => $processo->id,
             'user_id' => $processo->user_id,
             'descricao' => $data['descricao'] ?? null,
@@ -393,23 +584,100 @@ class ProcessoController extends Controller
             'payer_document' => $processo->user?->cpf_cnpj,
         ]);
 
-        return back()->with('status', 'Fatura criada.');
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'fatura', $fatura->id, 'Criou dívida de R$ ' . number_format((float) $fatura->valor, 2, ',', '.') . ($fatura->descricao ? ' (' . $fatura->descricao . ')' : ''));
+
+        return response()->json(['message' => 'Fatura registrada.']);
     }
 
-    public function destroyFatura(Request $request, Fatura $fatura): RedirectResponse
+    public function updateFatura(Request $request, Fatura $fatura): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
         abort_unless($fatura->processo_id, 404);
 
+        $data = $request->validate([
+            'descricao' => ['nullable', 'string', 'max:255'],
+            'valor' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'vencimento' => ['required', 'date'],
+            'status' => ['required', 'in:pendente,paga,cancelada'],
+        ]);
+
+        $updates = [
+            'descricao' => $data['descricao'] ?? null,
+            'valor' => $data['valor'],
+            'vencimento' => $data['vencimento'],
+            'status' => $data['status'],
+        ];
+
+        // Ajusta pago_em/metodo apenas quando o status entra/sai de "paga" via edição manual
+        if ($data['status'] === 'paga' && $fatura->status !== 'paga') {
+            $updates['pago_em'] = now();
+            $updates['metodo'] = 'manual';
+        } elseif ($data['status'] !== 'paga' && $fatura->status === 'paga') {
+            $updates['pago_em'] = null;
+        }
+
+        $fatura->update($updates);
+
+        $this->logAtividade($fatura->processo, HistoricoProcesso::ACAO_UPDATED, 'fatura', $fatura->id, 'Editou dívida de R$ ' . number_format((float) $fatura->valor, 2, ',', '.') . ' (status: ' . ucfirst($fatura->status) . ')');
+
+        return response()->json(['message' => 'Fatura atualizada.']);
+    }
+
+    public function destroyFatura(Request $request, Fatura $fatura): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($fatura->processo_id, 404);
+
+        $valor = number_format((float) $fatura->valor, 2, ',', '.');
         $processo = $fatura->processo;
         $fatura->delete();
 
-        return redirect()
-            ->route('processos.show', $processo)
-            ->with('status', 'Fatura excluída.');
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_DELETED, 'fatura', $fatura->id, 'Removeu dívida de R$ ' . $valor);
+
+        return response()->json(['message' => 'Fatura excluída.']);
     }
 
-    public function storeComissao(Request $request, Processo $processo): RedirectResponse
+    public function datatableComissoes(Request $request, Processo $processo): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $query = Comissao::query()
+            ->where('processo_id', $processo->id)
+            ->with('licenciado:id,name');
+
+        return DataTables::eloquent($query->orderByDesc('data_referencia')->orderByDesc('id'))
+            ->addColumn('descricao_fmt', fn (Comissao $c) => $c->descricao)
+            ->addColumn('usuario_nome', fn (Comissao $c) => $c->licenciado?->name ?? '—')
+            ->addColumn('valor_fmt', fn (Comissao $c) => 'R$ ' . number_format((float) $c->valor, 2, ',', '.'))
+            ->addColumn('tipo_badge', fn (Comissao $c) =>
+                '<span class="badge bg-label-' . $c->tipoColor() . '">' . e($c->tipoLabel()) . '</span>')
+            ->addColumn('data_fmt', fn (Comissao $c) => $c->data_referencia?->format('d/m/Y'))
+            ->addColumn('status_badge', function (Comissao $c) {
+                $map = ['pendente' => 'warning', 'paga' => 'success', 'cancelada' => 'secondary'];
+                $color = $map[$c->status] ?? 'secondary';
+                return '<span class="badge bg-label-' . $color . '">' . e(ucfirst($c->status)) . '</span>';
+            })
+            ->rawColumns(['tipo_badge', 'status_badge'])
+            ->toJson();
+    }
+
+    public function showComissao(Request $request, Comissao $comissao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($comissao->processo_id, 404);
+
+        return response()->json([
+            'id' => $comissao->id,
+            'licensed_by_user_id' => $comissao->licensed_by_user_id,
+            'descricao' => $comissao->descricao,
+            'valor' => number_format((float) $comissao->valor, 2, ',', '.'),
+            'tipo' => $comissao->tipo,
+            'data_referencia' => $comissao->data_referencia?->toDateString(),
+            'status' => $comissao->status,
+        ]);
+    }
+
+    public function storeComissao(Request $request, Processo $processo): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
 
@@ -422,32 +690,151 @@ class ProcessoController extends Controller
             'status' => ['required', 'in:pendente,paga,cancelada'],
         ]);
 
-        Comissao::create(array_merge($data, [
+        $comissao = Comissao::create(array_merge($data, [
             'processo_id' => $processo->id,
             'pago_em' => $data['status'] === 'paga' ? now() : null,
         ]));
 
-        return back()->with('status', 'Comissão vinculada ao processo.');
+        $valorFmt = number_format((float) $comissao->valor, 2, ',', '.');
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'comissao', $comissao->id, 'Criou comissão (' . $comissao->tipoLabel() . ') de R$ ' . $valorFmt . ': ' . $comissao->descricao);
+
+        return response()->json(['message' => 'Comissão registrada.']);
     }
 
-    public function destroyComissao(Request $request, Comissao $comissao): RedirectResponse
+    public function updateComissao(Request $request, Comissao $comissao): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
         abort_unless($comissao->processo_id, 404);
 
-        $processo = $comissao->processo;
-        $comissao->delete();
+        $data = $request->validate([
+            'licensed_by_user_id' => ['required', 'exists:users,id'],
+            'descricao' => ['required', 'string', 'max:160'],
+            'valor' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
+            'tipo' => ['required', 'in:a_receber,a_pagar'],
+            'data_referencia' => ['required', 'date'],
+            'status' => ['required', 'in:pendente,paga,cancelada'],
+        ]);
 
-        return redirect()
-            ->route('processos.show', $processo)
-            ->with('status', 'Comissão removida.');
+        $updates = $data;
+        if ($data['status'] === 'paga' && $comissao->status !== 'paga') {
+            $updates['pago_em'] = now();
+        } elseif ($data['status'] !== 'paga' && $comissao->status === 'paga') {
+            $updates['pago_em'] = null;
+        }
+
+        $comissao->update($updates);
+
+        $valorFmt = number_format((float) $comissao->valor, 2, ',', '.');
+        $this->logAtividade($comissao->processo, HistoricoProcesso::ACAO_UPDATED, 'comissao', $comissao->id, 'Editou comissão (' . $comissao->tipoLabel() . ') de R$ ' . $valorFmt);
+
+        return response()->json(['message' => 'Comissão atualizada.']);
     }
 
-    public function storeNegociacao(Request $request, Processo $processo): RedirectResponse
+    public function destroyComissao(Request $request, Comissao $comissao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($comissao->processo_id, 404);
+
+        $valorFmt = number_format((float) $comissao->valor, 2, ',', '.');
+        $processo = $comissao->processo;
+        $desc = 'Removeu comissão (' . $comissao->tipoLabel() . ') de R$ ' . $valorFmt;
+        $comissao->delete();
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_DELETED, 'comissao', $comissao->id, $desc);
+
+        return response()->json(['message' => 'Comissão removida.']);
+    }
+
+    public function datatableNegociacoes(Request $request, Processo $processo): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
 
-        $data = $request->validate([
+        $query = Negociacao::query()
+            ->where('processo_id', $processo->id)
+            ->with('inseridaPor:id,name');
+
+        return DataTables::eloquent($query->orderByDesc('data')->orderByDesc('id'))
+            ->addColumn('resumo_curto', fn (Negociacao $n) => \Illuminate\Support\Str::limit($n->resumo, 140))
+            ->addColumn('assessoria_fmt', fn (Negociacao $n) => $n->assessoria)
+            ->addColumn('data_fmt', fn (Negociacao $n) => $n->data?->format('d/m/Y'))
+            ->addColumn('val_em_maos_fmt', fn (Negociacao $n) => $n->val_em_maos !== null ? 'R$ ' . number_format((float) $n->val_em_maos, 2, ',', '.') : null)
+            ->addColumn('autor_nome', fn (Negociacao $n) => $n->inseridaPor?->name)
+            ->toJson();
+    }
+
+    public function showNegociacao(Request $request, Negociacao $negociacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $negociacao->load('inseridaPor:id,name');
+
+        return response()->json([
+            'id' => $negociacao->id,
+            'data' => $negociacao->data?->toDateString(),
+            'assessoria' => $negociacao->assessoria,
+            'resumo' => $negociacao->resumo,
+            'val_atualizado' => $negociacao->val_atualizado !== null ? number_format((float) $negociacao->val_atualizado, 2, ',', '.') : '',
+            'val_analise' => $negociacao->val_analise !== null ? number_format((float) $negociacao->val_analise, 2, ',', '.') : '',
+            'val_em_maos' => $negociacao->val_em_maos !== null ? number_format((float) $negociacao->val_em_maos, 2, ',', '.') : '',
+            'feedback' => $negociacao->feedback,
+            'autor' => $negociacao->inseridaPor?->name,
+            'criada_em' => $negociacao->created_at?->format('d/m/Y H:i'),
+        ]);
+    }
+
+    public function storeNegociacao(Request $request, Processo $processo): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $data = $this->validateNegociacao($request);
+
+        DB::transaction(function () use ($processo, $data, $request) {
+            $negociacao = Negociacao::create(array_merge($data, [
+                'processo_id' => $processo->id,
+                'inserida_por_user_id' => $request->user()->id,
+            ]));
+
+            $resumoCurto = \Illuminate\Support\Str::limit($data['resumo'], 140);
+            $desc = 'Registrou negociação';
+            if ($data['assessoria'] ?? null) $desc .= ' (' . $data['assessoria'] . ')';
+            $desc .= ': ' . $resumoCurto;
+
+            $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'negociacao', $negociacao->id, $desc);
+        });
+
+        return response()->json(['message' => 'Negociação registrada.']);
+    }
+
+    public function updateNegociacao(Request $request, Negociacao $negociacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $data = $this->validateNegociacao($request);
+
+        $negociacao->update($data);
+
+        $resumoCurto = \Illuminate\Support\Str::limit($negociacao->resumo, 100);
+        $this->logAtividade($negociacao->processo, HistoricoProcesso::ACAO_UPDATED, 'negociacao', $negociacao->id, 'Editou negociação: ' . $resumoCurto);
+
+        return response()->json(['message' => 'Negociação atualizada.']);
+    }
+
+    public function destroyNegociacao(Request $request, Negociacao $negociacao): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $resumoCurto = \Illuminate\Support\Str::limit($negociacao->resumo, 100);
+        $processo = $negociacao->processo;
+        $negociacao->delete();
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_DELETED, 'negociacao', $negociacao->id, 'Removeu negociação: ' . $resumoCurto);
+
+        return response()->json(['message' => 'Negociação removida.']);
+    }
+
+    private function validateNegociacao(Request $request): array
+    {
+        return $request->validate([
             'data' => ['required', 'date'],
             'assessoria' => ['nullable', 'string', 'max:120'],
             'resumo' => ['required', 'string', 'max:2000'],
@@ -456,41 +843,31 @@ class ProcessoController extends Controller
             'val_em_maos' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'feedback' => ['nullable', 'string', 'max:1000'],
         ]);
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($processo, $data, $request) {
-            Negociacao::create(array_merge($data, [
-                'processo_id' => $processo->id,
-                'inserida_por_user_id' => $request->user()->id,
-            ]));
-
-            // Registra no histórico de acompanhamento pra ficar visível na timeline lateral.
-            $resumoCurto = \Illuminate\Support\Str::limit($data['resumo'], 140);
-            $obs = 'Nova negociação registrada';
-            if ($data['assessoria'] ?? null) $obs .= ' (' . $data['assessoria'] . ')';
-            $obs .= ': ' . $resumoCurto;
-
-            HistoricoProcesso::create([
-                'processo_id' => $processo->id,
-                'user_id' => $request->user()->id,
-                'status_anterior' => $processo->status,
-                'status_novo' => $processo->status, // não muda status
-                'observacao' => $obs,
-            ]);
-        });
-
-        return back()->with('status', 'Negociação registrada.');
     }
 
-    public function destroyNegociacao(Request $request, Negociacao $negociacao): RedirectResponse
-    {
-        abort_unless($request->user()->hasRole('admin'), 403);
-
-        $processo = $negociacao->processo;
-        $negociacao->delete();
-
-        return redirect()
-            ->route('processos.show', $processo)
-            ->with('status', 'Negociação removida.');
+    /**
+     * Registra uma linha no log de atividades do processo.
+     * Auto-vincula user_id ao usuário autenticado — o log responde "quem, o quê, quando".
+     */
+    private function logAtividade(
+        Processo $processo,
+        string $acao,
+        string $entidade,
+        ?int $entId,
+        string $descricao,
+        ?string $statusAnterior = null,
+        ?string $statusNovo = null,
+    ): void {
+        HistoricoProcesso::create([
+            'processo_id' => $processo->id,
+            'user_id' => auth()->id(),
+            'acao' => $acao,
+            'entidade' => $entidade,
+            'entidade_id' => $entId,
+            'status_anterior' => $statusAnterior,
+            'status_novo' => $statusNovo,
+            'observacao' => $descricao,
+        ]);
     }
 
     private function authorizeAccess(Request $request, Processo $processo): void

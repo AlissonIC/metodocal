@@ -141,26 +141,6 @@
   </div>
 </div>
 
-{{-- ==================== MODAL DETALHES ==================== --}}
-<div class="modal fade" id="faturaDetailsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Detalhes da fatura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-3" id="fatura-details-body"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Fechar</button>
-        <a href="#" id="fatura-details-show" class="btn btn-primary">
-          <i class="icon-base ti tabler-external-link me-1"></i> Página completa
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
 @endsection
 
 @section('page-script')
@@ -209,14 +189,9 @@ document.addEventListener('DOMContentLoaded', function () {
         orderable: false, searchable: false,
         className: 'text-end text-nowrap',
         render: id => `
-          <div class="d-inline-flex flex-nowrap gap-1 justify-content-end">
-            <button class="btn btn-sm btn-icon view-fatura" data-id="${id}" title="Detalhes">
-              <i class="icon-base ti tabler-eye icon-22px"></i>
-            </button>
-            <a href="${baseUrl}/${id}" class="btn btn-sm btn-icon" title="Página completa">
-              <i class="icon-base ti tabler-external-link icon-22px"></i>
-            </a>
-          </div>`,
+          <a href="${baseUrl}/${id}" class="btn btn-sm btn-icon btn-label-primary" title="Ver fatura">
+            <i class="icon-base ti tabler-eye icon-22px"></i>
+          </a>`,
       },
     ],
     order: [[3, 'desc']], // Vencimento DESC
@@ -244,61 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
     dt.draw();
   });
 
-  // ---- Modal de detalhes ----
-  function renderField(label, value, opts = {}) {
-    if (value === null || value === undefined || value === '') value = '<span class="text-muted">—</span>';
-    return `
-      <div class="col-md-6 ${opts.full ? 'col-md-12' : ''}">
-        <div class="text-muted small text-uppercase mb-1" style="font-size:.72rem;letter-spacing:.05em;">${label}</div>
-        <div class="${opts.bold ? 'fw-semibold' : ''}">${value}</div>
-      </div>`;
-  }
-  function statusBadge(s, atrasada) {
-    if (atrasada) return '<span class="badge bg-label-danger">Atrasada</span>';
-    const map = { pendente: 'warning', paga: 'success', cancelada: 'secondary', estornada: 'info', atrasada: 'danger' };
-    return `<span class="badge bg-label-${map[s] || 'secondary'}">${s ? s[0].toUpperCase() + s.slice(1) : '—'}</span>`;
-  }
-  function fmtMoney(v) {
-    if (v === null || v === undefined) return null;
-    return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.view-fatura');
-    if (! btn) return;
-    const row = dt.row(btn.closest('tr')).data();
-    if (! row) return;
-    const d = row.details;
-    document.getElementById('fatura-details-show').href = `${baseUrl}/${row.actions}`;
-    document.getElementById('fatura-details-body').innerHTML = [
-      renderField('Status', statusBadge(d.status, d.is_atrasada), { bold: true }),
-      renderField('Valor', fmtMoney(d.valor), { bold: true }),
-      renderField('Vencimento', d.vencimento),
-      renderField('Método', d.metodo ? d.metodo[0].toUpperCase() + d.metodo.slice(1) : null),
-      renderField('Pago em', d.pago_em),
-      renderField('Estornado em', d.estornada_em),
-      renderField('Criado em', d.created_at),
-      '<div class="col-12"><hr class="my-2"><h6 class="text-muted small text-uppercase mb-3">Cliente</h6></div>',
-      renderField('Nome', d.user_name, { bold: true }),
-      renderField('E-mail', d.user_email),
-      '<div class="col-12"><hr class="my-2"><h6 class="text-muted small text-uppercase mb-3">Plano</h6></div>',
-      renderField('Plano', d.plan_nome),
-      renderField('Tipo', d.plan_tipo ? d.plan_tipo[0].toUpperCase() + d.plan_tipo.slice(1) : null),
-      renderField('Recorrência', d.plan_recorrencia ? d.plan_recorrencia[0].toUpperCase() + d.plan_recorrencia.slice(1) : null),
-      '<div class="col-12"><hr class="my-2"><h6 class="text-muted small text-uppercase mb-3">Pagador</h6></div>',
-      renderField('Nome', d.payer_name),
-      renderField('E-mail', d.payer_email),
-      renderField('Documento', d.payer_document),
-      '<div class="col-12"><hr class="my-2"><h6 class="text-muted small text-uppercase mb-3">Gateway (Mercado Pago)</h6></div>',
-      renderField('Payment ID', d.gateway_payment_id ? `<code class="small">${d.gateway_payment_id}</code>` : null),
-      renderField('Preference ID', d.gateway_preference_id ? `<code class="small">${d.gateway_preference_id}</code>` : null),
-      renderField('Refund ID', d.gateway_refund_id ? `<code class="small">${d.gateway_refund_id}</code>` : null, { full: true }),
-    ].join('');
-    new bootstrap.Modal(document.getElementById('faturaDetailsModal')).show();
-  });
-
-  // (As ações de aprovar/cancelar fatura ficam SÓ na página de detalhes —
-  // botões de ação inline na listagem foram removidos a pedido.)
+  // Detalhes agora abrem numa página dedicada (admin.financeiro.show) — sem modal.
 });
 </script>
 @endsection

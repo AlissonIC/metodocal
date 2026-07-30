@@ -7,6 +7,8 @@
   'resources/assets/vendor/libs/apex-charts/apex-charts.scss',
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
   'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
 ])
 @endsection
 
@@ -15,6 +17,7 @@
   'resources/assets/vendor/libs/apex-charts/apexcharts.js',
   'resources/assets/vendor/libs/flatpickr/flatpickr.js',
   'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
 ])
 @endsection
 
@@ -209,14 +212,73 @@
     </div>
   </div>
 </div>
+
+{{-- ==================== FLUXO DE CAIXA CONSOLIDADO ==================== --}}
+<div class="row g-3 mb-4" id="fluxo-caixa-totais">
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-receita p-3">
+      <div class="kpi-label">Entradas realizadas</div>
+      <div class="kpi-value text-success" data-fc="entradas_realizadas">R$ 0,00</div>
+      <div class="kpi-sub">Faturas + comissões pagas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-atrasado p-3">
+      <div class="kpi-label">Saídas realizadas</div>
+      <div class="kpi-value text-danger" data-fc="saidas_realizadas">R$ 0,00</div>
+      <div class="kpi-sub">Comissões + despesas pagas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-saldo p-3">
+      <div class="kpi-label">Saldo realizado</div>
+      <div class="kpi-value" data-fc="saldo_realizado">R$ 0,00</div>
+      <div class="kpi-sub">Entradas − saídas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-pendente p-3">
+      <div class="kpi-label">Saldo projetado</div>
+      <div class="kpi-value" data-fc="saldo_projetado">R$ 0,00</div>
+      <div class="kpi-sub">+ pendentes do período</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h5 class="card-title mb-0"><i class="icon-base ti tabler-list-details me-1"></i> Fluxo de caixa consolidado</h5>
+      <small class="text-muted">Faturas · Comissões · Despesas — filtradas pelo período acima</small>
+    </div>
+    <span class="badge bg-label-secondary" id="fluxo-caixa-qtd">0 registros</span>
+  </div>
+  <div class="card-body">
+    <table class="datatables-fluxo-caixa table dt-responsive" style="width:100%">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Tipo</th>
+          <th>Descrição</th>
+          <th class="text-end">Valor</th>
+          <th>Status</th>
+          <th class="text-end">Ver</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+</div>
 @endsection
 
 @section('page-script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const dataUrl = "{{ route('admin.financeiro.relatorios.data') }}";
+  const fluxoUrl = "{{ route('admin.financeiro.relatorios.fluxo-caixa') }}";
   const brandPrimary = '#B8860B';
   const brandSecondary = '#D4AF37';
+
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
   // ---- Flatpickr ----
   flatpickr('.flatpickr-filtro', {
@@ -362,6 +424,85 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Falha ao carregar relatório:', err);
       })
       .finally(() => setLoading(false));
+
+    carregarFluxoCaixa();
+  }
+
+  // ---- Fluxo de caixa (tabela consolidada) ----
+  const tipoMeta = {
+    fatura:   { label: 'Fatura',   color: 'primary' },
+    comissao: { label: 'Comissão', color: 'info' },
+    despesa:  { label: 'Despesa',  color: 'warning' },
+  };
+  const statusMeta = {
+    paga:      { label: 'Paga',      color: 'success' },
+    pendente:  { label: 'Pendente',  color: 'warning' },
+    atrasada:  { label: 'Atrasada',  color: 'danger' },
+    cancelada: { label: 'Cancelada', color: 'secondary' },
+    estornada: { label: 'Estornada', color: 'info' },
+  };
+
+  const dtFluxo = new DataTable('.datatables-fluxo-caixa', {
+    processing: true, responsive: true, data: [],
+    columns: [
+      { data: 'data', className: 'text-nowrap', render: v => v ? v.split('-').reverse().join('/') : '—' },
+      {
+        data: 'tipo', className: 'text-nowrap', orderable: false,
+        render: v => {
+          const m = tipoMeta[v] || { label: v, color: 'secondary' };
+          return `<span class="badge bg-label-${m.color}">${m.label}</span>`;
+        },
+      },
+      { data: 'descricao', render: v => escapeHtml(v) },
+      {
+        data: null, className: 'text-end text-nowrap fw-semibold',
+        render: row => {
+          const cls = row.sinal === '+' ? 'text-success' : 'text-danger';
+          return `<span class="${cls}">${row.sinal} ${fmtMoney(row.valor)}</span>`;
+        },
+      },
+      {
+        data: 'status', className: 'text-nowrap', orderable: false,
+        render: v => {
+          const m = statusMeta[v] || { label: v, color: 'secondary' };
+          return `<span class="badge bg-label-${m.color}">${m.label}</span>`;
+        },
+      },
+      {
+        data: 'url', className: 'text-end text-nowrap', orderable: false, searchable: false,
+        render: url => url
+          ? `<a href="${url}" class="btn btn-sm btn-icon btn-label-primary" title="Ver detalhes"><i class="icon-base ti tabler-eye icon-22px"></i></a>`
+          : '',
+      },
+    ],
+    order: [[0, 'desc']],
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    language: { processing: 'Carregando...', search: 'Buscar:', lengthMenu: '_MENU_ por página', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: 'Nenhum registro', zeroRecords: 'Nenhum lançamento encontrado', emptyTable: 'Nenhum lançamento no período', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+    layout: {
+      topStart: { features: [{ pageLength: {} }] },
+      topEnd:   { features: [{ search: { placeholder: 'Buscar por descrição' } }] },
+    },
+  });
+
+  function carregarFluxoCaixa() {
+    const params = new URLSearchParams({
+      de:  document.getElementById('f-de').value || '',
+      ate: document.getElementById('f-ate').value || '',
+    });
+    fetch(`${fluxoUrl}?${params.toString()}`, { headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(d => {
+        Object.entries(d.totais).forEach(([k, v]) => {
+          const el = document.querySelector(`[data-fc="${k}"]`);
+          if (el) el.textContent = fmtMoney(v);
+        });
+        document.getElementById('fluxo-caixa-qtd').textContent = d.totais.qtd + ' registro' + (d.totais.qtd === 1 ? '' : 's');
+
+        dtFluxo.clear();
+        dtFluxo.rows.add(d.linhas).draw();
+      })
+      .catch(err => console.error('Falha no fluxo de caixa:', err));
   }
 
   // ---- Eventos ----

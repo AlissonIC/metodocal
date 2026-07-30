@@ -23,6 +23,16 @@ class User extends Authenticatable
         'password',
         'phone',
         'cpf_cnpj',
+        'tipo_documento',
+        'data_nascimento',
+        'cep',
+        'logradouro',
+        'numero',
+        'complemento',
+        'bairro',
+        'cidade',
+        'uf',
+        'observacoes',
         'avatar',
         'status',
     ];
@@ -37,8 +47,14 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'data_nascimento' => 'date',
             'password' => 'hashed',
         ];
+    }
+
+    public function comprador(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Comprador::class);
     }
 
     public function subscriptions(): HasMany

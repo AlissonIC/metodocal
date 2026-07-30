@@ -101,6 +101,11 @@ class Processo extends Model
         return $this->hasMany(Negociacao::class)->orderByDesc('data')->orderByDesc('id');
     }
 
+    public function observacoes(): HasMany
+    {
+        return $this->hasMany(ObservacaoProcesso::class, 'processo_id')->orderByDesc('created_at');
+    }
+
     public function veiculo(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Veiculo::class);

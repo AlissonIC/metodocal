@@ -136,7 +136,7 @@
       <div class="row">
         <div class="col-md-3 mb-4">
           <label class="form-label">CEP</label>
-          <input type="text" name="cep" class="form-control mask-cep" maxlength="10" value="{{ old('cep', $processo->cep) }}" placeholder="00000-000">
+          <input type="text" name="cep" class="form-control mask-cep" maxlength="10" value="{{ old('cep', $processo->cep) }}" placeholder="00000-000" data-cep-autocomplete>
         </div>
         <div class="col-md-7 mb-4">
           <label class="form-label">Logradouro</label>
@@ -340,37 +340,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // ================================================================
-  // AUTOCOMPLETE CEP (BrasilAPI) — preenche endereço ao sair do campo
-  // ================================================================
-  const cepInput = document.querySelector('input[name="cep"]');
-  if (cepInput) {
-    cepInput.addEventListener('blur', function () {
-      const cep = (this.value || '').replace(/\D/g, '');
-      if (cep.length !== 8) return;
-
-      fetch(`{{ url('painel/api/cep') }}/${cep}`, { headers: { Accept: 'application/json' } })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (! d) return;
-          // Preenche apenas campos vazios pra não sobrescrever edições manuais
-          const setIfEmpty = (name, value) => {
-            const el = document.querySelector(`[name="${name}"]`);
-            if (el && ! el.value && value) el.value = value;
-          };
-          setIfEmpty('logradouro', d.street);
-          setIfEmpty('bairro', d.neighborhood);
-          setIfEmpty('cidade', d.city);
-          const uf = document.querySelector('[name="uf"]');
-          if (uf && ! uf.value && d.state) uf.value = d.state;
-          // Move foco pro número se ainda estiver vazio
-          const numero = document.querySelector('[name="numero"]');
-          if (numero && ! numero.value) numero.focus();
-        })
-        .catch(() => {});
-    });
-  }
-
-  // ================================================================
   // AUTOCOMPLETE VEÍCULO (FIPE via BrasilAPI) — marca depois modelo
   // ================================================================
   if (window.jQuery && jQuery('#veiculo-marca-select').length) {
@@ -456,4 +425,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @include('_partials._masks-script')
+@include('_partials._cep-autocomplete')
 @endsection
