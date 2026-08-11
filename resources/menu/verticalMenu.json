@@ -11,7 +11,7 @@
       "name": "Meu Perfil",
       "icon": "menu-icon icon-base ti tabler-user",
       "slug": "profile.edit",
-      "role": "admin|mentorado|licenciado|comprador"
+      "role": "admin|mentorado|licenciado|comprador|cliente"
     },
     {
       "url": "painel/minha-assinatura",
@@ -41,7 +41,7 @@
       "name": "Processos",
       "icon": "menu-icon icon-base ti tabler-id",
       "slug": "processos.index",
-      "role": "admin|mentorado|licenciado|comprador"
+      "role": "admin|mentorado|licenciado|comprador|cliente"
     },
     {
       "url": "painel/calculadora",
@@ -163,13 +163,18 @@
     {
       "name": "Financeiro",
       "icon": "menu-icon icon-base ti tabler-cash-banknote",
-      "slug": ["admin.financeiro", "admin.financeiro.show", "admin.financeiro.relatorios", "admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit", "admin.despesas"],
+      "slug": ["admin.financeiro", "admin.financeiro.show", "admin.financeiro.relatorios", "admin.comissoes", "admin.comissoes.create", "admin.comissoes.edit", "admin.despesas", "admin.financiamentos"],
       "role": "admin",
       "submenu": [
         {
           "url": "painel/financeiro/relatorios",
           "name": "Relatórios",
           "slug": "admin.financeiro.relatorios"
+        },
+        {
+          "url": "painel/financeiro/financiamentos",
+          "name": "Financiamentos",
+          "slug": "admin.financiamentos"
         },
         {
           "url": "painel/financeiro",

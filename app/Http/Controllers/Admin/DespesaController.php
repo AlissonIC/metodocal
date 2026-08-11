@@ -14,6 +14,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DespesaController extends Controller
 {
+    use \App\Http\Controllers\Concerns\ExportaPlanilha;
+
     public function __construct(private DespesaService $service) {}
 
     public function index(Request $request)
@@ -28,10 +30,9 @@ class DespesaController extends Controller
         ]);
     }
 
-    public function datatable(Request $request): JsonResponse
+    /** Filtros da listagem — compartilhados entre o DataTable e a exportação. */
+    private function queryFiltrada(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        abort_unless($request->user()->hasRole('admin'), 403);
-
         $query = DespesaOcorrencia::query()->with('despesa:id,nome,tipo,categoria,encerrada_em');
 
         if ($mes = $request->query('competencia')) {
@@ -55,7 +56,45 @@ class DespesaController extends Controller
             $query->whereHas('despesa', fn ($q) => $q->where('categoria', $cat));
         }
 
-        return DataTables::eloquent($query->orderByDesc('vencimento')->orderByDesc('id'))
+        // Busca livre — só na exportação; no DataTable quem faz isso é o próprio yajra.
+        if ($b = trim((string) $request->query('busca', ''))) {
+            $query->whereHas('despesa', fn ($q) => $q
+                ->where('nome', 'like', "%$b%")
+                ->orWhere('categoria', 'like', "%$b%"));
+        }
+
+        return $query->orderByDesc('vencimento');
+    }
+
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        return $this->exportarCsv(
+            'despesas-a-pagar',
+            ['ID', 'Despesa', 'Tipo', 'Categoria', 'Competência', 'Vencimento', 'Valor (R$)', 'Status', 'Pago em', 'Método', 'Observações'],
+            $this->queryFiltrada($request),
+            fn (DespesaOcorrencia $o) => [
+                $o->id,
+                $o->despesa?->nome,
+                $o->despesa?->tipo === Despesa::TIPO_FIXA ? 'Fixa' : 'Única',
+                $o->despesa?->categoria,
+                $o->competencia?->format('m/Y'),
+                $o->vencimento,
+                $this->dinheiroCsv($o->valor),
+                $o->statusLabel(),
+                $o->pago_em?->format('d/m/Y H:i'),
+                $o->metodo ? ucfirst($o->metodo) : null,
+                $o->observacoes,
+            ],
+        );
+    }
+
+    public function datatable(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        return DataTables::eloquent($this->queryFiltrada($request)->orderByDesc('id'))
             ->addColumn('despesa_nome', function (DespesaOcorrencia $o) {
                 $badge = $o->despesa->tipo === Despesa::TIPO_FIXA
                     ? '<span class="badge bg-label-info ms-1" title="Despesa fixa">Fixa</span>'

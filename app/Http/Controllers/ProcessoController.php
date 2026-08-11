@@ -23,6 +23,21 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ProcessoController extends Controller
 {
+    public function __construct(private \App\Services\FinanciamentoService $financiamento) {}
+
+    /**
+     * Regera o carnê de parcelas após salvar e registra o que mudou no log do processo.
+     * Só as parcelas pendentes são tocadas — pagas e canceladas ficam intactas.
+     */
+    private function sincronizarParcelas(Processo $processo): void
+    {
+        $resumo = $this->financiamento->sincronizar($processo);
+
+        if ($desc = $this->financiamento->descreverResumo($resumo)) {
+            $this->logAtividade($processo, HistoricoProcesso::ACAO_UPDATED, 'parcela', null, $desc);
+        }
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -30,7 +45,8 @@ class ProcessoController extends Controller
             'statuses' => Processo::STATUSES,
             'servicos' => Servico::orderBy('nome')->get(['id', 'nome']),
             'isAdmin' => $user->hasRole('admin'),
-            'isComprador' => $user->hasRole('comprador'),
+            // Comprador e cliente só visualizam — nunca criam nem editam processos
+            'isComprador' => $user->hasRole('comprador') || $user->hasRole('cliente'),
         ]);
     }
 
@@ -50,6 +66,9 @@ class ProcessoController extends Controller
             // Comprador vê apenas processos aos quais está vinculado
             $query->whereHas('comprador', fn ($q) => $q->where('user_id', $user->id))
                   ->with('user:id,name');
+        } elseif ($user->hasRole('cliente')) {
+            // Cliente titular vê apenas os processos em que é o titular
+            $query->where('cliente_user_id', $user->id)->with('user:id,name');
         } else {
             $query->where('user_id', $user->id);
         }
@@ -80,7 +99,7 @@ class ProcessoController extends Controller
     public function create(Request $request)
     {
         $isAdmin = $request->user()->hasRole('admin');
-        $servicos = Servico::where('ativo', true)->orderBy('nome')->get(['id', 'nome']);
+        $servicos = Servico::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'valor_padrao']);
         abort_if($servicos->isEmpty(), 422, 'Nenhum serviço ativo disponível. Peça ao administrador para cadastrar.');
 
         return view('content.processos.form', [
@@ -91,9 +110,11 @@ class ProcessoController extends Controller
             'dividas' => collect(),
             'veiculo' => null,
             'servicos' => $servicos,
+            'bancos' => $this->bancosParaSelect(),
             'isAdmin' => $isAdmin,
             'clientes' => $isAdmin ? $this->clientesParaSelect() : collect(),
             'compradores' => $isAdmin ? Comprador::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'documento', 'tipo_documento']) : collect(),
+            'clientesFinais' => $isAdmin ? $this->clientesFinaisParaSelect() : collect(),
         ]);
     }
 
@@ -147,6 +168,8 @@ class ProcessoController extends Controller
             return $processo;
         });
 
+        $this->sincronizarParcelas($processo);
+
         return redirect()
             ->route('processos.show', $processo)
             ->with('status', 'Processo cadastrado com sucesso.');
@@ -158,11 +181,15 @@ class ProcessoController extends Controller
 
         $user = $request->user();
         $isAdmin = $user->hasRole('admin');
-        $isComprador = $user->hasRole('comprador');
+        // Comprador e cliente têm a mesma postura na tela: leitura, sem ações de escrita
+        $isComprador = $user->hasRole('comprador') || $user->hasRole('cliente');
 
         $relations = [
             'user.roles:id,name',
+            'clienteUser:id,name,email',
             'servico:id,nome',
+            'banco:id,nome,taxa',
+            'parcelas',
             'dividas',
             'documentos.uploadedBy:id,name',
             'historico.user:id,name',
@@ -175,6 +202,10 @@ class ProcessoController extends Controller
             $relations[] = 'negociacoes.inseridaPor:id,name';
         }
         $processo->load($relations);
+        $processo->loadCount([
+            'parcelas',
+            'parcelas as parcelas_pagas_count' => fn ($q) => $q->where('status', 'paga'),
+        ]);
 
         // Usuários para select2 no form inline de comissão — inclui role pra colorir
         $usuariosParaComissao = collect();
@@ -200,6 +231,28 @@ class ProcessoController extends Controller
         ]);
     }
 
+    /**
+     * Versão para impressão/PDF do cadastro: página isolada (sem menu nem ações),
+     * com CSS de impressão próprio. O usuário salva em PDF pelo diálogo do navegador.
+     */
+    public function imprimir(Request $request, Processo $processo)
+    {
+        $this->authorizeAccess($request, $processo);
+
+        $isAdmin = $request->user()->hasRole('admin');
+
+        $relations = ['user:id,name,email', 'servico:id,nome', 'banco:id,nome,taxa', 'dividas', 'veiculo', 'comprador', 'documentos'];
+        if ($isAdmin) {
+            $relations[] = 'negociacoes.inseridaPor:id,name';
+        }
+        $processo->load($relations);
+
+        return view('content.processos.imprimir', [
+            'processo' => $processo,
+            'isAdmin' => $isAdmin,
+        ]);
+    }
+
     public function edit(Request $request, Processo $processo)
     {
         $isAdmin = $request->user()->hasRole('admin');
@@ -214,10 +267,12 @@ class ProcessoController extends Controller
             'processo' => $processo,
             'dividas' => $processo->dividas,
             'veiculo' => $processo->veiculo,
-            'servicos' => Servico::where('ativo', true)->orderBy('nome')->get(['id', 'nome']),
+            'servicos' => Servico::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'valor_padrao']),
+            'bancos' => $this->bancosParaSelect(),
             'isAdmin' => $isAdmin,
             'clientes' => $isAdmin ? $this->clientesParaSelect() : collect(),
             'compradores' => $isAdmin ? Comprador::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'documento', 'tipo_documento']) : collect(),
+            'clientesFinais' => $isAdmin ? $this->clientesFinaisParaSelect() : collect(),
         ]);
     }
 
@@ -254,6 +309,8 @@ class ProcessoController extends Controller
             $this->logAtividade($processo, HistoricoProcesso::ACAO_UPDATED, 'processo', $processo->id, 'Dados do processo atualizados.');
         });
 
+        $this->sincronizarParcelas($processo->refresh());
+
         return redirect()
             ->route('processos.show', $processo)
             ->with('status', 'Processo atualizado.');
@@ -284,10 +341,30 @@ class ProcessoController extends Controller
         $request->validate([
             'arquivo' => ['required', 'file', 'max:20480'],
             'categoria' => ['nullable', 'string', 'max:80'],
+        ], [
+            'arquivo.required' => 'Escolha um arquivo para enviar.',
+            'arquivo.file' => 'O envio falhou. Verifique se o arquivo não passa de 20 MB e tente de novo.',
+            'arquivo.max' => 'O arquivo tem mais de 20 MB. Comprima-o ou envie em partes.',
+            'categoria.max' => 'A categoria deve ter no máximo 80 caracteres.',
         ]);
 
         $file = $request->file('arquivo');
+
+        // Upload interrompido no meio do caminho (rede caiu, limite do PHP) chega aqui
+        // como arquivo inválido. Devolve a causa em vez de estourar erro 500.
+        if (! $file->isValid()) {
+            return back()->withErrors([
+                'arquivo' => 'O arquivo não chegou por inteiro ao servidor (' . $file->getErrorMessage() . '). Tente novamente.',
+            ]);
+        }
+
         $path = $file->store('processos/' . $processo->id, 'local');
+
+        if (! $path) {
+            return back()->withErrors([
+                'arquivo' => 'Não foi possível gravar o arquivo no servidor. Avise o administrador.',
+            ]);
+        }
 
         $doc = $processo->documentos()->create([
             'uploaded_by_user_id' => $request->user()->id,
@@ -566,27 +643,55 @@ class ProcessoController extends Controller
             'valor' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'vencimento' => ['required', 'date'],
             'status' => ['required', 'in:pendente,paga,cancelada'],
+            'qtd_parcelas' => ['nullable', 'integer', 'min:1', 'max:120'],
         ]);
 
         $processo->loadMissing('user:id,name,email,cpf_cnpj');
 
-        $fatura = Fatura::create([
-            'processo_id' => $processo->id,
-            'user_id' => $processo->user_id,
-            'descricao' => $data['descricao'] ?? null,
-            'valor' => $data['valor'],
-            'vencimento' => $data['vencimento'],
-            'status' => $data['status'],
-            'pago_em' => $data['status'] === 'paga' ? now() : null,
-            'metodo' => $data['status'] === 'paga' ? 'manual' : null,
-            'payer_name' => $processo->user?->name,
-            'payer_email' => $processo->user?->email,
-            'payer_document' => $processo->user?->cpf_cnpj,
+        // Parcelamento com a empresa: o valor informado é o de CADA parcela e
+        // cada uma vira uma cobrança própria, vencendo mês a mês.
+        $qtd = (int) ($data['qtd_parcelas'] ?? 1);
+        $primeiro = Carbon::parse($data['vencimento']);
+        $valorFmt = number_format((float) $data['valor'], 2, ',', '.');
+
+        $ids = DB::transaction(function () use ($processo, $data, $qtd, $primeiro) {
+            $ids = [];
+            for ($n = 1; $n <= $qtd; $n++) {
+                $descricao = $data['descricao'] ?? null;
+                if ($qtd > 1) {
+                    $descricao = trim(($descricao ?: 'Parcelamento') . " ({$n}/{$qtd})");
+                }
+
+                $fatura = Fatura::create([
+                    'processo_id' => $processo->id,
+                    'user_id' => $processo->user_id,
+                    'descricao' => $descricao,
+                    'valor' => $data['valor'],
+                    // addMonthsNoOverflow: dia 31 em mês curto cai no último dia, não vira o mês seguinte
+                    'vencimento' => $primeiro->copy()->addMonthsNoOverflow($n - 1)->toDateString(),
+                    'status' => $data['status'],
+                    'pago_em' => $data['status'] === 'paga' ? now() : null,
+                    'metodo' => $data['status'] === 'paga' ? 'manual' : null,
+                    'payer_name' => $processo->user?->name,
+                    'payer_email' => $processo->user?->email,
+                    'payer_document' => $processo->user?->cpf_cnpj,
+                ]);
+                $ids[] = $fatura->id;
+            }
+            return $ids;
+        });
+
+        $desc = $qtd > 1
+            ? "Criou parcelamento de {$qtd}x R$ {$valorFmt} a partir de " . $primeiro->format('d/m/Y')
+            : 'Criou dívida de R$ ' . $valorFmt . (($data['descricao'] ?? null) ? ' (' . $data['descricao'] . ')' : '');
+
+        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'fatura', $ids[0] ?? null, $desc);
+
+        return response()->json([
+            'message' => $qtd > 1
+                ? "{$qtd} parcelas registradas (R$ {$valorFmt} cada)."
+                : 'Fatura registrada.',
         ]);
-
-        $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'fatura', $fatura->id, 'Criou dívida de R$ ' . number_format((float) $fatura->valor, 2, ',', '.') . ($fatura->descricao ? ' (' . $fatura->descricao . ')' : ''));
-
-        return response()->json(['message' => 'Fatura registrada.']);
     }
 
     public function updateFatura(Request $request, Fatura $fatura): JsonResponse
@@ -753,11 +858,17 @@ class ProcessoController extends Controller
             ->where('processo_id', $processo->id)
             ->with('inseridaPor:id,name');
 
+        $dinheiro = fn ($v) => $v !== null ? 'R$ ' . number_format((float) $v, 2, ',', '.') : null;
+
         return DataTables::eloquent($query->orderByDesc('data')->orderByDesc('id'))
             ->addColumn('resumo_curto', fn (Negociacao $n) => \Illuminate\Support\Str::limit($n->resumo, 140))
             ->addColumn('assessoria_fmt', fn (Negociacao $n) => $n->assessoria)
+            ->addColumn('telefone_fmt', fn (Negociacao $n) => $n->telefone)
+            ->addColumn('contato_fmt', fn (Negociacao $n) => $n->contato_nome)
             ->addColumn('data_fmt', fn (Negociacao $n) => $n->data?->format('d/m/Y'))
-            ->addColumn('val_em_maos_fmt', fn (Negociacao $n) => $n->val_em_maos !== null ? 'R$ ' . number_format((float) $n->val_em_maos, 2, ',', '.') : null)
+            ->addColumn('val_atualizado_fmt', fn (Negociacao $n) => $dinheiro($n->val_atualizado))
+            ->addColumn('val_analise_fmt', fn (Negociacao $n) => $dinheiro($n->val_analise))
+            ->addColumn('val_em_maos_fmt', fn (Negociacao $n) => $dinheiro($n->val_em_maos))
             ->addColumn('autor_nome', fn (Negociacao $n) => $n->inseridaPor?->name)
             ->toJson();
     }
@@ -772,6 +883,8 @@ class ProcessoController extends Controller
             'id' => $negociacao->id,
             'data' => $negociacao->data?->toDateString(),
             'assessoria' => $negociacao->assessoria,
+            'telefone' => $negociacao->telefone,
+            'contato_nome' => $negociacao->contato_nome,
             'resumo' => $negociacao->resumo,
             'val_atualizado' => $negociacao->val_atualizado !== null ? number_format((float) $negociacao->val_atualizado, 2, ',', '.') : '',
             'val_analise' => $negociacao->val_analise !== null ? number_format((float) $negociacao->val_analise, 2, ',', '.') : '',
@@ -797,6 +910,7 @@ class ProcessoController extends Controller
             $resumoCurto = \Illuminate\Support\Str::limit($data['resumo'], 140);
             $desc = 'Registrou negociação';
             if ($data['assessoria'] ?? null) $desc .= ' (' . $data['assessoria'] . ')';
+            if ($data['contato_nome'] ?? null) $desc .= ' — falou com ' . $data['contato_nome'];
             $desc .= ': ' . $resumoCurto;
 
             $this->logAtividade($processo, HistoricoProcesso::ACAO_CREATED, 'negociacao', $negociacao->id, $desc);
@@ -837,6 +951,8 @@ class ProcessoController extends Controller
         return $request->validate([
             'data' => ['required', 'date'],
             'assessoria' => ['nullable', 'string', 'max:120'],
+            'telefone' => ['nullable', 'string', 'max:40'],
+            'contato_nome' => ['nullable', 'string', 'max:120'],
             'resumo' => ['required', 'string', 'max:2000'],
             'val_atualizado' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'val_analise' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
@@ -879,7 +995,10 @@ class ProcessoController extends Controller
         $isCompradorVinculado = $user->hasRole('comprador')
             && $processo->comprador
             && $processo->comprador->user_id === $user->id;
-        abort_unless($isAdmin || $isOwner || $isCompradorVinculado, 403);
+        // Cliente titular: vê apenas o próprio processo
+        $isClienteTitular = $user->hasRole('cliente') && $processo->cliente_user_id === $user->id;
+
+        abort_unless($isAdmin || $isOwner || $isCompradorVinculado || $isClienteTitular, 403);
     }
 
     private function authorizeOwner(Request $request, Processo $processo): void
@@ -887,11 +1006,23 @@ class ProcessoController extends Controller
         abort_unless($processo->user_id === $request->user()->id, 403);
     }
 
+    /** Bancos ativos com a taxa — a taxa alimenta o cálculo da parcela no formulário. */
+    private function bancosParaSelect()
+    {
+        return \App\Models\Banco::where('ativo', true)->orderBy('nome')->get(['id', 'nome', 'taxa']);
+    }
+
     private function clientesParaSelect()
     {
         return User::role(['mentorado', 'licenciado'])
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
+    }
+
+    /** Usuários com nível "cliente" — titulares que acessam o próprio processo. */
+    private function clientesFinaisParaSelect()
+    {
+        return User::role('cliente')->orderBy('name')->get(['id', 'name', 'email']);
     }
 
     private function validateProcesso(Request $request, bool $isAdmin): array
@@ -906,6 +1037,13 @@ class ProcessoController extends Controller
             'telefone_contato' => ['nullable', 'string', 'max:40'],
             'servico_id' => ['required', 'exists:servicos,id'],
             'observacoes_cliente' => ['nullable', 'string', 'max:3000'],
+
+            // Financiamento do cliente
+            'banco_id' => ['nullable', 'exists:bancos,id'],
+            'valor_financiamento' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'qtd_parcelas' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'valor_parcela' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'data_primeira_parcela' => ['nullable', 'date'],
 
             // Endereço (todo opcional)
             'cep' => ['nullable', 'string', 'max:10'],
@@ -939,8 +1077,10 @@ class ProcessoController extends Controller
 
         if ($isAdmin) {
             $rules['user_id'] = ['required', 'exists:users,id'];
+            $rules['cliente_user_id'] = ['nullable', 'exists:users,id'];
             $rules['comprador_id'] = ['nullable', 'exists:compradores,id'];
             $rules['observacoes_admin'] = ['nullable', 'string', 'max:5000'];
+            $rules['link_pagamento_mensal'] = ['nullable', 'url', 'max:500'];
         }
 
         $data = $request->validate($rules);

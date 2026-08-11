@@ -62,9 +62,14 @@
       <h5 class="card-title mb-0">Usuários</h5>
       <p class="text-muted mb-0 mt-1 small">Gerenciamento de contas de admin, mentorados e licenciados.</p>
     </div>
-    <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-      <i class="icon-base ti tabler-plus me-1"></i> Novo usuário
-    </a>
+    <div class="d-flex gap-2">
+      <button type="button" id="btn-exportar" class="btn btn-label-success">
+        <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Exportar
+      </button>
+      <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
+        <i class="icon-base ti tabler-plus me-1"></i> Novo usuário
+      </a>
+    </div>
   </div>
 
   @if (session('status'))
@@ -184,7 +189,18 @@ document.addEventListener('DOMContentLoaded', function () {
       },
     },
     columns: [
-      { data: 'name',         responsivePriority: 1 },
+      {
+        data: 'name', responsivePriority: 1,
+        render: (nome, type, row) => {
+          if (type !== 'display') return nome;
+          const escapado = $('<div>').text(nome ?? '').html();
+          if (! row.atrasadas) return escapado;
+          // Tag na frente do nome quando há parcela vencida em aberto
+          const plural = row.atrasadas > 1 ? 's' : '';
+          return `<span class="badge bg-label-danger me-2" title="${row.atrasadas} parcela${plural} vencida${plural} em aberto">`
+               + `<i class="icon-base ti tabler-alert-triangle me-1"></i>Inadimplente</span>${escapado}`;
+        },
+      },
       { data: 'status_badge', responsivePriority: 1 },
       { data: 'role',         responsivePriority: 2 },
       { data: 'email',        responsivePriority: 3 },
@@ -232,6 +248,19 @@ document.addEventListener('DOMContentLoaded', function () {
   $('#btn-limpar-filtros').on('click', () => {
     $('#filtro-role').val([]).trigger('change');
     $('#filtro-status, #filtro-plano').val(null).trigger('change');
+  });
+
+  // Exportação: leva os mesmos filtros da tela e traz todas as linhas, sem paginação.
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    const params = new URLSearchParams();
+    ($('#filtro-role').val() || []).forEach(r => params.append('roles[]', r));
+    const simples = {
+      status:  $('#filtro-status').val() || '',
+      plan_id: $('#filtro-plano').val() || '',
+      busca:   dt.search(),
+    };
+    Object.entries(simples).forEach(([k, v]) => { if (v) params.append(k, v); });
+    window.location = "{{ route('admin.users.export') }}?" + params.toString();
   });
 
   // ---- Modal de detalhes ----

@@ -14,6 +14,7 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -39,6 +40,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn (Request $request) => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Envio acima do post_max_size do PHP: o corpo do POST é descartado antes de
+        // chegar ao Laravel. Sem este tratamento o usuário só vê "413" ou, pior, um
+        // 419 "página expirada" (o token CSRF sumiu junto) e não descobre a causa.
+        $exceptions->render(function (PostTooLargeException $e, Request $request) {
+            $limite = ini_get('post_max_size') ?: '?';
+            $msg = "O envio ultrapassou o limite do servidor ({$limite}). Envie um arquivo menor.";
+
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg], 413);
+            }
+
+            return back()->withErrors(['arquivo' => $msg]);
+        });
+
         $exceptions->render(function (AuthorizationException $e, Request $request) {
             if ($request->expectsJson()) {
                 return response()->json(['status' => 'error', 'message' => 'Não autorizado.'], 403);

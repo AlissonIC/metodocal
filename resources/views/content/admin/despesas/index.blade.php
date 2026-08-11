@@ -45,9 +45,14 @@
       <h5 class="card-title mb-0"><i class="icon-base ti tabler-cash-banknote me-1"></i> Despesas</h5>
       <p class="text-muted mb-0 mt-1 small">Cadastro de despesas <strong>fixas</strong> (repetem mensalmente) e <strong>únicas</strong>. As fixas continuam sendo geradas até você encerrá-las.</p>
     </div>
-    <button type="button" class="btn btn-primary" id="btn-nova-despesa">
-      <i class="icon-base ti tabler-plus me-1"></i> Nova despesa
-    </button>
+    <div class="d-flex gap-2">
+      <button type="button" id="btn-exportar" class="btn btn-label-success">
+        <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Exportar
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-nova-despesa">
+        <i class="icon-base ti tabler-plus me-1"></i> Nova despesa
+      </button>
+    </div>
   </div>
 
   <div class="card-body filtros-bar">
@@ -276,6 +281,19 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('filtro-competencia').value = '';
     $('#filtro-status, #filtro-tipo, #filtro-categoria').val(null).trigger('change');
     dt.draw();
+  });
+
+  // Exportação: leva os mesmos filtros da tela e traz todas as linhas, sem paginação.
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    const params = new URLSearchParams({
+      competencia: document.getElementById('filtro-competencia').value,
+      status:      $('#filtro-status').val() || '',
+      tipo:        $('#filtro-tipo').val() || '',
+      categoria:   $('#filtro-categoria').val() || '',
+      busca:       dt.search(),
+    });
+    [...params.keys()].forEach(k => { if (! params.get(k)) params.delete(k); });
+    window.location = "{{ route('admin.despesas.export') }}?" + params.toString();
   });
 
   // ---- Modal handling ----

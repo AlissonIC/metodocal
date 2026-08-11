@@ -74,7 +74,12 @@
 </div>
 
 <div class="card">
-  <div class="card-header border-bottom"><h5 class="card-title mb-0">Faturas</h5></div>
+  <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h5 class="card-title mb-0">Faturas</h5>
+    <button type="button" id="btn-exportar" class="btn btn-label-success btn-sm">
+      <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Exportar
+    </button>
+  </div>
 
   {{-- ==================== FILTROS ==================== --}}
   <div class="card-body filtros-bar">
@@ -217,6 +222,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('filtro-de')._flatpickr?.clear();
     document.getElementById('filtro-ate')._flatpickr?.clear();
     dt.draw();
+  });
+
+  // Exportação: leva os mesmos filtros da tela e traz todas as linhas, sem paginação.
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    const params = new URLSearchParams({
+      status:         $('#filtro-status').val() || '',
+      metodo:         $('#filtro-metodo').val() || '',
+      plan_id:        $('#filtro-plano').val() || '',
+      vencimento_de:  document.getElementById('filtro-de').value,
+      vencimento_ate: document.getElementById('filtro-ate').value,
+      busca:          dt.search(),
+    });
+    [...params.keys()].forEach(k => { if (! params.get(k)) params.delete(k); });
+    window.location = "{{ route('admin.financeiro.export') }}?" + params.toString();
   });
 
   // Detalhes agora abrem numa página dedicada (admin.financeiro.show) — sem modal.

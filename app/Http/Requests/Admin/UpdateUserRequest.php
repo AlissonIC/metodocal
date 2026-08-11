@@ -22,12 +22,14 @@ class UpdateUserRequest extends BaseFormRequest
             'name' => ['required', 'string', 'min:3', 'max:120'],
             'email' => ['required', 'email', 'max:180', Rule::unique('users', 'email')->ignore($targetId)],
             'phone' => ['nullable', 'string', 'max:20'],
-            'cpf_cnpj' => ['nullable', 'string', 'max:20'],
+            // Comprador vira um registro na tabela `compradores`, onde o documento é
+            // obrigatório — sem esta regra o cadastro estourava erro de banco.
+            'cpf_cnpj' => ['nullable', 'string', 'max:20', 'required_if:role,comprador'],
             'tipo_documento' => ['nullable', 'in:cpf,cnpj'],
             'data_nascimento' => ['nullable', 'date'],
             'role' => [
                 'required',
-                'in:admin,mentorado,licenciado,comprador',
+                'in:admin,mentorado,licenciado,comprador,cliente',
                 function ($attr, $value, $fail) use ($isSelf) {
                     if ($isSelf && $value !== 'admin' && $this->user()->hasRole('admin')) {
                         $fail('Você não pode rebaixar seu próprio acesso de admin.');
@@ -47,6 +49,13 @@ class UpdateUserRequest extends BaseFormRequest
             'uf' => ['nullable', 'string', 'size:2'],
 
             'observacoes' => ['nullable', 'string', 'max:5000'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'cpf_cnpj.required_if' => 'Informe o CPF/CNPJ — ele é obrigatório para o nível Comprador.',
         ];
     }
 }

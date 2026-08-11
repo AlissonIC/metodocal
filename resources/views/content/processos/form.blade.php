@@ -3,13 +3,17 @@
 @section('title', $processo->exists ? 'Editar processo' : 'Novo processo')
 
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/select2/select2.scss'])
+@vite([
+  'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
+])
 @endsection
 
 @section('vendor-script')
 @vite([
   'resources/assets/vendor/libs/cleave-zen/cleave-zen.js',
   'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/flatpickr/flatpickr.js',
 ])
 @endsection
 
@@ -73,6 +77,23 @@
             </select>
             <small class="text-muted">Destino da operação. Visível apenas para admin.</small>
           </div>
+
+          <div class="col-12 mt-4">
+            <label class="form-label">Cliente titular com acesso ao painel (opcional)</label>
+            <select name="cliente_user_id" id="cliente_user_id" class="form-select select2">
+              <option value="">— sem acesso ao painel —</option>
+              @foreach ($clientesFinais as $cf)
+                <option value="{{ $cf->id }}" @selected(old('cliente_user_id', $processo->cliente_user_id) == $cf->id)>
+                  {{ $cf->name }} · {{ $cf->email }}
+                </option>
+              @endforeach
+            </select>
+            <small class="text-muted">
+              Usuário de nível <strong>Cliente</strong> que poderá entrar e acompanhar este processo:
+              andamento, parcelas, link de pagamento, documentos e PDF. Cadastre-o antes em
+              <a href="{{ route('admin.users.create') }}" target="_blank">Usuários → Novo usuário</a>.
+            </small>
+          </div>
         </div>
       </div>
     </div>
@@ -86,7 +107,9 @@
           <div class="col-md-4 mb-3">
             <div class="form-check custom-option custom-option-basic">
               <label class="form-check-label custom-option-content w-100 d-flex align-items-center" style="padding-block: 0.75rem;">
-                <input class="form-check-input me-2 mt-0" type="radio" name="servico_id" value="{{ $servico->id }}" @checked((int) old('servico_id', $processo->servico_id) === $servico->id)>
+                <input class="form-check-input me-2 mt-0 servico-radio" type="radio" name="servico_id" value="{{ $servico->id }}"
+                       data-comissao="{{ (float) ($servico->valor_padrao ?? 0) }}"
+                       @checked((int) old('servico_id', $processo->servico_id) === $servico->id)>
                 <span class="h6 mb-0">{{ $servico->nome }}</span>
               </label>
             </div>
@@ -262,6 +285,68 @@
     </div>
   </div>
 
+  {{-- =============== FINANCIAMENTO =============== --}}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0"><i class="icon-base ti tabler-building-bank me-1"></i> Financiamento</h5>
+      <small class="text-muted">Valor financiado e parcelamento contratado pelo cliente.</small>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <label class="form-label">Banco</label>
+          <select name="banco_id" id="banco_id" class="form-select">
+            <option value="" data-taxa="0">— sem banco definido —</option>
+            @foreach ($bancos as $banco)
+              <option value="{{ $banco->id }}" data-taxa="{{ (float) $banco->taxa }}"
+                      @selected(old('banco_id', $processo->banco_id) == $banco->id)>
+                {{ $banco->nome }} · {{ number_format((float) $banco->taxa, 2, ',', '.') }}%
+              </option>
+            @endforeach
+          </select>
+          <small class="text-muted">A taxa é o <strong>% da dívida</strong> que o banco aceita para quitar.</small>
+        </div>
+        <div class="col-md-6 mb-4">
+          <label class="form-label">Valor do financiamento (R$)</label>
+          <input type="text" inputmode="numeric" name="valor_financiamento" id="valor_financiamento" class="form-control mask-money"
+                 value="{{ old('valor_financiamento', $processo->valor_financiamento ? number_format((float) $processo->valor_financiamento, 2, ',', '.') : '') }}" placeholder="0,00">
+        </div>
+        <div class="col-md-4 mb-4">
+          <label class="form-label">Quantidade de parcelas</label>
+          <input type="number" name="qtd_parcelas" id="qtd_parcelas" class="form-control" min="1" max="999"
+                 value="{{ old('qtd_parcelas', $processo->qtd_parcelas) }}" placeholder="Ex.: 48">
+        </div>
+        <div class="col-md-4 mb-4">
+          <label class="form-label">Primeira parcela</label>
+          <input type="text" name="data_primeira_parcela" id="data_primeira_parcela" class="form-control flatpickr-date"
+                 value="{{ old('data_primeira_parcela', $processo->data_primeira_parcela?->toDateString()) }}" placeholder="dd/mm/aaaa">
+          <small class="text-muted">As demais vencem no mesmo dia dos meses seguintes.</small>
+        </div>
+        <div class="col-md-4 mb-4">
+          <label class="form-label d-flex justify-content-between align-items-center">
+            <span>Valor da parcela (R$)</span>
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btn-recalcular-parcela" style="display:none;">
+              <i class="icon-base ti tabler-refresh"></i> recalcular
+            </button>
+          </label>
+          <input type="text" inputmode="numeric" name="valor_parcela" id="valor_parcela" class="form-control mask-money"
+                 value="{{ old('valor_parcela', $processo->valor_parcela ? number_format((float) $processo->valor_parcela, 2, ',', '.') : '') }}" placeholder="0,00">
+          <small class="text-muted" id="parcela-memoria">Calculado automaticamente a partir do banco, do financiamento e do serviço.</small>
+        </div>
+
+        @if ($isAdmin)
+          <div class="col-12 mt-4">
+            <label class="form-label">Link para pagamento mensal</label>
+            <input type="url" name="link_pagamento_mensal" class="form-control" maxlength="500"
+                   value="{{ old('link_pagamento_mensal', $processo->link_pagamento_mensal) }}"
+                   placeholder="https://...">
+            <small class="text-muted">Endereço que o cliente usa para pagar a parcela do mês. Aparece como botão na tela do processo.</small>
+          </div>
+        @endif
+      </div>
+    </div>
+  </div>
+
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h5 class="card-title mb-0">Dívidas</h5>
@@ -317,6 +402,95 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.jQuery && jQuery('#comprador_id').length) {
     jQuery('#comprador_id').select2({ placeholder: 'Selecione o comprador', allowClear: true, width: '100%' });
   }
+  if (window.jQuery && jQuery('#cliente_user_id').length) {
+    jQuery('#cliente_user_id').select2({ placeholder: 'Selecione o cliente titular', allowClear: true, width: '100%' });
+  }
+
+  // Data da primeira parcela: digita/exibe em dd/mm/aaaa, envia em Y-m-d
+  if (window.flatpickr) {
+    flatpickr('.flatpickr-date', { altInput: true, altFormat: 'd/m/Y', dateFormat: 'Y-m-d', allowInput: true });
+  }
+
+  // ================================================================
+  // FINANCIAMENTO — valor da parcela calculado pelo mesmo critério da
+  // Calculadora de quitação: o banco aceita um % da dívida, soma-se a
+  // comissão do serviço e divide-se pelo número de parcelas.
+  //   mínimo  = financiamento × (taxa do banco / 100)
+  //   final   = mínimo + comissão do serviço
+  //   parcela = final / parcelas
+  // O campo continua editável: se o usuário digitar por cima, o cálculo
+  // para de sobrescrever até ele clicar em "recalcular".
+  // ================================================================
+  (function () {
+    const bancoEl    = document.getElementById('banco_id');
+    const finEl      = document.getElementById('valor_financiamento');
+    const parcelasEl = document.getElementById('qtd_parcelas');
+    const parcelaEl  = document.getElementById('valor_parcela');
+    const memoriaEl  = document.getElementById('parcela-memoria');
+    const recalcBtn  = document.getElementById('btn-recalcular-parcela');
+    if (! bancoEl || ! parcelaEl) return;
+
+    // Em edição, um valor já gravado é tratado como manual — não sobrescreve o que
+    // o usuário salvou antes só porque a tela abriu.
+    let manual = parcelaEl.value.trim() !== '';
+
+    const parseMoney = (v) => {
+      const s = String(v || '').trim().replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    };
+    const fmtMoney = (n) => Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function comissaoServico() {
+      const sel = document.querySelector('.servico-radio:checked');
+      return sel ? parseFloat(sel.dataset.comissao || 0) : 0;
+    }
+
+    function calcular() {
+      const financiamento = parseMoney(finEl.value);
+      const parcelas = parseInt(parcelasEl.value || '0', 10);
+      const opt = bancoEl.options[bancoEl.selectedIndex];
+      const taxa = opt ? parseFloat(opt.dataset.taxa || 0) : 0;
+      const comissao = comissaoServico();
+
+      if (! financiamento || ! parcelas || parcelas < 1) {
+        memoriaEl.textContent = 'Preencha banco, financiamento e parcelas para calcular.';
+        return;
+      }
+
+      const minimo = financiamento * (taxa / 100);
+      const final = minimo + comissao;
+      const parcela = final / parcelas;
+
+      memoriaEl.innerHTML = `R$ ${fmtMoney(financiamento)} × ${fmtMoney(taxa)}% = R$ ${fmtMoney(minimo)}`
+        + ` + comissão R$ ${fmtMoney(comissao)} = <strong>R$ ${fmtMoney(final)}</strong>`
+        + ` ÷ ${parcelas}x = <strong>R$ ${fmtMoney(parcela)}</strong>`;
+
+      if (! manual) parcelaEl.value = fmtMoney(parcela);
+    }
+
+    function marcarManual() {
+      manual = true;
+      recalcBtn.style.display = '';
+    }
+
+    [bancoEl, finEl, parcelasEl].forEach(el => {
+      el.addEventListener('input', calcular);
+      el.addEventListener('change', calcular);
+    });
+    document.querySelectorAll('.servico-radio').forEach(el => el.addEventListener('change', calcular));
+
+    parcelaEl.addEventListener('input', marcarManual);
+
+    recalcBtn.addEventListener('click', function () {
+      manual = false;
+      recalcBtn.style.display = 'none';
+      calcular();
+    });
+
+    if (manual) recalcBtn.style.display = '';
+    calcular();
+  })();
 
   const container = document.getElementById('dividas-container');
   const template = document.getElementById('divida-template').innerHTML;

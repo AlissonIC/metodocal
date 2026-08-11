@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\NotificationQueueService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -60,6 +61,30 @@ class User extends Authenticatable
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function processos(): HasMany
+    {
+        return $this->hasMany(Processo::class);
+    }
+
+    /**
+     * Parcelas vencidas e ainda em aberto do cliente, atravessando os processos dele:
+     * tanto o carnê do financiamento quanto as cobranças parceladas com a empresa.
+     * É o que sustenta a tag "Inadimplente" na listagem de usuários.
+     */
+    public function scopeWithParcelasAtrasadasCount(Builder $query): Builder
+    {
+        return $query->withCount([
+            'processos as parcelas_atrasadas_count' => fn ($q) => $q
+                ->join('parcelas_financiamento', 'parcelas_financiamento.processo_id', '=', 'processos.id')
+                ->where('parcelas_financiamento.status', 'pendente')
+                ->where('parcelas_financiamento.vencimento', '<', now()->startOfDay()),
+            'processos as faturas_atrasadas_count' => fn ($q) => $q
+                ->join('faturas', 'faturas.processo_id', '=', 'processos.id')
+                ->whereIn('faturas.status', ['pendente', 'atrasada'])
+                ->where('faturas.vencimento', '<', now()->startOfDay()),
+        ]);
     }
 
     public function currentSubscription(): BelongsTo

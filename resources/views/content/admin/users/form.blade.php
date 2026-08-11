@@ -69,8 +69,9 @@
               </select>
             </div>
             <div class="col-md-8 mb-0">
-              <label class="form-label">CPF / CNPJ</label>
-              <input type="text" class="form-control mask-cpf-cnpj" name="cpf_cnpj" placeholder="000.000.000-00" value="{{ old('cpf_cnpj', $user->cpf_cnpj) }}">
+              <label class="form-label">CPF / CNPJ <span id="cpf-obrigatorio" class="text-danger" style="display:none;">*</span></label>
+              <input type="text" class="form-control mask-cpf-cnpj" name="cpf_cnpj" id="cpf_cnpj" placeholder="000.000.000-00" value="{{ old('cpf_cnpj', $user->cpf_cnpj) }}">
+              <small class="text-muted" id="cpf-ajuda" style="display:none;">Obrigatório para o nível Comprador.</small>
             </div>
           </div>
         </div>
@@ -141,13 +142,18 @@
         <div class="card-body">
           <div class="mb-4">
             <label class="form-label">Nível</label>
-            <select name="role" class="form-select">
+            <select name="role" id="role" class="form-select">
               <option value="mentorado" @selected(old('role', $currentRole) === 'mentorado')>Mentorado</option>
               <option value="licenciado" @selected(old('role', $currentRole) === 'licenciado')>Licenciado</option>
+              <option value="cliente" @selected(old('role', $currentRole) === 'cliente')>Cliente</option>
               <option value="comprador" @selected(old('role', $currentRole) === 'comprador')>Comprador</option>
               <option value="admin" @selected(old('role', $currentRole) === 'admin')>Admin</option>
             </select>
-            <small class="text-muted">Compradores podem ser vinculados como parte destino em processos.</small>
+            <small class="text-muted d-block" id="ajuda-nivel-cliente" style="display:none;">
+              Titular do processo. Entra no painel e acompanha apenas os processos em que
+              estiver vinculado: andamento, parcelas, link de pagamento, documentos e PDF.
+            </small>
+            <small class="text-muted d-block" id="ajuda-nivel-padrao">Compradores podem ser vinculados como parte destino em processos.</small>
           </div>
           <div class="mb-0">
             <label class="form-label">Status</label>
@@ -160,7 +166,9 @@
         </div>
       </div>
 
-      <div class="card">
+      {{-- Só mentorado e licenciado assinam plano. Para admin e comprador o bloco
+           some da tela (e o plan_id é descartado no servidor). --}}
+      <div class="card" id="bloco-plano" style="{{ in_array(old('role', $currentRole), ['mentorado', 'licenciado'], true) ? '' : 'display:none;' }}">
         <div class="card-header border-bottom"><h5 class="card-title mb-0">Plano</h5></div>
         <div class="card-body">
           <label class="form-label">Plano (opcional)</label>
@@ -201,6 +209,35 @@ document.addEventListener('DOMContentLoaded', function () {
       allowInput: true,
     });
   }
+
+  // Plano só faz sentido para quem assina: mentorado e licenciado.
+  const roleEl = document.getElementById('role');
+  const blocoPlano = document.getElementById('bloco-plano');
+  const ASSINANTES = ['mentorado', 'licenciado'];
+
+  const cpfEl = document.getElementById('cpf_cnpj');
+  const cpfAsterisco = document.getElementById('cpf-obrigatorio');
+  const cpfAjuda = document.getElementById('cpf-ajuda');
+
+  function alternarPorNivel() {
+    const assina = ASSINANTES.includes(roleEl.value);
+    blocoPlano.style.display = assina ? '' : 'none';
+    // Zera a seleção ao esconder, senão um plano escolhido antes seguiria no POST
+    if (! assina) $plan.val(null).trigger('change');
+
+    // Comprador gera um registro na tabela de compradores, que exige documento
+    const exigeCpf = roleEl.value === 'comprador';
+    cpfEl.required = exigeCpf;
+    cpfAsterisco.style.display = exigeCpf ? '' : 'none';
+    cpfAjuda.style.display = exigeCpf ? '' : 'none';
+
+    const ehCliente = roleEl.value === 'cliente';
+    document.getElementById('ajuda-nivel-cliente').style.display = ehCliente ? '' : 'none';
+    document.getElementById('ajuda-nivel-padrao').style.display = ehCliente ? 'none' : '';
+  }
+
+  roleEl.addEventListener('change', alternarPorNivel);
+  alternarPorNivel();
 });
 </script>
 @include('_partials._masks-script')

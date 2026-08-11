@@ -2,24 +2,30 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\ExportaPlanilha;
 use App\Http\Controllers\Controller;
 use App\Models\ClienteLicenciado;
 use App\Models\Comissao;
 use App\Models\Processo;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Yajra\DataTables\Facades\DataTables;
 
 class ComissaoController extends Controller
 {
+    use ExportaPlanilha;
+
     public function index()
     {
         return view('content.admin.comissoes.index');
     }
 
-    public function datatable(Request $request): JsonResponse
+    /** Filtros da listagem — compartilhados entre o DataTable e a exportação. */
+    private function queryFiltrada(Request $request): Builder
     {
         $query = Comissao::query()->with(['licenciado:id,name', 'cliente:id,nome', 'processo:id,nome_completo']);
 
@@ -36,7 +42,52 @@ class ComissaoController extends Controller
             $query->whereDate('data_referencia', '<=', $ate);
         }
 
-        return DataTables::eloquent($query)
+        // Busca livre — só na exportação; no DataTable quem faz isso é o próprio yajra.
+        if ($b = trim((string) $request->query('busca', ''))) {
+            $query->where(function ($q) use ($b) {
+                $q->where('descricao', 'like', "%$b%")
+                    ->orWhereHas('licenciado', fn ($u) => $u->where('name', 'like', "%$b%"))
+                    ->orWhereHas('cliente', fn ($c) => $c->where('nome', 'like', "%$b%"))
+                    ->orWhereHas('processo', fn ($p) => $p->where('nome_completo', 'like', "%$b%"));
+            });
+        }
+
+        return $query;
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $query = $this->queryFiltrada($request)->orderByDesc('data_referencia');
+
+        $tipo = $request->query('tipo');
+        $nome = match ($tipo) {
+            'a_receber' => 'comissoes-a-receber',
+            'a_pagar' => 'comissoes-a-pagar',
+            default => 'comissoes',
+        };
+
+        return $this->exportarCsv(
+            $nome,
+            ['ID', 'Usuário', 'Tipo', 'Descrição', 'Cliente', 'Processo', 'Data de referência', 'Valor (R$)', 'Status', 'Pago em'],
+            $query,
+            fn (Comissao $c) => [
+                $c->id,
+                $c->licenciado?->name,
+                $c->tipoLabel(),
+                $c->descricao,
+                $c->cliente?->nome,
+                $c->processo ? '#' . $c->processo->id . ' · ' . $c->processo->nome_completo : null,
+                $c->data_referencia,
+                $this->dinheiroCsv($c->valor),
+                ucfirst($c->status),
+                $c->pago_em?->format('d/m/Y H:i'),
+            ],
+        );
+    }
+
+    public function datatable(Request $request): JsonResponse
+    {
+        return DataTables::eloquent($this->queryFiltrada($request))
             ->addColumn('licenciado_nome', fn (Comissao $c) => $c->licenciado?->name ?? '—')
             ->addColumn('cliente_nome', fn (Comissao $c) => $c->cliente?->nome ?? '—')
             ->addColumn('processo_label', fn (Comissao $c) => $c->processo

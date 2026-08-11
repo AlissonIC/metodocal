@@ -17,6 +17,8 @@ class Negociacao extends Model
         'inserida_por_user_id',
         'data',
         'assessoria',
+        'telefone',
+        'contato_nome',
         'resumo',
         'val_atualizado',
         'val_analise',

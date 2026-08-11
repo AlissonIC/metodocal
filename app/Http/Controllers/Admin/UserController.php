@@ -17,11 +17,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
+    use \App\Http\Controllers\Concerns\ExportaPlanilha;
+
     private const ROLE_COLORS = [
         'admin' => 'primary',
         'mentorado' => 'info',
         'licenciado' => 'warning',
         'comprador' => 'success',
+        'cliente' => 'secondary',
     ];
 
     public function index()
@@ -33,12 +36,12 @@ class UserController extends Controller
         ]);
     }
 
-    public function datatable(Request $request): JsonResponse
+    /** Filtros da listagem — compartilhados entre o DataTable e a exportação. */
+    private function queryFiltrada(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        $this->authorize('viewAny', User::class);
-
         $query = User::query()
             ->with(['roles:id,name', 'currentSubscription.plan:id,nome,tipo,preco,recorrencia'])
+            ->withParcelasAtrasadasCount()
             ->latest('created_at');
 
         if ($status = $request->query('status')) {
@@ -59,7 +62,57 @@ class UserController extends Controller
             $query->whereHas('currentSubscription', fn ($s) => $s->where('plan_id', $planId));
         }
 
-        return DataTables::eloquent($query)
+        // Busca livre — só na exportação; no DataTable quem faz isso é o próprio yajra.
+        if ($b = trim((string) $request->query('busca', ''))) {
+            $query->where(function ($q) use ($b) {
+                $q->where('name', 'like', "%$b%")
+                    ->orWhere('email', 'like', "%$b%")
+                    ->orWhere('cpf_cnpj', 'like', "%$b%")
+                    ->orWhere('phone', 'like', "%$b%");
+            });
+        }
+
+        return $query;
+    }
+
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        return $this->exportarCsv(
+            'clientes',
+            ['ID', 'Nome', 'E-mail', 'Telefone', 'CPF/CNPJ', 'Nível', 'Status', 'Plano', 'Situação da assinatura', 'Endereço', 'Cadastrado em', 'Último acesso'],
+            $this->queryFiltrada($request),
+            function (User $u) {
+                $sub = $u->currentSubscription;
+                $endereco = $u->cep
+                    ? trim("{$u->logradouro}, {$u->numero} · {$u->bairro} · {$u->cidade}/{$u->uf} · CEP {$u->cep}", ' ,·')
+                    : null;
+
+                return [
+                    $u->id,
+                    $u->name,
+                    $u->email,
+                    $u->phone,
+                    $u->cpf_cnpj,
+                    ucfirst($u->getRoleNames()->first() ?? ''),
+                    ucfirst($u->status),
+                    $sub?->plan?->nome,
+                    $sub?->status,
+                    $endereco,
+                    $u->created_at?->format('d/m/Y H:i'),
+                    $u->last_login_at?->format('d/m/Y H:i'),
+                ];
+            },
+        );
+    }
+
+    public function datatable(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        return DataTables::eloquent($this->queryFiltrada($request))
+            ->addColumn('atrasadas', fn (User $u) => (int) $u->parcelas_atrasadas_count + (int) $u->faturas_atrasadas_count)
             ->addColumn('role', function (User $u) {
                 $role = $u->getRoleNames()->first() ?? '—';
                 $c = self::ROLE_COLORS[$role] ?? 'secondary';
@@ -126,11 +179,19 @@ class UserController extends Controller
         ]);
     }
 
+    /** Só mentorado e licenciado assinam plano — para os demais o plan_id é descartado. */
+    private const ROLES_COM_PLANO = ['mentorado', 'licenciado'];
+
+    private function planoPermitido(?string $role, $planId)
+    {
+        return in_array($role, self::ROLES_COM_PLANO, true) ? $planId : null;
+    }
+
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $planId = $data['plan_id'] ?? null;
         $role = $data['role'];
+        $planId = $this->planoPermitido($role, $data['plan_id'] ?? null);
         unset($data['plan_id'], $data['role']);
 
         DB::transaction(function () use ($data, $role, $planId) {
@@ -159,8 +220,8 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
         $data = $request->validated();
-        $planId = array_key_exists('plan_id', $data) ? $data['plan_id'] : null;
         $role = $data['role'];
+        $planId = $this->planoPermitido($role, $data['plan_id'] ?? null);
         unset($data['plan_id'], $data['role']);
 
         DB::transaction(function () use ($user, $data, $role, $planId) {

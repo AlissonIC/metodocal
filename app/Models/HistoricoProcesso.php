@@ -29,6 +29,7 @@ class HistoricoProcesso extends Model
         'comissao'   => ['tabler-cash',          'success'],
         'negociacao' => ['tabler-message-2',     'info'],
         'documento'  => ['tabler-file',          'primary'],
+        'parcela'    => ['tabler-calendar-dollar', 'warning'],
     ];
 
     public const ACAO_LABELS = [

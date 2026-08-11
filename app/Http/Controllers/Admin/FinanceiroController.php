@@ -22,6 +22,8 @@ use Yajra\DataTables\Facades\DataTables;
 
 class FinanceiroController extends Controller
 {
+    use \App\Http\Controllers\Concerns\ExportaPlanilha;
+
     public function __construct(private FaturaService $faturaService) {}
 
     public function index()
@@ -46,13 +48,13 @@ class FinanceiroController extends Controller
         ]);
     }
 
-    public function datatable(Request $request): JsonResponse
+    /** Filtros da listagem — compartilhados entre o DataTable e a exportação. */
+    private function queryFiltrada(Request $request): \Illuminate\Database\Eloquent\Builder
     {
         $query = Fatura::query()
             ->with(['user:id,name,email', 'plan:id,nome,tipo,preco,recorrencia'])
             ->latest('created_at');
 
-        // ---- Filtros ----
         if ($status = $request->query('status')) {
             $query->where('status', $status);
         }
@@ -69,7 +71,45 @@ class FinanceiroController extends Controller
             $query->whereDate('vencimento', '<=', $ate);
         }
 
-        return DataTables::eloquent($query)
+        // Busca livre — só na exportação; no DataTable quem faz isso é o próprio yajra.
+        if ($b = trim((string) $request->query('busca', ''))) {
+            $query->where(function ($q) use ($b) {
+                $q->where('gateway_payment_id', 'like', "%$b%")
+                    ->orWhere('payer_name', 'like', "%$b%")
+                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%$b%")->orWhere('email', 'like', "%$b%"))
+                    ->orWhereHas('plan', fn ($p) => $p->where('nome', 'like', "%$b%"));
+            });
+        }
+
+        return $query;
+    }
+
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        return $this->exportarCsv(
+            'faturas-a-receber',
+            ['ID', 'Usuário', 'E-mail', 'Plano', 'Valor (R$)', 'Status', 'Vencimento', 'Pago em', 'Método', 'Estornada em', 'ID no gateway', 'Criada em'],
+            $this->queryFiltrada($request),
+            fn (Fatura $f) => [
+                $f->id,
+                $f->user?->name,
+                $f->user?->email,
+                $f->plan?->nome,
+                $this->dinheiroCsv($f->valor),
+                $f->isAtrasada() ? 'Atrasada' : ucfirst($f->status),
+                $f->vencimento,
+                $f->pago_em?->format('d/m/Y H:i'),
+                $f->metodo ? ucfirst($f->metodo) : null,
+                $f->estornada_em?->format('d/m/Y H:i'),
+                $f->gateway_payment_id,
+                $f->created_at?->format('d/m/Y H:i'),
+            ],
+        );
+    }
+
+    public function datatable(Request $request): JsonResponse
+    {
+        return DataTables::eloquent($this->queryFiltrada($request))
             ->addColumn('user_name', fn (Fatura $f) => $f->user?->name ?? '—')
             ->addColumn('plan_nome', fn (Fatura $f) => $f->plan?->nome ?? '—')
             ->addColumn('valor_formatado', fn (Fatura $f) => 'R$ ' . number_format((float) $f->valor, 2, ',', '.'))

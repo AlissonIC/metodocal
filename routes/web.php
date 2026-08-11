@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ComissaoController as AdminComissaoController;
 use App\Http\Controllers\Admin\DespesaController as AdminDespesaController;
 use App\Http\Controllers\Admin\ConteudoController as AdminConteudoController;
 use App\Http\Controllers\Admin\FinanceiroController;
+use App\Http\Controllers\Admin\FinanciamentoController;
 use App\Http\Controllers\Admin\MaterialController as AdminMaterialController;
 use App\Http\Controllers\Admin\BancoController as AdminBancoController;
 use App\Http\Controllers\Api\BrasilApiController;
@@ -81,7 +82,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Perfil — qualquer usuário autenticado
-    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado|comprador|cliente')->group(function () {
         Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
         Route::patch('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -137,10 +138,11 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Processos - listagem + endpoints com caminho fixo (comprador acessa aqui também)
-    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado|comprador|cliente')->group(function () {
         Route::get('/processos', [ProcessoController::class, 'index'])->name('processos.index');
         Route::get('/processos/datatable', [ProcessoController::class, 'datatable'])->name('processos.datatable');
         Route::get('/processos/documentos/{documento}/download', [ProcessoController::class, 'downloadDocumento'])->name('processos.documentos.download');
+        Route::get('/processos/{processo}/imprimir', [ProcessoController::class, 'imprimir'])->name('processos.imprimir');
     });
 
     // Processos - ações que exigem {processo} e permitem escrita (comprador NÃO pode escrever)
@@ -153,7 +155,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     // Processos - visualização (comprador pode ver processos vinculados)
-    Route::middleware('role:admin|mentorado|licenciado|comprador')->group(function () {
+    Route::middleware('role:admin|mentorado|licenciado|comprador|cliente')->group(function () {
         Route::get('/processos/{processo}', [ProcessoController::class, 'show'])->name('processos.show');
     });
 
@@ -192,13 +194,16 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::get('/financeiro/relatorios/data', [FinanceiroController::class, 'relatoriosData'])->name('admin.financeiro.relatorios.data');
         Route::get('/financeiro/relatorios/fluxo-caixa', [FinanceiroController::class, 'fluxoCaixaData'])->name('admin.financeiro.relatorios.fluxo-caixa');
         Route::get('/financeiro/datatable', [FinanceiroController::class, 'datatable'])->name('admin.financeiro.datatable');
+        Route::get('/financeiro/exportar', [FinanceiroController::class, 'export'])->name('admin.financeiro.export');
         Route::get('/financeiro/eventos-pagamento/datatable', [FinanceiroController::class, 'paymentEvents']);
-        Route::get('/financeiro/{fatura}', [FinanceiroController::class, 'show'])->name('admin.financeiro.show');
-        Route::get('/financeiro/{fatura}/refresh', [FinanceiroController::class, 'refresh'])->name('admin.financeiro.refresh');
-        Route::patch('/financeiro/{fatura}/marcar-paga', [FinanceiroController::class, 'marcarPaga'])->name('admin.financeiro.marcar-paga');
-        Route::patch('/financeiro/{fatura}/cancelar', [FinanceiroController::class, 'cancelar'])->name('admin.financeiro.cancelar');
-        Route::patch('/financeiro/{fatura}/estornar', [FinanceiroController::class, 'estornar'])->name('admin.financeiro.estornar');
-        Route::patch('/financeiro/{fatura}/status', [FinanceiroController::class, 'mudarStatus'])->name('admin.financeiro.status');
+        // {fatura} restrito a número: sem isso, /financeiro/despesas (registrado mais
+        // abaixo, no grupo prefix('financeiro')) é capturado aqui e devolve 404.
+        Route::get('/financeiro/{fatura}', [FinanceiroController::class, 'show'])->whereNumber('fatura')->name('admin.financeiro.show');
+        Route::get('/financeiro/{fatura}/refresh', [FinanceiroController::class, 'refresh'])->whereNumber('fatura')->name('admin.financeiro.refresh');
+        Route::patch('/financeiro/{fatura}/marcar-paga', [FinanceiroController::class, 'marcarPaga'])->whereNumber('fatura')->name('admin.financeiro.marcar-paga');
+        Route::patch('/financeiro/{fatura}/cancelar', [FinanceiroController::class, 'cancelar'])->whereNumber('fatura')->name('admin.financeiro.cancelar');
+        Route::patch('/financeiro/{fatura}/estornar', [FinanceiroController::class, 'estornar'])->whereNumber('fatura')->name('admin.financeiro.estornar');
+        Route::patch('/financeiro/{fatura}/status', [FinanceiroController::class, 'mudarStatus'])->whereNumber('fatura')->name('admin.financeiro.status');
     });
 
     // Admin - Notificações
@@ -246,6 +251,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users');
         Route::get('/usuarios/datatable', [UserController::class, 'datatable']);
+        Route::get('/usuarios/exportar', [UserController::class, 'export'])->name('admin.users.export');
         Route::get('/usuarios/novo', [UserController::class, 'create'])->name('admin.users.create');
         Route::post('/usuarios', [UserController::class, 'store'])->name('admin.users.store');
         Route::get('/usuarios/{user}/editar', [UserController::class, 'edit'])->name('admin.users.edit');
@@ -308,6 +314,7 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/comissoes', [AdminComissaoController::class, 'index'])->name('admin.comissoes');
         Route::get('/comissoes/datatable', [AdminComissaoController::class, 'datatable']);
+        Route::get('/comissoes/exportar', [AdminComissaoController::class, 'export'])->name('admin.comissoes.export');
         Route::get('/comissoes/novo', [AdminComissaoController::class, 'create'])->name('admin.comissoes.create');
         Route::post('/comissoes', [AdminComissaoController::class, 'store'])->name('admin.comissoes.store');
         Route::get('/comissoes/{comissao}/editar', [AdminComissaoController::class, 'edit'])->name('admin.comissoes.edit');
@@ -316,8 +323,17 @@ Route::prefix('painel')->middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin')->prefix('financeiro')->group(function () {
+        Route::get('/financiamentos', [FinanciamentoController::class, 'index'])->name('admin.financiamentos');
+        Route::get('/financiamentos/datatable', [FinanciamentoController::class, 'datatable'])->name('admin.financiamentos.datatable');
+        Route::get('/financiamentos/exportar', [FinanciamentoController::class, 'export'])->name('admin.financiamentos.export');
+        Route::patch('/financiamentos/parcelas/{parcela}/paga', [FinanciamentoController::class, 'marcarPaga'])->name('admin.financiamentos.paga');
+        Route::patch('/financiamentos/parcelas/{parcela}/pendente', [FinanciamentoController::class, 'marcarPendente'])->name('admin.financiamentos.pendente');
+        Route::patch('/financiamentos/parcelas/{parcela}/cancelar', [FinanciamentoController::class, 'cancelar'])->name('admin.financiamentos.cancelar');
+        Route::post('/financiamentos/{processo}/regerar', [FinanciamentoController::class, 'regerar'])->name('admin.financiamentos.regerar');
+
         Route::get('/despesas', [AdminDespesaController::class, 'index'])->name('admin.despesas');
         Route::get('/despesas/datatable', [AdminDespesaController::class, 'datatable'])->name('admin.despesas.datatable');
+        Route::get('/despesas/exportar', [AdminDespesaController::class, 'export'])->name('admin.despesas.export');
         Route::post('/despesas', [AdminDespesaController::class, 'storeDespesa'])->name('admin.despesas.store');
         Route::get('/despesas/{despesa}', [AdminDespesaController::class, 'showDespesa'])->name('admin.despesas.show');
         Route::patch('/despesas/{despesa}', [AdminDespesaController::class, 'updateDespesa'])->name('admin.despesas.update');

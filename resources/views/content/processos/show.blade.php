@@ -79,6 +79,9 @@
   </div>
   <div class="d-flex align-items-center gap-2">
     <span class="badge bg-label-{{ $processo->statusColor() }} fs-6">{{ $processo->statusLabel() }}</span>
+    <a href="{{ route('processos.imprimir', $processo) }}" target="_blank" rel="noopener" class="btn btn-label-secondary">
+      <i class="icon-base ti tabler-file-type-pdf me-1"></i> Salvar em PDF
+    </a>
     @if (! $isComprador && ($isAdmin || ($isOwner && $processo->isEditavelPeloCliente())))
       <a href="{{ route('processos.edit', $processo) }}" class="btn btn-label-primary"><i class="icon-base ti tabler-edit me-1"></i> Editar</a>
       <form method="POST" action="{{ route('processos.destroy', $processo) }}" onsubmit="return confirm('Excluir este processo?')">
@@ -167,6 +170,178 @@
               <dd class="col-sm-8">{{ $processo->user->created_at->format('d/m/Y') }}</dd>
             @endif
           </dl>
+        </div>
+      </div>
+    @endif
+
+    {{-- Sempre visível, mesmo sem dados: o bloco faz parte do cadastro e a ausência
+         de valores é informação (mostra o que ainda falta preencher). --}}
+    <div class="card mb-4">
+      <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="icon-base ti tabler-building-bank me-1"></i> Financiamento</h5>
+        <div class="d-flex gap-2">
+          @if ($isAdmin && $processo->parcelas_count)
+            <a href="{{ route('admin.financiamentos', ['processo_id' => $processo->id]) }}" class="btn btn-sm btn-label-primary">
+              <i class="icon-base ti tabler-calendar-dollar me-1"></i> Ver {{ $processo->parcelas_count }} parcelas
+            </a>
+          @endif
+          @if (! $isComprador && ($isAdmin || ($isOwner && $processo->isEditavelPeloCliente())))
+            <a href="{{ route('processos.edit', $processo) }}" class="btn btn-sm btn-label-secondary">
+              <i class="icon-base ti tabler-edit me-1"></i> {{ $processo->temFinanciamento() ? 'Alterar' : 'Preencher' }}
+            </a>
+          @endif
+        </div>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4 text-muted">Banco</dt>
+          <dd class="col-sm-8 {{ $processo->banco ? '' : 'text-muted' }}">
+            @if ($processo->banco)
+              {{ $processo->banco->nome }}
+              <span class="badge bg-label-secondary ms-1">{{ number_format((float) $processo->banco->taxa, 2, ',', '.') }}%</span>
+            @else
+              —
+            @endif
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Valor financiado</dt>
+          <dd class="col-sm-8 {{ $processo->valor_financiamento !== null ? 'fw-semibold' : 'text-muted' }}">
+            {{ $processo->valor_financiamento !== null ? 'R$ ' . number_format((float) $processo->valor_financiamento, 2, ',', '.') : '—' }}
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Quantidade de parcelas</dt>
+          <dd class="col-sm-8 {{ $processo->qtd_parcelas ? '' : 'text-muted' }}">
+            {{ $processo->qtd_parcelas ? $processo->qtd_parcelas . 'x' : '—' }}
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Valor da parcela</dt>
+          <dd class="col-sm-8 {{ $processo->valor_parcela !== null ? 'fw-semibold' : 'text-muted' }}">
+            {{ $processo->valor_parcela !== null ? 'R$ ' . number_format((float) $processo->valor_parcela, 2, ',', '.') : '—' }}
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Primeira parcela</dt>
+          <dd class="col-sm-8 {{ $processo->data_primeira_parcela ? '' : 'text-muted' }}">
+            {{ $processo->data_primeira_parcela?->format('d/m/Y') ?: '—' }}
+            @if ($isAdmin && $processo->parcelas_count)
+              <span class="text-muted small">
+                · {{ $processo->parcelas_pagas_count }} de {{ $processo->parcelas_count }} paga(s)
+              </span>
+            @endif
+          </dd>
+
+          <dt class="col-sm-4 text-muted">Pagamento mensal</dt>
+          <dd class="col-sm-8">
+            @if ($processo->link_pagamento_mensal)
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <a href="{{ $processo->link_pagamento_mensal }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary">
+                  <i class="icon-base ti tabler-credit-card me-1"></i> Pagar parcela do mês
+                </a>
+                <button type="button" class="btn btn-sm btn-label-secondary" id="btn-copiar-link-pagamento"
+                        data-link="{{ $processo->link_pagamento_mensal }}">
+                  <i class="icon-base ti tabler-copy me-1"></i> Copiar link
+                </button>
+              </div>
+              <small class="text-muted d-block text-break mt-1">{{ $processo->link_pagamento_mensal }}</small>
+            @else
+              <span class="text-muted">Nenhum link cadastrado.</span>
+            @endif
+          </dd>
+        </dl>
+      </div>
+    </div>
+    @if ($processo->link_pagamento_mensal)
+      {{-- Inline: o bloco de financiamento aparece para todos os perfis, e a section
+           page-script deste arquivo só existe para admin. --}}
+      <script>
+        document.getElementById('btn-copiar-link-pagamento')?.addEventListener('click', function () {
+          const btn = this;
+          navigator.clipboard.writeText(btn.dataset.link).then(function () {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="icon-base ti tabler-check me-1"></i> Copiado!';
+            setTimeout(function () { btn.innerHTML = original; }, 2000);
+          });
+        });
+      </script>
+    @endif
+
+    {{-- Carnê de parcelas: visível a quem enxerga o processo (inclusive o cliente titular).
+         Somente leitura aqui — quem muda status é o admin, em Financeiro → Financiamentos. --}}
+    @if ($processo->parcelas->isNotEmpty())
+      @php
+        $parcelas = $processo->parcelas;
+        $pagas = $parcelas->where('status', 'paga');
+        $emAberto = $parcelas->where('status', 'pendente');
+        $atrasadas = $emAberto->filter(fn ($p) => $p->isAtrasada());
+        $proxima = $emAberto->reject(fn ($p) => $p->isAtrasada())->first();
+      @endphp
+      <div class="card mb-4">
+        <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="card-title mb-0"><i class="icon-base ti tabler-calendar-dollar me-1"></i> Parcelas do financiamento</h5>
+            <small class="text-muted">
+              {{ $pagas->count() }} de {{ $parcelas->count() }} paga(s)
+              @if ($atrasadas->isNotEmpty())
+                · <span class="text-danger fw-medium">{{ $atrasadas->count() }} em atraso</span>
+              @elseif ($proxima)
+                · próxima em {{ $proxima->vencimento->format('d/m/Y') }}
+              @endif
+            </small>
+          </div>
+          @if ($isAdmin)
+            <a href="{{ route('admin.financiamentos', ['processo_id' => $processo->id]) }}" class="btn btn-sm btn-label-primary">
+              <i class="icon-base ti tabler-settings me-1"></i> Gerenciar
+            </a>
+          @endif
+        </div>
+        <div class="card-body">
+          @if ($atrasadas->isNotEmpty() && ! $isAdmin)
+            <div class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
+              <i class="icon-base ti tabler-alert-triangle"></i>
+              <div>
+                Você tem <strong>{{ $atrasadas->count() }}</strong> parcela(s) vencida(s), somando
+                <strong>R$ {{ number_format((float) $atrasadas->sum('valor'), 2, ',', '.') }}</strong>.
+                @if ($processo->link_pagamento_mensal)
+                  Use o botão de pagamento acima para regularizar.
+                @endif
+              </div>
+            </div>
+          @endif
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Parcela</th>
+                  <th>Vencimento</th>
+                  <th class="text-end">Valor</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach ($parcelas as $p)
+                  <tr @class(['table-danger' => $p->isAtrasada()])>
+                    <td class="text-nowrap">{{ $p->numero }}/{{ $parcelas->count() }}</td>
+                    <td class="text-nowrap">
+                      {{ $p->vencimento->format('d/m/Y') }}
+                      @if ($p->isAtrasada())
+                        <div class="small text-danger">{{ $p->diasAtraso() }} dia(s) em atraso</div>
+                      @elseif ($p->pago_em)
+                        <div class="small text-success">pago em {{ $p->pago_em->format('d/m/Y') }}</div>
+                      @endif
+                    </td>
+                    <td class="text-end text-nowrap fw-semibold">R$ {{ number_format((float) $p->valor, 2, ',', '.') }}</td>
+                    <td><span class="badge bg-label-{{ $p->statusColor() }}">{{ $p->statusLabel() }}</span></td>
+                  </tr>
+                @endforeach
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="2">Total em aberto</th>
+                  <th class="text-end text-nowrap">R$ {{ number_format((float) $emAberto->sum('valor'), 2, ',', '.') }}</th>
+                  <th></th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </div>
     @endif
@@ -348,7 +523,9 @@
             <thead>
               <tr>
                 <th>Resumo</th>
-                <th>Assessoria</th>
+                <th>Assessoria / contato</th>
+                <th>Val. atual</th>
+                <th>Pré-análise</th>
                 <th>Val. em mãos</th>
                 <th>Data</th>
                 <th class="text-end">Ações</th>
@@ -459,20 +636,37 @@
                 </div>
                 <div class="row">
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Valor (R$) *</label>
+                    <label class="form-label">Valor da parcela (R$) *</label>
                     <input type="text" inputmode="numeric" class="form-control mask-money" name="valor" id="fatura-valor" required placeholder="0,00">
                   </div>
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Vencimento *</label>
+                    <label class="form-label">1º vencimento *</label>
                     <input type="text" class="form-control flatpickr-date" name="vencimento" id="fatura-vencimento" required placeholder="dd/mm/aaaa">
                   </div>
-                  <div class="col-md-4 mb-0">
+                  <div class="col-md-4 mb-3">
                     <label class="form-label">Status *</label>
                     <select class="form-select" name="status" id="fatura-status" required>
                       <option value="pendente">Pendente</option>
                       <option value="paga">Paga</option>
                       <option value="cancelada">Cancelada</option>
                     </select>
+                  </div>
+                </div>
+
+                {{-- Parcelamento com a empresa: gera N cobranças mensais de uma vez --}}
+                <div class="row" id="fatura-parcelamento-wrap">
+                  <div class="col-md-4 mb-0">
+                    <label class="form-label">Parcelar em</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" name="qtd_parcelas" id="fatura-qtd-parcelas"
+                             min="1" max="120" value="1">
+                      <span class="input-group-text">x</span>
+                    </div>
+                  </div>
+                  <div class="col-md-8 mb-0 d-flex align-items-end">
+                    <small class="text-muted" id="fatura-memoria">
+                      Deixe em <strong>1</strong> para uma cobrança única.
+                    </small>
                   </div>
                 </div>
               </div>
@@ -568,20 +762,31 @@
                     <input type="text" class="form-control flatpickr-date" name="data" id="negociacao-data" required placeholder="dd/mm/aaaa">
                   </div>
                   <div class="col-md-9 mb-3">
-                    <label class="form-label">Assessoria</label>
+                    <label class="form-label">Nome da assessoria</label>
                     <input type="text" class="form-control" name="assessoria" id="negociacao-assessoria" maxlength="120" placeholder="Ex.: JCS, Banco XYZ...">
                   </div>
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Val. atualizado</label>
+                    <label class="form-label">Telefone</label>
+                    <input type="text" class="form-control mask-phone" name="telefone" id="negociacao-telefone" maxlength="40" placeholder="(00) 00000-0000">
+                  </div>
+                  <div class="col-md-8 mb-3">
+                    <label class="form-label">Com quem falou</label>
+                    <input type="text" class="form-control" name="contato_nome" id="negociacao-contato" maxlength="120" placeholder="Nome do atendente/negociador">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label">Valor atual</label>
                     <input type="text" inputmode="numeric" class="form-control mask-money" name="val_atualizado" id="negociacao-val-atualizado" placeholder="0,00">
+                    <small class="text-muted">Saldo devedor atualizado.</small>
                   </div>
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Val. análise</label>
+                    <label class="form-label">Valor de pré-análise</label>
                     <input type="text" inputmode="numeric" class="form-control mask-money" name="val_analise" id="negociacao-val-analise" placeholder="0,00">
+                    <small class="text-muted">Valor sugerido pela instituição.</small>
                   </div>
                   <div class="col-md-4 mb-3">
-                    <label class="form-label">Val. em mãos</label>
+                    <label class="form-label">Valor em mãos</label>
                     <input type="text" inputmode="numeric" class="form-control mask-money" name="val_em_maos" id="negociacao-val-em-maos" placeholder="0,00">
+                    <small class="text-muted">Proposta apresentada.</small>
                   </div>
                   <div class="col-12 mb-3">
                     <label class="form-label">Resumo da negociação *</label>
@@ -609,13 +814,71 @@
       <div class="card-header border-bottom"><h5 class="card-title mb-0">Documentos</h5></div>
       <div class="card-body">
         @unless ($isComprador)
-        <form method="POST" action="{{ route('processos.documentos.store', $processo) }}" enctype="multipart/form-data" class="row g-2 mb-4">
+        <form method="POST" action="{{ route('processos.documentos.store', $processo) }}" enctype="multipart/form-data" class="row g-2 mb-4" id="form-documento">
           @csrf
-          <div class="col-md-5"><input type="file" name="arquivo" class="form-control form-control-sm" required></div>
-          <div class="col-md-4"><input type="text" name="categoria" class="form-control form-control-sm" maxlength="80" placeholder="Categoria (opcional)"></div>
-          <div class="col-md-3"><button type="submit" class="btn btn-sm btn-primary w-100"><i class="icon-base ti tabler-upload me-1"></i> Enviar</button></div>
-          <div class="col-12"><small class="text-muted">Tamanho máximo: 20 MB.</small></div>
+          <div class="col-md-5">
+            <input type="file" name="arquivo" id="documento-arquivo" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-4">
+            <input type="text" name="categoria" class="form-control form-control-sm" maxlength="80"
+                   placeholder="Categoria (ex.: Contrato)" list="categorias-documento">
+            <datalist id="categorias-documento">
+              @foreach (['Contrato', 'Procuração', 'RG/CNH', 'CPF', 'Comprovante de residência', 'Comprovante de pagamento', 'Documento do veículo', 'Boletim de ocorrência', 'Petição', 'Outros'] as $cat)
+                <option value="{{ $cat }}">
+              @endforeach
+            </datalist>
+          </div>
+          <div class="col-md-3"><button type="submit" class="btn btn-sm btn-primary w-100" id="documento-btn"><i class="icon-base ti tabler-upload me-1"></i> Enviar</button></div>
+          <div class="col-12">
+            <small class="text-muted" id="documento-info">Tamanho máximo: 20 MB por arquivo.</small>
+          </div>
         </form>
+
+        {{-- Barrar o arquivo grande AQUI evita o pior caso: acima do post_max_size o PHP
+             descarta o corpo inteiro do POST, o token CSRF some junto e a tela devolve
+             "página expirada" — que não diz ao usuário qual foi o problema real. --}}
+        <script>
+        (function () {
+          const form = document.getElementById('form-documento');
+          if (! form) return;
+          const input = document.getElementById('documento-arquivo');
+          const info  = document.getElementById('documento-info');
+          const btn   = document.getElementById('documento-btn');
+          const LIMITE = 20 * 1024 * 1024;
+
+          const tamanho = (b) => b < 1024 * 1024
+            ? (b / 1024).toFixed(1).replace('.', ',') + ' KB'
+            : (b / 1024 / 1024).toFixed(2).replace('.', ',') + ' MB';
+
+          function avaliar() {
+            const f = input.files && input.files[0];
+            if (! f) {
+              info.className = 'text-muted';
+              info.textContent = 'Tamanho máximo: 20 MB por arquivo.';
+              btn.disabled = false;
+              return true;
+            }
+            if (f.size > LIMITE) {
+              info.className = 'text-danger fw-medium';
+              info.textContent = `"${f.name}" tem ${tamanho(f.size)} e o limite é 20 MB. `
+                + 'Comprima o arquivo ou envie em partes.';
+              btn.disabled = true;
+              return false;
+            }
+            info.className = 'text-muted';
+            info.textContent = `${f.name} · ${tamanho(f.size)} — pronto para enviar.`;
+            btn.disabled = false;
+            return true;
+          }
+
+          input.addEventListener('change', avaliar);
+          form.addEventListener('submit', function (e) {
+            if (! avaliar()) { e.preventDefault(); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enviando...';
+          });
+        })();
+        </script>
         @endunless
 
         @if ($processo->documentos->isEmpty())
@@ -681,6 +944,9 @@
       </div>
     @endif
 
+    {{-- Log interno: registra comissões, negociações e observações da equipe.
+         Fica fora do alcance de quem só acompanha o processo de fora (cliente/comprador). --}}
+    @if ($isAdmin || $isOwner)
     <div class="card">
       <div class="card-header border-bottom d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0"><i class="icon-base ti tabler-history me-1"></i> Log de atividades</h5>
@@ -716,6 +982,7 @@
         @endif
       </div>
     </div>
+    @endif
   </div>
 </div>
 @endsection
@@ -1117,6 +1384,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusEl = document.getElementById('fatura-status');
     const errorEl  = document.getElementById('fatura-error');
     const saveBtn  = document.getElementById('fatura-save-btn');
+    const qtdEl    = document.getElementById('fatura-qtd-parcelas');
+    const parcWrap = document.getElementById('fatura-parcelamento-wrap');
+    const memoriaEl = document.getElementById('fatura-memoria');
 
     const dt = new DataTable(table, {
       processing: true, serverSide: true, responsive: true,
@@ -1141,15 +1411,46 @@ document.addEventListener('DOMContentLoaded', function () {
       layout: { topStart: null, topEnd: null },
     });
 
+    // Resumo do parcelamento com a empresa — total e mês do último vencimento
+    function atualizarMemoria() {
+      const qtd = parseInt(qtdEl.value || '1', 10);
+      const valor = moneyToRaw(valorEl.value);
+      if (! qtd || qtd < 2 || ! valor) {
+        memoriaEl.innerHTML = 'Deixe em <strong>1</strong> para uma cobrança única.';
+        return;
+      }
+      const total = (parseFloat(valor) || 0) * qtd;
+      const fmt = (n) => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const iso = readDate(vencEl);
+      let ultimo = '';
+      if (iso) {
+        const d = new Date(iso + 'T00:00:00');
+        const alvo = new Date(d.getFullYear(), d.getMonth() + (qtd - 1), 1);
+        // Dia original, limitado ao último dia do mês de destino
+        const ultimoDia = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+        alvo.setDate(Math.min(d.getDate(), ultimoDia));
+        ultimo = ' · última em ' + alvo.toLocaleDateString('pt-BR');
+      }
+      memoriaEl.innerHTML = `Serão criadas <strong>${qtd}</strong> cobranças mensais de `
+        + `<strong>${fmt(valor)}</strong> — total ${fmt(total)}${ultimo}`;
+    }
+
     function resetForm(defaults = {}) {
       idEl.value = '';
       descEl.value = defaults.descricao || '';
       valorEl.value = defaults.valor || '';
       setDate(vencEl, defaults.vencimento || '');
       statusEl.value = defaults.status || 'pendente';
+      qtdEl.value = 1;
       errorEl.style.display = 'none'; errorEl.innerHTML = '';
       refreshMasks();
+      atualizarMemoria();
     }
+
+    [qtdEl, valorEl, vencEl].forEach(el => {
+      el.addEventListener('input', atualizarMemoria);
+      el.addEventListener('change', atualizarMemoria);
+    });
 
     function openNew() {
       resetForm({
@@ -1157,6 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
         valor: {!! json_encode($processo->servico?->valor_padrao ? number_format((float) $processo->servico->valor_padrao, 2, ',', '.') : '') !!},
       });
       titleEl.textContent = 'Nova dívida';
+      parcWrap.style.display = '';   // parcelar só ao criar
       modal.show();
     }
 
@@ -1164,6 +1466,7 @@ document.addEventListener('DOMContentLoaded', function () {
       resetForm();
       titleEl.textContent = 'Editar dívida';
       idEl.value = id;
+      parcWrap.style.display = 'none';   // editar mexe numa parcela só
       fetch(`${baseUrl}/${id}`, { headers: { Accept: 'application/json' } })
         .then(r => { if (! r.ok) throw new Error('Não foi possível carregar a dívida.'); return r.json(); })
         .then(d => {
@@ -1205,12 +1508,13 @@ document.addEventListener('DOMContentLoaded', function () {
           valor: moneyToRaw(valorEl.value),
           vencimento: readDate(vencEl),
           status: statusEl.value,
+          ...(isEdit ? {} : { qtd_parcelas: parseInt(qtdEl.value || '1', 10) }),
         },
         saveBtn, errorEl,
         onOk: (body) => {
           modal.hide();
           dt.draw(false);
-          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 1600, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 2200, showConfirmButton: false });
         },
       });
     });
@@ -1364,6 +1668,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const idEl       = document.getElementById('negociacao-id');
     const dataEl     = document.getElementById('negociacao-data');
     const assessEl   = document.getElementById('negociacao-assessoria');
+    const telEl      = document.getElementById('negociacao-telefone');
+    const contatoEl  = document.getElementById('negociacao-contato');
     const atualEl    = document.getElementById('negociacao-val-atualizado');
     const analiseEl  = document.getElementById('negociacao-val-analise');
     const maosEl     = document.getElementById('negociacao-val-em-maos');
@@ -1385,7 +1691,19 @@ document.addEventListener('DOMContentLoaded', function () {
             return `<div>${escapeHtml(row.resumo_curto || '')}</div>${autor}`;
           },
         },
-        { data: 'assessoria_fmt', responsivePriority: 3, render: v => v ? escapeHtml(v) : '<span class="text-muted">—</span>' },
+        {
+          data: null, responsivePriority: 3, orderable: false, searchable: false,
+          render: (row) => {
+            if (! row.assessoria_fmt && ! row.contato_fmt && ! row.telefone_fmt) {
+              return '<span class="text-muted">—</span>';
+            }
+            const contato = [row.contato_fmt, row.telefone_fmt].filter(Boolean).map(escapeHtml).join(' · ');
+            return `<div>${escapeHtml(row.assessoria_fmt || '—')}</div>` +
+                   (contato ? `<small class="text-muted">${contato}</small>` : '');
+          },
+        },
+        { data: 'val_atualizado_fmt', responsivePriority: 4, className: 'text-nowrap', render: v => v || '<span class="text-muted">—</span>' },
+        { data: 'val_analise_fmt', responsivePriority: 4, className: 'text-nowrap', render: v => v || '<span class="text-muted">—</span>' },
         { data: 'val_em_maos_fmt', responsivePriority: 2, className: 'text-nowrap fw-semibold text-success', render: v => v || '<span class="text-muted fw-normal">—</span>' },
         { data: 'data_fmt', responsivePriority: 2, className: 'text-nowrap' },
         {
@@ -1406,6 +1724,8 @@ document.addEventListener('DOMContentLoaded', function () {
       idEl.value = '';
       setDate(dataEl, defaults.data || '');
       assessEl.value = defaults.assessoria || '';
+      telEl.value = defaults.telefone || '';
+      contatoEl.value = defaults.contato_nome || '';
       atualEl.value = defaults.val_atualizado || '';
       analiseEl.value = defaults.val_analise || '';
       maosEl.value = defaults.val_em_maos || '';
@@ -1431,6 +1751,8 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(d => {
           setDate(dataEl, d.data);
           assessEl.value = d.assessoria || '';
+          telEl.value = d.telefone || '';
+          contatoEl.value = d.contato_nome || '';
           atualEl.value = d.val_atualizado || '';
           analiseEl.value = d.val_analise || '';
           maosEl.value = d.val_em_maos || '';
@@ -1472,6 +1794,8 @@ document.addEventListener('DOMContentLoaded', function () {
         payload: {
           data: readDate(dataEl),
           assessoria: assessEl.value.trim() || null,
+          telefone: telEl.value.trim() || null,
+          contato_nome: contatoEl.value.trim() || null,
           val_atualizado: moneyToRaw(atualEl.value),
           val_analise: moneyToRaw(analiseEl.value),
           val_em_maos: moneyToRaw(maosEl.value),

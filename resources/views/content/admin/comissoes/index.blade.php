@@ -39,9 +39,14 @@
       <h5 class="card-title mb-0">Lançamentos de Comissões</h5>
       <p class="text-muted mb-0 mt-1 small">Comissões dos licenciados por cliente e período.</p>
     </div>
-    <a href="{{ route('admin.comissoes.create') }}" class="btn btn-primary">
-      <i class="icon-base ti tabler-plus me-1"></i> Nova Comissão
-    </a>
+    <div class="d-flex gap-2">
+      <button type="button" id="btn-exportar" class="btn btn-label-success">
+        <i class="icon-base ti tabler-file-spreadsheet me-1"></i> Exportar
+      </button>
+      <a href="{{ route('admin.comissoes.create') }}" class="btn btn-primary">
+        <i class="icon-base ti tabler-plus me-1"></i> Nova Comissão
+      </a>
+    </div>
   </div>
 
   @if (session('status'))
@@ -177,6 +182,19 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('filtro-de')._flatpickr?.clear();
     document.getElementById('filtro-ate')._flatpickr?.clear();
     dt.draw();
+  });
+
+  // Exportação: leva os mesmos filtros da tela e traz todas as linhas, sem paginação.
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    const params = new URLSearchParams({
+      tipo:     document.getElementById('filtro-tipo').value,
+      status:   document.getElementById('filtro-status').value,
+      data_de:  document.getElementById('filtro-de').value,
+      data_ate: document.getElementById('filtro-ate').value,
+      busca:    dt.search(),
+    });
+    [...params.keys()].forEach(k => { if (! params.get(k)) params.delete(k); });
+    window.location = "{{ route('admin.comissoes.export') }}?" + params.toString();
   });
 
   document.addEventListener('click', function (e) {
