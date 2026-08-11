@@ -307,7 +307,7 @@
             </div>
           @endif
           <div class="table-responsive">
-            <table class="table table-sm mb-0">
+            <table class="table table-sm mb-0" id="tabela-parcelas">
               <thead>
                 <tr>
                   <th>Parcela</th>
@@ -318,7 +318,7 @@
               </thead>
               <tbody>
                 @foreach ($parcelas as $p)
-                  <tr @class(['table-danger' => $p->isAtrasada()])>
+                  <tr data-parcela @class(['table-danger' => $p->isAtrasada()])>
                     <td class="text-nowrap">{{ $p->numero }}/{{ $parcelas->count() }}</td>
                     <td class="text-nowrap">
                       {{ $p->vencimento->format('d/m/Y') }}
@@ -342,8 +342,72 @@
               </tfoot>
             </table>
           </div>
+
+          @php
+            // Abre já na página da primeira parcela ainda em aberto — num carnê de 48x,
+            // é ali que está a informação que interessa, não na parcela 1 paga há dois anos.
+            $indiceAtual = $parcelas->search(fn ($p) => $p->status === 'pendente');
+          @endphp
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3"
+               id="paginacao-parcelas" style="display:none !important;">
+            <small class="text-muted" id="parcelas-resumo"></small>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Navegar pelas parcelas">
+              <button type="button" class="btn btn-label-secondary" data-pagina="primeira" title="Primeira">&laquo;</button>
+              <button type="button" class="btn btn-label-secondary" data-pagina="anterior" title="Anterior">&lsaquo;</button>
+              <button type="button" class="btn btn-label-secondary" data-pagina="proxima" title="Próxima">&rsaquo;</button>
+              <button type="button" class="btn btn-label-secondary" data-pagina="ultima" title="Última">&raquo;</button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <script>
+      // Paginação sem dependência: os assets do DataTables só são carregados para
+      // admin, e este card também aparece para o cliente e para o dono do processo.
+      (function () {
+        const tabela = document.getElementById('tabela-parcelas');
+        const barra  = document.getElementById('paginacao-parcelas');
+        if (! tabela || ! barra) return;
+
+        const linhas = Array.from(tabela.querySelectorAll('tbody tr[data-parcela]'));
+        const POR_PAGINA = 10;
+        if (linhas.length <= POR_PAGINA) return;   // cabe inteiro, sem paginação
+
+        const resumoEl = document.getElementById('parcelas-resumo');
+        const totalPaginas = Math.ceil(linhas.length / POR_PAGINA);
+        const indiceAtual = @json($indiceAtual === false ? null : $indiceAtual);
+        let pagina = indiceAtual === null ? 1 : Math.floor(indiceAtual / POR_PAGINA) + 1;
+
+        function render() {
+          pagina = Math.min(Math.max(pagina, 1), totalPaginas);
+          const ini = (pagina - 1) * POR_PAGINA;
+          const fim = Math.min(ini + POR_PAGINA, linhas.length);
+
+          linhas.forEach((tr, i) => { tr.style.display = (i >= ini && i < fim) ? '' : 'none'; });
+          resumoEl.textContent = `Mostrando ${ini + 1}–${fim} de ${linhas.length} parcelas`
+            + ` · página ${pagina} de ${totalPaginas}`;
+
+          barra.querySelector('[data-pagina="primeira"]').disabled = pagina === 1;
+          barra.querySelector('[data-pagina="anterior"]').disabled = pagina === 1;
+          barra.querySelector('[data-pagina="proxima"]').disabled  = pagina === totalPaginas;
+          barra.querySelector('[data-pagina="ultima"]').disabled   = pagina === totalPaginas;
+        }
+
+        barra.addEventListener('click', function (e) {
+          const btn = e.target.closest('[data-pagina]');
+          if (! btn || btn.disabled) return;
+          const acao = btn.dataset.pagina;
+          if (acao === 'primeira') pagina = 1;
+          else if (acao === 'anterior') pagina--;
+          else if (acao === 'proxima') pagina++;
+          else if (acao === 'ultima') pagina = totalPaginas;
+          render();
+        });
+
+        barra.style.removeProperty('display');
+        render();
+      })();
+      </script>
     @endif
 
     @php $temEndereco = $processo->cep || $processo->logradouro || $processo->cidade; @endphp
