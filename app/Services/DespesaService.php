@@ -16,8 +16,17 @@ use Carbon\Carbon;
 class DespesaService
 {
     /**
+     * Quantos meses à frente a despesa fixa é projetada.
+     *
+     * Sem isso, um mês futuro não existia como linha e portanto não aparecia em
+     * lugar nenhum — nem ao filtrar a competência, nem nos relatórios. Projetando,
+     * o compromisso mensal já contratado fica visível antes de vencer.
+     */
+    public const MESES_PROJECAO = 12;
+
+    /**
      * Cria as ocorrências iniciais de uma despesa recém-cadastrada.
-     * Para "unica" cria 1; para "fixa" cria todas até o mês corrente.
+     * Para "unica" cria 1; para "fixa" cria até o horizonte de projeção.
      */
     public function criarOcorrenciasIniciais(Despesa $d): int
     {
@@ -29,15 +38,15 @@ class DespesaService
     }
 
     /**
-     * Gera ocorrências mensais que ainda não existem, do mês da data_inicio
-     * até o mês corrente (ou até $ate). Respeita encerrada_em.
+     * Gera ocorrências mensais que ainda não existem, do mês da data_inicio até
+     * $ate — por padrão, o horizonte de projeção. Respeita encerrada_em.
      */
     public function gerarOcorrenciasFaltantes(Despesa $d, ?Carbon $ate = null): int
     {
         if (! $d->isFixa()) return 0;
 
         $inicio = $d->data_inicio->copy()->startOfMonth();
-        $fim = ($ate ?? now())->copy()->startOfMonth();
+        $fim = ($ate ?? now()->addMonths(self::MESES_PROJECAO))->copy()->startOfMonth();
 
         // Se a despesa foi encerrada, não gera além do mês do encerramento
         if ($d->encerrada_em) {
@@ -59,17 +68,20 @@ class DespesaService
     }
 
     /**
-     * Roda para todas as despesas fixas ativas — garante que a ocorrência do
-     * mês corrente exista. Chamada pelo controller ao abrir a listagem.
+     * Roda para todas as despesas fixas ativas, mantendo a janela de projeção
+     * sempre cheia. Chamada ao abrir a listagem e pelo agendador diário.
+     *
+     * $ate permite esticar a janela sob demanda: um relatório que pede um período
+     * além do horizonte padrão garante as competências antes de somar.
      */
-    public function garantirOcorrenciasAtuais(): int
+    public function garantirOcorrenciasAtuais(?Carbon $ate = null): int
     {
         $total = 0;
         Despesa::where('tipo', Despesa::TIPO_FIXA)
             ->whereNull('encerrada_em')
-            ->chunk(100, function ($chunk) use (&$total) {
+            ->chunk(100, function ($chunk) use (&$total, $ate) {
                 foreach ($chunk as $d) {
-                    $total += $this->gerarOcorrenciasFaltantes($d);
+                    $total += $this->gerarOcorrenciasFaltantes($d, $ate);
                 }
             });
         return $total;

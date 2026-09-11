@@ -49,15 +49,27 @@ class DespesaOcorrencia extends Model
         return $this->status === 'pendente' && $this->vencimento->isPast();
     }
 
+    /**
+     * Competência ainda por vir: a linha existe por projeção, não porque o mês
+     * chegou. Separar isso de "Pendente" evita ler previsão como dívida corrente.
+     */
+    public function isPrevista(): bool
+    {
+        return $this->status === 'pendente'
+            && $this->competencia->gt(now()->startOfMonth());
+    }
+
     public function statusLabel(): string
     {
         if ($this->isAtrasada()) return 'Atrasada';
+        if ($this->isPrevista()) return 'Prevista';
         return self::STATUSES[$this->status][0] ?? $this->status;
     }
 
     public function statusColor(): string
     {
         if ($this->isAtrasada()) return 'danger';
+        if ($this->isPrevista()) return 'info';
         return self::STATUSES[$this->status][1] ?? 'secondary';
     }
 }

@@ -173,11 +173,22 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="despesa-save-btn">
-            <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
-          </button>
+        <div class="modal-footer justify-content-between">
+          {{-- Encerrar fica aqui, e não só como ícone na listagem: é aqui que se procura --}}
+          <div>
+            <button type="button" class="btn btn-label-warning" id="despesa-encerrar" style="display:none;">
+              <i class="icon-base ti tabler-player-stop me-1"></i> Encerrar recorrência
+            </button>
+            <button type="button" class="btn btn-label-info" id="despesa-reabrir" style="display:none;">
+              <i class="icon-base ti tabler-player-play me-1"></i> Reabrir recorrência
+            </button>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="despesa-save-btn">
+              <i class="icon-base ti tabler-device-floppy me-1"></i> Salvar
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -310,6 +321,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const metaEl  = document.getElementById('despesa-meta');
   const errEl   = document.getElementById('despesa-error');
   const saveBtn = document.getElementById('despesa-save-btn');
+  const btnEncerrar = document.getElementById('despesa-encerrar');
+  const btnReabrir  = document.getElementById('despesa-reabrir');
   const titleEl = document.getElementById('despesaModalTitle');
   const tipoHelp = document.getElementById('tipo-help');
   const diaHelp = document.getElementById('dia-help');
@@ -342,6 +355,9 @@ document.addEventListener('DOMContentLoaded', function () {
     atualizarCamposTipo();
     metaEl.style.display = 'none'; metaEl.innerHTML = '';
     errEl.style.display = 'none'; errEl.innerHTML = '';
+    // Despesa nova ainda não tem recorrência para encerrar; openEdit reexibe conforme o caso
+    btnEncerrar.style.display = 'none';
+    btnReabrir.style.display = 'none';
     refreshMasks();
   }
 
@@ -371,8 +387,18 @@ document.addEventListener('DOMContentLoaded', function () {
         // Não permite trocar tipo na edição (evitaria drift entre template e ocorrências)
         document.querySelectorAll('input[name="tipo"]').forEach(r => r.disabled = true);
         atualizarCamposTipo();
+
+        // Só despesa fixa tem recorrência para encerrar; única não repete.
+        const ehFixa = (d.tipo || 'fixa') === 'fixa';
+        btnEncerrar.style.display = (ehFixa && ! d.encerrada_em) ? '' : 'none';
+        btnReabrir.style.display  = (ehFixa && d.encerrada_em) ? '' : 'none';
+
         if (d.encerrada_em) {
           metaEl.innerHTML = `<i class="icon-base ti tabler-lock me-1"></i> Despesa encerrada em <strong>${escapeHtml(d.encerrada_em)}</strong>. Novos meses não serão gerados.`;
+          metaEl.style.display = '';
+        } else if (ehFixa) {
+          metaEl.innerHTML = '<i class="icon-base ti tabler-repeat me-1"></i> Recorrência <strong>ativa</strong>: '
+            + 'uma cobrança é gerada a cada mês. Use <strong>Encerrar recorrência</strong> para parar nos próximos meses.';
           metaEl.style.display = '';
         }
         refreshMasks();
@@ -444,12 +470,17 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(r => r.json().then(b => ({ ok: r.ok, body: b })))
         .then(({ ok, body }) => {
           if (! ok) throw new Error(body.message || 'Erro');
+          modal.hide();          // quando vem do modal de edição, ele precisa sair de cena
           dt.draw(false);
           Swal.fire({ icon: 'success', title: body.message, timer: 1600, showConfirmButton: false });
         })
         .catch(err => Swal.fire({ icon: 'error', title: 'Erro', text: err.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
     });
   }
+
+  // Ações de recorrência dentro do próprio modal de edição
+  btnEncerrar.addEventListener('click', () => encerrarDespesa(idEl.value));
+  btnReabrir.addEventListener('click', () => reabrirDespesa(idEl.value));
 
   function reabrirDespesa(id) {
     Swal.fire({
@@ -462,6 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(r => r.json().then(b => ({ ok: r.ok, body: b })))
         .then(({ ok, body }) => {
           if (! ok) throw new Error(body.message || 'Erro');
+          modal.hide();
           dt.draw(false);
           Swal.fire({ icon: 'success', title: body.message, timer: 1600, showConfirmButton: false });
         })

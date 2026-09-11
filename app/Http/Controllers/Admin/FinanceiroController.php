@@ -287,6 +287,13 @@ class FinanceiroController extends Controller
         $de = $request->query('de') ? Carbon::parse($request->query('de'))->startOfDay() : now()->startOfMonth();
         $ate = $request->query('ate') ? Carbon::parse($request->query('ate'))->endOfDay() : now()->endOfMonth();
 
+        // Despesa fixa é projetada para frente; se o período pedido passa do
+        // horizonte já gerado, completa as competências antes de somar — senão
+        // o relatório mostraria zero num mês que tem compromisso contratado.
+        if ($ate->isFuture()) {
+            app(\App\Services\DespesaService::class)->garantirOcorrenciasAtuais($ate->copy());
+        }
+
         $statusFatura = $request->query('status_fatura');
         $statusComissao = $request->query('status_comissao');
         $tipoComissao = $request->query('tipo_comissao'); // a_receber | a_pagar
@@ -389,6 +396,11 @@ class FinanceiroController extends Controller
     {
         $de = $request->query('de') ? Carbon::parse($request->query('de'))->startOfDay() : now()->startOfMonth();
         $ate = $request->query('ate') ? Carbon::parse($request->query('ate'))->endOfDay() : now()->endOfMonth();
+
+        // Mesma garantia do relatório: projeta a despesa fixa até o fim do período pedido.
+        if ($ate->isFuture()) {
+            app(\App\Services\DespesaService::class)->garantirOcorrenciasAtuais($ate->copy());
+        }
 
         // Filtra pela DATA DE REFERÊNCIA (pago_em para realizados; vencimento para previstos).
         // Para incluir o item no relatório, sua data relevante precisa cair no período.
