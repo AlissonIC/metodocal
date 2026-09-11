@@ -174,6 +174,11 @@ Route::prefix('painel')->middleware('auth')->group(function () {
         Route::patch('/processos/faturas/{fatura}', [ProcessoController::class, 'updateFatura'])->name('processos.faturas.update');
         Route::delete('/processos/faturas/{fatura}', [ProcessoController::class, 'destroyFatura'])->name('processos.faturas.destroy');
 
+        // Cobranças recorrentes do processo (mensal até encerrar)
+        Route::get('/processos/{processo}/recorrentes/datatable', [ProcessoController::class, 'datatableRecorrentes'])->name('processos.recorrentes.datatable');
+        Route::patch('/processos/recorrentes/{cobranca}/encerrar', [ProcessoController::class, 'encerrarRecorrente'])->name('processos.recorrentes.encerrar');
+        Route::patch('/processos/recorrentes/{cobranca}/reabrir', [ProcessoController::class, 'reabrirRecorrente'])->name('processos.recorrentes.reabrir');
+
         Route::get('/processos/{processo}/comissoes/datatable', [ProcessoController::class, 'datatableComissoes'])->name('processos.comissoes.datatable');
         Route::post('/processos/{processo}/comissoes', [ProcessoController::class, 'storeComissao'])->name('processos.comissoes.store');
         Route::get('/processos/comissoes/{comissao}', [ProcessoController::class, 'showComissao'])->name('processos.comissoes.show');

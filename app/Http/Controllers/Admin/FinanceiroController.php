@@ -75,6 +75,7 @@ class FinanceiroController extends Controller
         if ($b = trim((string) $request->query('busca', ''))) {
             $query->where(function ($q) use ($b) {
                 $q->where('gateway_payment_id', 'like', "%$b%")
+                    ->orWhere('descricao', 'like', "%$b%")
                     ->orWhere('payer_name', 'like', "%$b%")
                     ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%$b%")->orWhere('email', 'like', "%$b%"))
                     ->orWhereHas('plan', fn ($p) => $p->where('nome', 'like', "%$b%"));

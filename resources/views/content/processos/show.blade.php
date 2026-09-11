@@ -543,6 +543,31 @@
         </div>
       </div>
 
+      {{-- ========== COBRANÇAS RECORRENTES (mensal até encerrar) ========== --}}
+      <div class="card mb-4" id="card-recorrentes" style="display:none;">
+        <div class="card-header border-bottom">
+          <h5 class="card-title mb-0"><i class="icon-base ti tabler-repeat me-1"></i> Cobranças recorrentes</h5>
+          <small class="text-muted">
+            Enquanto estiverem <strong>ativas</strong>, uma cobrança é lançada a cada mês automaticamente.
+            Ao encerrar, para nos meses seguintes — o histórico já lançado permanece.
+          </small>
+        </div>
+        <div class="card-body">
+          <table class="datatables-recorrentes dt-collapse-empty table dt-responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Valor/mês</th>
+                <th>Venc.</th>
+                <th>Desde</th>
+                <th>Situação</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+
       {{-- ================= COMISSÕES DO PROCESSO ================= --}}
       <div class="card mb-4">
         <div class="card-header border-bottom d-flex justify-content-between align-items-center">
@@ -694,6 +719,16 @@
               <div class="modal-body">
                 <div id="fatura-error" class="alert alert-danger py-2 small mb-3" style="display:none;"></div>
                 <input type="hidden" name="id" id="fatura-id">
+
+                <div class="mb-3" id="fatura-tipo-wrap">
+                  <label class="form-label">Tipo de cobrança</label>
+                  <select class="form-select" id="fatura-tipo">
+                    <option value="unica">Única — uma cobrança só</option>
+                    <option value="parcelada">Parcelada — nº fixo de vezes</option>
+                    <option value="recorrente">Recorrente — todo mês até eu encerrar</option>
+                  </select>
+                </div>
+
                 <div class="mb-3">
                   <label class="form-label">Descrição</label>
                   <input type="text" class="form-control" name="descricao" id="fatura-descricao" maxlength="255" placeholder="Ex.: Entrada do serviço, dívida assumida do banco X">
@@ -1451,6 +1486,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const qtdEl    = document.getElementById('fatura-qtd-parcelas');
     const parcWrap = document.getElementById('fatura-parcelamento-wrap');
     const memoriaEl = document.getElementById('fatura-memoria');
+    const tipoEl   = document.getElementById('fatura-tipo');
+    const tipoWrap = document.getElementById('fatura-tipo-wrap');
 
     const dt = new DataTable(table, {
       processing: true, serverSide: true, responsive: true,
@@ -1477,10 +1514,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Resumo do parcelamento com a empresa — total e mês do último vencimento
     function atualizarMemoria() {
-      const qtd = parseInt(qtdEl.value || '1', 10);
+      const tipo = tipoEl.value;
       const valor = moneyToRaw(valorEl.value);
+      const fmtM = (n) => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Parcelamento tem fim; recorrente não — some o campo de quantidade
+      parcWrap.style.display = tipo === 'parcelada' ? '' : 'none';
+
+      if (tipo === 'recorrente') {
+        memoriaEl.innerHTML = valor
+          ? `Será lançada <strong>${fmtM(valor)}</strong> por mês, todo dia `
+            + `<strong>${(readDate(vencEl) || '').slice(8, 10) || '—'}</strong>, `
+            + 'até você encerrar a cobrança.'
+          : 'Uma cobrança por mês, sem data para acabar, até você encerrar.';
+        return;
+      }
+
+      const qtd = parseInt(qtdEl.value || '1', 10);
       if (! qtd || qtd < 2 || ! valor) {
-        memoriaEl.innerHTML = 'Deixe em <strong>1</strong> para uma cobrança única.';
+        memoriaEl.innerHTML = tipo === 'parcelada'
+          ? 'Informe valor e quantidade de parcelas.'
+          : 'Uma cobrança única, na data informada.';
         return;
       }
       const total = (parseFloat(valor) || 0) * qtd;
@@ -1506,12 +1560,13 @@ document.addEventListener('DOMContentLoaded', function () {
       setDate(vencEl, defaults.vencimento || '');
       statusEl.value = defaults.status || 'pendente';
       qtdEl.value = 1;
+      tipoEl.value = 'unica';
       errorEl.style.display = 'none'; errorEl.innerHTML = '';
       refreshMasks();
       atualizarMemoria();
     }
 
-    [qtdEl, valorEl, vencEl].forEach(el => {
+    [qtdEl, valorEl, vencEl, tipoEl].forEach(el => {
       el.addEventListener('input', atualizarMemoria);
       el.addEventListener('change', atualizarMemoria);
     });
@@ -1522,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', function () {
         valor: {!! json_encode($processo->servico?->valor_padrao ? number_format((float) $processo->servico->valor_padrao, 2, ',', '.') : '') !!},
       });
       titleEl.textContent = 'Nova dívida';
-      parcWrap.style.display = '';   // parcelar só ao criar
+      tipoWrap.style.display = '';   // escolher o tipo só ao criar
       modal.show();
     }
 
@@ -1530,7 +1585,8 @@ document.addEventListener('DOMContentLoaded', function () {
       resetForm();
       titleEl.textContent = 'Editar dívida';
       idEl.value = id;
-      parcWrap.style.display = 'none';   // editar mexe numa parcela só
+      tipoWrap.style.display = 'none';   // editar mexe numa cobrança só
+      parcWrap.style.display = 'none';
       fetch(`${baseUrl}/${id}`, { headers: { Accept: 'application/json' } })
         .then(r => { if (! r.ok) throw new Error('Não foi possível carregar a dívida.'); return r.json(); })
         .then(d => {
@@ -1545,6 +1601,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('btn-nova-fatura').addEventListener('click', openNew);
+    document.addEventListener('faturas:refresh', () => dt.draw(false));
 
     table.addEventListener('click', function (e) {
       const editBtn = e.target.closest('.fatura-edit');
@@ -1572,18 +1629,100 @@ document.addEventListener('DOMContentLoaded', function () {
           valor: moneyToRaw(valorEl.value),
           vencimento: readDate(vencEl),
           status: statusEl.value,
-          ...(isEdit ? {} : { qtd_parcelas: parseInt(qtdEl.value || '1', 10) }),
+          ...(isEdit ? {} : {
+            tipo_cobranca: tipoEl.value,
+            qtd_parcelas: tipoEl.value === 'parcelada' ? parseInt(qtdEl.value || '1', 10) : 1,
+          }),
         },
         saveBtn, errorEl,
         onOk: (body) => {
           modal.hide();
           dt.draw(false);
-          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 2200, showConfirmButton: false });
+          document.dispatchEvent(new CustomEvent('recorrentes:refresh'));
+          Swal.fire({ icon: 'success', title: isEdit ? 'Atualizada' : 'Registrada', text: body.message, timer: 2600, showConfirmButton: false });
         },
       });
     });
   })();
 
+  // ================================================================
+  // COBRANÇAS RECORRENTES — lista + encerrar/reabrir
+  // ================================================================
+  (function () {
+    const table = document.querySelector('.datatables-recorrentes');
+    if (! table || ! window.DataTable) return;
+
+    const card    = document.getElementById('card-recorrentes');
+    const dtUrl   = @json(route('processos.recorrentes.datatable', $processo));
+    const baseUrl = @json(url('painel/processos/recorrentes'));
+
+    const dt = new DataTable(table, {
+      processing: true, serverSide: true, responsive: true,
+      searching: false, lengthChange: false, pageLength: 5,
+      ajax: { url: dtUrl },
+      columns: [
+        { data: 'descricao', responsivePriority: 1, render: v => escapeHtml(v) },
+        { data: 'valor_fmt', responsivePriority: 1, className: 'text-nowrap fw-semibold' },
+        { data: 'dia_vencimento', responsivePriority: 4, className: 'text-nowrap', render: d => `todo dia ${d}` },
+        { data: 'inicio_fmt', responsivePriority: 5, className: 'text-nowrap' },
+        {
+          data: null, responsivePriority: 2, orderable: false, searchable: false,
+          render: (row) => row.status_badge
+            + (row.encerrada_fmt ? `<div class="small text-muted">em ${escapeHtml(row.encerrada_fmt)}</div>` : '')
+            + `<div class="small text-muted">${row.faturas_count} mês(es) lançado(s)</div>`,
+        },
+        {
+          data: null, responsivePriority: 1, orderable: false, searchable: false, className: 'text-end text-nowrap',
+          render: (row) => row.ativa
+            ? `<button class="btn btn-sm btn-label-warning rec-encerrar" data-id="${row.id}">
+                 <i class="icon-base ti tabler-player-stop me-1"></i> Encerrar</button>`
+            : `<button class="btn btn-sm btn-label-info rec-reabrir" data-id="${row.id}">
+                 <i class="icon-base ti tabler-player-play me-1"></i> Reabrir</button>`,
+        },
+      ],
+      order: [],
+      language: { processing: 'Carregando...', info: 'Exibindo _START_ a _END_ de _TOTAL_', infoEmpty: '', zeroRecords: '', emptyTable: '', paginate: { first: '«', previous: '‹', next: '›', last: '»' } },
+      layout: { topStart: null, topEnd: null },
+      // O card só existe quando há recorrência — não polui a tela de quem não usa
+      drawCallback: function () {
+        card.style.display = this.api().rows().count() > 0 ? '' : 'none';
+      },
+    });
+
+    document.addEventListener('recorrentes:refresh', () => dt.draw(false));
+
+    function acao(id, tipo) {
+      fetch(`${baseUrl}/${id}/${tipo}`, {
+        method: 'PATCH',
+        headers: { 'X-CSRF-TOKEN': csrfToken, Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+        .then(async r => { const b = await r.json().catch(() => ({})); if (! r.ok) throw new Error(b.message || 'Falha na operação.'); return b; })
+        .then(b => {
+          dt.draw(false);
+          document.dispatchEvent(new CustomEvent('faturas:refresh'));
+          Swal.fire({ icon: 'success', title: tipo === 'encerrar' ? 'Encerrada' : 'Reativada', text: b.message, timer: 2600, showConfirmButton: false });
+        })
+        .catch(e => Swal.fire({ icon: 'error', title: 'Erro', text: e.message, customClass: { confirmButton: 'btn btn-danger' }, buttonsStyling: false }));
+    }
+
+    table.addEventListener('click', function (e) {
+      const enc = e.target.closest('.rec-encerrar');
+      if (enc) {
+        Swal.fire({
+          title: 'Encerrar esta cobrança?',
+          text: 'Ela deixa de ser gerada nos próximos meses. As já lançadas continuam no histórico, e as futuras ainda pendentes são canceladas.',
+          icon: 'warning', showCancelButton: true,
+          confirmButtonText: 'Sim, encerrar', cancelButtonText: 'Voltar',
+          customClass: { confirmButton: 'btn btn-warning me-2', cancelButton: 'btn btn-label-secondary' },
+          buttonsStyling: false,
+        }).then(r => { if (r.isConfirmed) acao(enc.dataset.id, 'encerrar'); });
+        return;
+      }
+      const reab = e.target.closest('.rec-reabrir');
+      if (reab) acao(reab.dataset.id, 'reabrir');
+    });
+  })();
   // ================================================================
   // COMISSÕES — DataTable + Modal
   // ================================================================

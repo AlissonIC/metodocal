@@ -18,12 +18,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Yajra\DataTables\Facades\DataTables;
 
 class ProcessoController extends Controller
 {
-    public function __construct(private \App\Services\FinanciamentoService $financiamento) {}
+    public function __construct(
+        private \App\Services\FinanciamentoService $financiamento,
+        private \App\Services\CobrancaRecorrenteService $recorrentes,
+    ) {}
 
     /**
      * Regera o carnê de parcelas após salvar e registra o que mudou no log do processo.
@@ -579,6 +583,16 @@ class ProcessoController extends Controller
     private function attachFile(ObservacaoProcesso $obs, \Illuminate\Http\UploadedFile $file, Processo $processo): void
     {
         $path = $file->store('observacoes/' . $processo->id, 'local');
+
+        // O disco 'local' roda com throw=false: falha de escrita (permissão em
+        // storage/app/private, por exemplo) volta como false, não como exception.
+        // Sem esta checagem o anexo se perderia em silêncio.
+        if (! $path) {
+            throw ValidationException::withMessages([
+                'anexo' => 'Não foi possível gravar o anexo no servidor. Avise o administrador — provável falta de permissão de escrita em storage/.',
+            ]);
+        }
+
         $obs->update([
             'anexo_arquivo' => $path,
             'anexo_nome_original' => $file->getClientOriginalName(),
@@ -644,7 +658,13 @@ class ProcessoController extends Controller
             'vencimento' => ['required', 'date'],
             'status' => ['required', 'in:pendente,paga,cancelada'],
             'qtd_parcelas' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'tipo_cobranca' => ['nullable', 'in:unica,parcelada,recorrente'],
         ]);
+
+        // Recorrente tem fluxo próprio: cria o molde e materializa os meses já vencidos.
+        if (($data['tipo_cobranca'] ?? 'unica') === 'recorrente') {
+            return $this->storeCobrancaRecorrente($request, $processo, $data);
+        }
 
         $processo->loadMissing('user:id,name,email,cpf_cnpj');
 
@@ -694,6 +714,109 @@ class ProcessoController extends Controller
         ]);
     }
 
+    /**
+     * Cria o molde da cobrança recorrente e já materializa os meses vencidos até hoje.
+     * A partir daí, o agendador diário cuida de virar o mês sozinho.
+     */
+    private function storeCobrancaRecorrente(Request $request, Processo $processo, array $data): JsonResponse
+    {
+        $primeiro = Carbon::parse($data['vencimento']);
+
+        $cobranca = \App\Models\CobrancaRecorrente::create([
+            'processo_id' => $processo->id,
+            'user_id' => $processo->user_id,
+            'descricao' => $data['descricao'] ?: 'Cobrança mensal',
+            'valor' => $data['valor'],
+            'dia_vencimento' => $primeiro->day,
+            'data_inicio' => $primeiro->toDateString(),
+            'created_by_user_id' => $request->user()->id,
+        ]);
+
+        $geradas = $this->recorrentes->gerarFaturasFaltantes($cobranca);
+        $valorFmt = number_format((float) $cobranca->valor, 2, ',', '.');
+
+        $this->logAtividade(
+            $processo,
+            HistoricoProcesso::ACAO_CREATED,
+            'fatura',
+            $cobranca->id,
+            'Criou cobrança recorrente de R$ ' . $valorFmt . '/mês ("' . $cobranca->descricao
+                . '"), todo dia ' . $cobranca->dia_vencimento . ', a partir de ' . $primeiro->format('m/Y') . '.',
+        );
+
+        return response()->json([
+            'message' => "Cobrança recorrente criada (R$ {$valorFmt}/mês). {$geradas} mês(es) já lançado(s); "
+                . 'os próximos entram automaticamente até você encerrar.',
+        ]);
+    }
+
+    public function datatableRecorrentes(Request $request, Processo $processo): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $query = \App\Models\CobrancaRecorrente::query()
+            ->where('processo_id', $processo->id)
+            ->withCount('faturas');
+
+        return DataTables::eloquent($query->orderByDesc('id'))
+            ->addColumn('valor_fmt', fn ($c) => 'R$ ' . number_format((float) $c->valor, 2, ',', '.'))
+            ->addColumn('inicio_fmt', fn ($c) => $c->data_inicio->format('m/Y'))
+            ->addColumn('encerrada_fmt', fn ($c) => $c->encerrada_em?->format('d/m/Y'))
+            ->addColumn('ativa', fn ($c) => $c->isAtiva())
+            ->addColumn('status_badge', fn ($c) =>
+                '<span class="badge bg-label-' . $c->statusColor() . '">' . e($c->statusLabel()) . '</span>')
+            ->rawColumns(['status_badge'])
+            ->toJson();
+    }
+
+    /** Encerra a recorrência: para de gerar e cancela só o pendente de vencimento futuro. */
+    public function encerrarRecorrente(Request $request, \App\Models\CobrancaRecorrente $cobranca): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        if (! $cobranca->isAtiva()) {
+            return response()->json(['message' => 'Esta cobrança já está encerrada.'], 422);
+        }
+
+        $canceladas = $this->recorrentes->encerrar($cobranca);
+
+        $this->logAtividade(
+            $cobranca->processo,
+            HistoricoProcesso::ACAO_UPDATED,
+            'fatura',
+            $cobranca->id,
+            'Encerrou a cobrança recorrente "' . $cobranca->descricao . '".'
+                . ($canceladas ? " {$canceladas} cobrança(s) futura(s) cancelada(s)." : ''),
+        );
+
+        return response()->json([
+            'message' => 'Cobrança encerrada. Ela não será mais gerada nos próximos meses.'
+                . ($canceladas ? " {$canceladas} cobrança(s) futura(s) cancelada(s)." : ''),
+        ]);
+    }
+
+    public function reabrirRecorrente(Request $request, \App\Models\CobrancaRecorrente $cobranca): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        if ($cobranca->isAtiva()) {
+            return response()->json(['message' => 'Esta cobrança já está ativa.'], 422);
+        }
+
+        $geradas = $this->recorrentes->reabrir($cobranca);
+
+        $this->logAtividade(
+            $cobranca->processo,
+            HistoricoProcesso::ACAO_UPDATED,
+            'fatura',
+            $cobranca->id,
+            'Reabriu a cobrança recorrente "' . $cobranca->descricao . '".',
+        );
+
+        return response()->json([
+            'message' => "Cobrança reativada. {$geradas} mês(es) em atraso reposto(s).",
+        ]);
+    }
     public function updateFatura(Request $request, Fatura $fatura): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);

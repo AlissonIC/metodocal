@@ -20,6 +20,8 @@ class Fatura extends Model
         'user_id',
         'plan_id',
         'processo_id',
+        'cobranca_recorrente_id',
+        'competencia',
         'descricao',
         'valor',
         'vencimento',
@@ -44,11 +46,17 @@ class Fatura extends Model
         return [
             'valor' => 'decimal:2',
             'vencimento' => 'date',
+            'competencia' => 'date',
             'pago_em' => 'datetime',
             'estornada_em' => 'datetime',
             'payer_address' => 'array',
             'payer_info' => 'array',
         ];
+    }
+
+    public function cobrancaRecorrente(): BelongsTo
+    {
+        return $this->belongsTo(CobrancaRecorrente::class, 'cobranca_recorrente_id');
     }
 
     public function subscription(): BelongsTo
